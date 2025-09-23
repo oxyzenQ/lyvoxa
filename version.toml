@@ -1,0 +1,43 @@
+# =============================================================================
+# LYVOXA VERSION CONFIGURATION
+# =============================================================================
+# Central version management for all project files
+# Edit this file to update version across entire project
+
+[version]
+# Semantic version (major.minor.patch)
+semantic = "1.5.0"
+
+# Release name (for branding)
+release_name = "Stellar"
+
+# Release number (for this series)
+release_number = "1.5"
+
+# Full release identifier
+release_tag = "stellar-1.5"
+
+[metadata]
+# Project metadata
+project_name = "lyvoxa"
+author = "rezky_nightky"
+license = "GPL-3.0"
+repository = "https://github.com/oxyzenQ/lyvoxa"
+
+# Build information
+target = "x86_64-unknown-linux-gnu"
+rust_edition = "2021"
+
+[files]
+# Files that need version updates (relative to project root)
+cargo_toml = "Cargo.toml"
+readme = "README.md"
+changelog = "CHANGELOG.md"
+security = "SECURITY.md"
+dockerfile = "Dockerfile"
+docker_compose = "docker-compose.yml"
+makefile = "Makefile"
+build_script = "build.sh"
+ci_workflow = ".github/workflows/ci.yml"
+release_workflow = ".github/workflows/release.yml"
+ssh_docs = "docs/SETUP_SSH_SIGNING.md"
