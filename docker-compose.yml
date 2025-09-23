@@ -1,0 +1,151 @@
+# =============================================================================
+# LYVOXA DOCKER COMPOSE CONFIGURATION
+# =============================================================================
+# Container orchestration for Lyvoxa with CPU limits and persistent caching
+# Author: rezky_nightky
+# Version: Stellar 1.5
+
+version: '3.8'
+
+services:
+  # Production build and runtime
+  lyvoxa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        BUILD_JOBS: 3
+        RUST_VERSION: stable
+        TARGET: x86_64-unknown-linux-gnu
+    image: lyvoxa:stellar-1.5
+    container_name: lyvoxa-monitor
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 512M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
+    volumes:
+      # Persistent cache volumes
+      - lyvoxa-target:/tmp/target
+      - lyvoxa-sccache:/tmp/sccache
+    networks:
+      - lyvoxa-network
+    restart: unless-stopped
+    # Run in privileged mode to access host system info
+    privileged: true
+    pid: host
+
+  # Development environment
+  lyvoxa-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        BUILD_JOBS: 3
+        RUST_VERSION: stable
+        TARGET: x86_64-unknown-linux-gnu
+    image: lyvoxa:dev
+    container_name: lyvoxa-dev
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 256M
+    volumes:
+      # Mount source code for development
+      - .:/workspace
+      - lyvoxa-target:/tmp/target
+      - lyvoxa-sccache:/tmp/sccache
+      # Cargo registry cache
+      - cargo-registry:/home/builder/.cargo/registry
+      - cargo-git:/home/builder/.cargo/git
+    networks:
+      - lyvoxa-network
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: bash
+    profiles:
+      - dev
+
+  # Build-only service for CI/CD
+  lyvoxa-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app-builder
+      args:
+        BUILD_JOBS: 3
+        RUST_VERSION: stable
+        TARGET: x86_64-unknown-linux-gnu
+    image: lyvoxa:builder
+    container_name: lyvoxa-builder
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 4G
+    volumes:
+      - .:/app
+      - lyvoxa-target:/tmp/target
+      - lyvoxa-sccache:/tmp/sccache
+    networks:
+      - lyvoxa-network
+    profiles:
+      - build
+
+# Persistent volumes for caching
+volumes:
+  lyvoxa-target:
+    driver: local
+    name: lyvoxa-target
+  lyvoxa-sccache:
+    driver: local
+    name: lyvoxa-sccache
+  cargo-registry:
+    driver: local
+    name: lyvoxa-cargo-registry
+  cargo-git:
+    driver: local
+    name: lyvoxa-cargo-git
+
+# Network configuration
+networks:
+  lyvoxa-network:
+    driver: bridge
+    name: lyvoxa-network
+
+# =============================================================================
+# USAGE EXAMPLES
+# =============================================================================
+#
+# Production build and run:
+#   docker-compose up lyvoxa
+#
+# Development environment:
+#   docker-compose --profile dev up lyvoxa-dev
+#
+# Build only (for CI/CD):
+#   docker-compose --profile build up lyvoxa-builder
+#
+# Build all services:
+#   docker-compose build
+#
+# Clean up:
+#   docker-compose down -v --remove-orphans
+#
+# View logs:
+#   docker-compose logs -f lyvoxa
+#
+# Execute commands in dev container:
+#   docker-compose --profile dev exec lyvoxa-dev cargo build --jobs 3
+#
+# =============================================================================

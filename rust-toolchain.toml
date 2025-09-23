@@ -1,0 +1,28 @@
+[toolchain]
+# Lyvoxa Build Toolchain Configuration
+# Ensures reproducible builds across all developer environments
+
+# Use stable channel for production builds
+channel = "stable"
+
+# Target only Linux x86_64 for now
+# Future: Add x86_64-apple-darwin and aarch64-apple-darwin for macOS support
+targets = [
+    "x86_64-unknown-linux-gnu",
+    # "x86_64-apple-darwin",     # Future macOS Intel support
+    # "aarch64-apple-darwin",    # Future macOS Apple Silicon support
+]
+
+# Essential components for development and optimization
+components = [
+    "rustc",
+    "cargo", 
+    "rustfmt",
+    "clippy",
+    "rust-src",
+    "rust-analyzer",
+]
+
+# Rust version profile for consistent builds
+# This locks the toolchain version across all environments
+profile = "default"
