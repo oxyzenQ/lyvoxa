@@ -8,9 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
-    widgets::{
-        Axis, Block, Borders, Chart, Dataset, Gauge, Paragraph, Row, Table,
-    },
+    widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, Paragraph, Row, Table},
     Frame, Terminal,
 };
 use std::{
@@ -74,7 +72,7 @@ impl App {
     fn update(&mut self) {
         if self.last_update.elapsed() >= Duration::from_millis(1000) {
             self.monitor.refresh();
-            
+
             // Update CPU history
             let cpu_usage = self.monitor.get_global_cpu_usage();
             self.cpu_history.push_back(cpu_usage);
@@ -94,19 +92,13 @@ impl App {
     }
 
     fn on_key(&mut self, c: char) {
-        match c {
-            'q' => {
-                self.should_quit = true;
-            }
-            _ => {}
+        if c == 'q' {
+            self.should_quit = true;
         }
     }
 }
 
-async fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-) -> io::Result<()> {
+async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let tick_rate = Duration::from_millis(250);
 
@@ -153,7 +145,11 @@ fn ui(f: &mut Frame, app: &App) {
     // Header
     let header = Paragraph::new("Rust System Monitor - Press 'q' to quit, 'Esc' to exit")
         .style(Style::default().fg(Color::Cyan))
-        .block(Block::default().borders(Borders::ALL).title("System Monitor"));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("System Monitor"),
+        );
     f.render_widget(header, chunks[0]);
 
     // CPU and Memory info layout
@@ -178,10 +174,12 @@ fn ui(f: &mut Frame, app: &App) {
         .block(Block::default().borders(Borders::ALL).title("Memory Usage"))
         .gauge_style(Style::default().fg(Color::Green))
         .percent(memory_usage as u16)
-        .label(format!("{:.1}% ({}/{})", 
-                      memory_usage, 
-                      humansize::format_size(used_mem, humansize::DECIMAL),
-                      humansize::format_size(total_mem, humansize::DECIMAL)));
+        .label(format!(
+            "{:.1}% ({}/{})",
+            memory_usage,
+            humansize::format_size(used_mem, humansize::DECIMAL),
+            humansize::format_size(total_mem, humansize::DECIMAL)
+        ));
     f.render_widget(memory_gauge, info_chunks[1]);
 
     // Charts layout
@@ -192,7 +190,8 @@ fn ui(f: &mut Frame, app: &App) {
 
     // CPU chart
     if !app.cpu_history.is_empty() {
-        let cpu_data: Vec<(f64, f64)> = app.cpu_history
+        let cpu_data: Vec<(f64, f64)> = app
+            .cpu_history
             .iter()
             .enumerate()
             .map(|(i, &cpu)| (i as f64, cpu))
@@ -213,7 +212,8 @@ fn ui(f: &mut Frame, app: &App) {
 
     // Memory chart
     if !app.memory_history.is_empty() {
-        let memory_data: Vec<(f64, f64)> = app.memory_history
+        let memory_data: Vec<(f64, f64)> = app
+            .memory_history
             .iter()
             .enumerate()
             .map(|(i, &mem)| (i as f64, mem))
@@ -226,7 +226,11 @@ fn ui(f: &mut Frame, app: &App) {
             .data(&memory_data)];
 
         let memory_chart = Chart::new(datasets)
-            .block(Block::default().title("Memory History").borders(Borders::ALL))
+            .block(
+                Block::default()
+                    .title("Memory History")
+                    .borders(Borders::ALL),
+            )
             .x_axis(Axis::default().title("Time").bounds([0.0, 60.0]))
             .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
         f.render_widget(memory_chart, chart_chunks[1]);
@@ -248,9 +252,15 @@ fn ui(f: &mut Frame, app: &App) {
         .collect();
 
     let process_table = Table::new(process_items)
-        .header(Row::new(vec!["PID", "Name", "CPU%", "Memory", "Status"])
-            .style(Style::default().fg(Color::Yellow)))
-        .block(Block::default().borders(Borders::ALL).title("Top Processes"))
+        .header(
+            Row::new(vec!["PID", "Name", "CPU%", "Memory", "Status"])
+                .style(Style::default().fg(Color::Yellow)),
+        )
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Top Processes"),
+        )
         .widths(&[
             Constraint::Length(8),
             Constraint::Min(20),

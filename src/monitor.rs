@@ -1,4 +1,4 @@
-use sysinfo::{CpuExt, ProcessExt, System, SystemExt, PidExt};
+use sysinfo::{CpuExt, PidExt, ProcessExt, System, SystemExt};
 
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
@@ -11,6 +11,7 @@ pub struct ProcessInfo {
 
 pub struct SystemMonitor {
     system: System,
+    #[allow(dead_code)]
     cpu_count: usize,
 }
 
@@ -19,11 +20,8 @@ impl SystemMonitor {
         let mut system = System::new_all();
         system.refresh_all();
         let cpu_count = system.cpus().len();
-        
-        Self {
-            system,
-            cpu_count,
-        }
+
+        Self { system, cpu_count }
     }
 
     pub fn refresh(&mut self) {
@@ -34,12 +32,18 @@ impl SystemMonitor {
         self.system.global_cpu_info().cpu_usage() as f64
     }
 
+    #[allow(dead_code)]
     pub fn get_cpu_count(&self) -> usize {
         self.cpu_count
     }
 
+    #[allow(dead_code)]
     pub fn get_cpu_usage_per_core(&self) -> Vec<f32> {
-        self.system.cpus().iter().map(|cpu| cpu.cpu_usage()).collect()
+        self.system
+            .cpus()
+            .iter()
+            .map(|cpu| cpu.cpu_usage())
+            .collect()
     }
 
     pub fn get_memory_info(&self) -> (u64, u64) {
@@ -57,27 +61,32 @@ impl SystemMonitor {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_swap_info(&self) -> (u64, u64) {
         let used = self.system.used_swap();
         let total = self.system.total_swap();
         (used, total)
     }
 
+    #[allow(dead_code)]
     pub fn get_uptime(&self) -> u64 {
         self.system.uptime()
     }
 
+    #[allow(dead_code)]
     pub fn get_load_average(&self) -> (f64, f64, f64) {
         let load_avg = self.system.load_average();
         (load_avg.one, load_avg.five, load_avg.fifteen)
     }
 
+    #[allow(dead_code)]
     pub fn get_process_count(&self) -> usize {
         self.system.processes().len()
     }
 
     pub fn get_top_processes(&self, limit: usize) -> Vec<ProcessInfo> {
-        let mut processes: Vec<ProcessInfo> = self.system
+        let mut processes: Vec<ProcessInfo> = self
+            .system
             .processes()
             .iter()
             .map(|(pid, process)| ProcessInfo {
@@ -91,17 +100,18 @@ impl SystemMonitor {
 
         // Sort by CPU usage (descending)
         processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
-        
+
         // Take only the top N processes
         processes.truncate(limit);
         processes
     }
 
+    #[allow(dead_code)]
     pub fn get_process_by_name(&self, name: &str) -> Vec<ProcessInfo> {
         self.system
             .processes()
             .iter()
-            .filter(|(_, process)| process.name().contains(name))
+            .filter(|(_, process)| process.name().to_lowercase().contains(&name.to_lowercase()))
             .map(|(pid, process)| ProcessInfo {
                 pid: pid.as_u32(),
                 name: process.name().to_string(),
@@ -112,11 +122,21 @@ impl SystemMonitor {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn get_system_info(&self) -> SystemInfo {
         SystemInfo {
-            hostname: self.system.host_name().unwrap_or_else(|| "Unknown".to_string()),
-            kernel_version: self.system.kernel_version().unwrap_or_else(|| "Unknown".to_string()),
-            os_version: self.system.long_os_version().unwrap_or_else(|| "Unknown".to_string()),
+            hostname: self
+                .system
+                .host_name()
+                .unwrap_or_else(|| "Unknown".to_string()),
+            kernel_version: self
+                .system
+                .kernel_version()
+                .unwrap_or_else(|| "Unknown".to_string()),
+            os_version: self
+                .system
+                .long_os_version()
+                .unwrap_or_else(|| "Unknown".to_string()),
             uptime: self.get_uptime(),
             load_average: self.get_load_average(),
             process_count: self.get_process_count(),
@@ -125,6 +145,7 @@ impl SystemMonitor {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct SystemInfo {
     pub hostname: String,
     pub kernel_version: String,
