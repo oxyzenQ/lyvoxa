@@ -22,19 +22,43 @@ Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/ly
 
 ### Build from source
 
+#### Quick Build (Recommended)
 ```bash
 # Clone the repository
 git clone https://github.com/oxyzenQ/lyvoxa.git
 cd lyvoxa
 
-# Build the release version for optimal performance
-cargo build --release
+# Use the optimized build script (limits CPU to 3 cores)
+./build.sh release
 
 # Run the full TUI version (htop-like interface)
-./target/release/lyvoxa
+./target/x86_64-unknown-linux-gnu/release/lyvoxa
 
 # Or run the simple terminal version
-./target/release/lyvoxa-simple
+./target/x86_64-unknown-linux-gnu/release/lyvoxa-simple
+```
+
+#### Manual Build
+```bash
+# Build with CPU core limits (recommended for heat control)
+cargo build --release --jobs 3 --target x86_64-unknown-linux-gnu
+
+# Or use Make for automation
+make release
+
+# Or use bun for package management (if available)
+bun install  # Install any additional tools
+make all     # Full build cycle
+```
+
+#### Docker Build
+```bash
+# Build and run with Docker (CPU limited)
+docker build --cpus=3 -t lyvoxa:stellar-1.5 .
+docker run --rm --cpus=3 --privileged --pid=host lyvoxa:stellar-1.5
+
+# Or use Docker Compose
+docker-compose up lyvoxa
 ```
 
 ### Controls
@@ -54,6 +78,31 @@ This Rust-based monitor offers several advantages over traditional system monito
 2. **Low CPU Overhead**: Compiled binary with optimized system calls
 3. **Fast Startup**: No interpreter or virtual machine overhead
 4. **Minimal Dependencies**: Self-contained binary with minimal runtime requirements
+
+## Build Optimization
+
+Lyvoxa uses an advanced build system optimized for developer machines:
+
+### 🔥 **Heat Control**
+- **CPU Core Limiting**: All builds limited to 3 cores maximum to prevent overheating
+- **Incremental Compilation**: Faster rebuilds with cached artifacts
+- **sccache Integration**: Shared compilation cache for even faster builds
+
+### ⚡ **Performance Features**
+- **Target-Specific Optimization**: Builds optimized for `x86_64-unknown-linux-gnu`
+- **Link-Time Optimization (LTO)**: Smaller, faster binaries
+- **Native CPU Features**: Automatically uses your CPU's capabilities
+- **Mold Linker Support**: Faster linking when available
+
+### 🛠️ **Build Profiles**
+- `debug`: Fast compilation for development
+- `release`: Maximum optimization for production
+- `release-with-debug`: Optimized with debug info for profiling
+
+### 📦 **Reproducible Builds**
+- Locked Rust toolchain via `rust-toolchain.toml`
+- Dependency locking with `Cargo.lock`
+- Containerized builds with Docker
 
 ## Architecture
 

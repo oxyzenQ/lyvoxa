@@ -466,6 +466,7 @@ local/
 # Custom build scripts output
 build-output/
 dist/
+.windsurf
 
 # =============================================================================
 # END OF GITIGNORE
