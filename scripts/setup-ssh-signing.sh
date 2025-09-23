@@ -60,15 +60,28 @@ log_info "Private key for GitHub Secrets:"
 echo "==============================="
 log_warning "Copy this ENTIRE output (including headers) to GitHub Secrets as SSH_SIGN_KEY:"
 echo ""
-echo "Option 1: Raw private key (recommended):"
-echo "----------------------------------------"
+echo "🔑 Raw private key (RECOMMENDED - copy exactly as shown):"
+echo "--------------------------------------------------------"
 cat "$SSH_KEY_PATH"
 echo ""
 
-echo "Option 2: Base64 encoded (alternative):"
-echo "---------------------------------------"
+echo "🔑 Base64 encoded (alternative if raw doesn't work):"
+echo "---------------------------------------------------"
 base64 -w 0 "$SSH_KEY_PATH"
 echo ""
+echo ""
+
+# Test signing locally
+log_info "Testing SSH signing locally:"
+echo "============================"
+echo "test signing" > /tmp/test_sign.txt
+if ssh-keygen -Y sign -f "$SSH_KEY_PATH" -n file /tmp/test_sign.txt >/dev/null 2>&1; then
+    log_success "✅ SSH signing test passed - key is valid for signing"
+    rm -f /tmp/test_sign.txt /tmp/test_sign.txt.sig
+else
+    log_error "❌ SSH signing test failed - key may not be suitable for signing"
+    log_warning "Try generating a new ED25519 key or check key permissions"
+fi
 echo ""
 
 # Instructions

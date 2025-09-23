@@ -203,21 +203,55 @@ jobs:
             mkdir -p ~/.ssh
             
             # Handle SSH key format properly (preserve newlines)
-            echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null || {
-              # If not base64 encoded, write directly with proper formatting
-              printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-            }
+            echo "🔧 Processing SSH key..."
+            
+            # Try different methods to write the SSH key
+            if echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null; then
+              echo "📝 SSH key decoded from base64"
+            else
+              # Write directly, handling potential newline issues
+              echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+              echo "📝 SSH key written directly"
+            fi
             
             chmod 600 ~/.ssh/id_ed25519
             
+            # Debug: Show key info (without exposing content)
+            echo "🔍 SSH key file info:"
+            ls -la ~/.ssh/id_ed25519
+            echo "File size: $(wc -c < ~/.ssh/id_ed25519) bytes"
+            echo "First line: $(head -1 ~/.ssh/id_ed25519)"
+            echo "Last line: $(tail -1 ~/.ssh/id_ed25519)"
+            
             # Validate SSH key format
             if ! ssh-keygen -l -f ~/.ssh/id_ed25519 >/dev/null 2>&1; then
-              echo "❌ Invalid SSH key format. Please check your SSH_SIGN_KEY secret."
-              echo "Key should be in OpenSSH private key format or base64 encoded."
-              exit 1
+              echo "❌ SSH key validation failed. Trying alternative format..."
+              
+              # Try with explicit newline handling
+              printf "%s" "$SSH_PRIVATE_KEY" | tr ' ' '\n' > ~/.ssh/id_ed25519_alt
+              chmod 600 ~/.ssh/id_ed25519_alt
+              
+              if ssh-keygen -l -f ~/.ssh/id_ed25519_alt >/dev/null 2>&1; then
+                mv ~/.ssh/id_ed25519_alt ~/.ssh/id_ed25519
+                echo "✅ SSH key fixed with alternative format"
+              else
+                echo "❌ SSH key format is invalid. Please check your SSH_SIGN_KEY secret."
+                echo "Expected format: OpenSSH private key (-----BEGIN OPENSSH PRIVATE KEY-----)"
+                echo "Current key starts with: $(head -1 ~/.ssh/id_ed25519)"
+                exit 1
+              fi
+            else
+              echo "✅ SSH key loaded and validated"
             fi
             
-            echo "✅ SSH key loaded and validated"
+            # Final verification that signing will work
+            echo "🧪 Testing SSH key for signing capability..."
+            if ! ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n test /dev/null >/dev/null 2>&1; then
+              echo "❌ SSH key cannot be used for signing. This might be a key format issue."
+              echo "Please ensure your SSH_SIGN_KEY is a valid OpenSSH private key."
+              exit 1
+            fi
+            echo "✅ SSH key ready for signing"
             
             # Sign the package
             echo "🔑 Signing package with SSH key..."
