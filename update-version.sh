@@ -131,28 +131,7 @@ update_security_docs() {
     log_success "✅ SECURITY.md updated"
 }
 
-update_dockerfile() {
-    local new_tag="$1"
-    log_info "Updating Dockerfile..."
-    
-    # Update version comment and labels
-    sed -i "s/# Version: .*/# Version: $new_tag/" Dockerfile
-    sed -i "s/version=\".*\"/version=\"$new_tag\"/" Dockerfile
-    sed -i "s/stellar-1\\.5/$new_tag/g" Dockerfile
-    
-    log_success "✅ Dockerfile updated"
-}
-
-update_docker_compose() {
-    local new_tag="$1"
-    log_info "Updating docker-compose.yml..."
-    
-    # Update version comment and image tag
-    sed -i "s/# Version: .*/# Version: $new_tag/" docker-compose.yml
-    sed -i "s/lyvoxa:stellar-1\\.5/lyvoxa:$new_tag/" docker-compose.yml
-    
-    log_success "✅ docker-compose.yml updated"
-}
+# Docker files removed - no longer updating Dockerfile or docker-compose.yml
 
 update_makefile() {
     local new_release_name="$1"
@@ -256,8 +235,6 @@ main() {
     update_readme "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER" "$NEW_SEMANTIC"
     update_changelog "$NEW_SEMANTIC" "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_security_docs "$NEW_RELEASE_TAG"
-    update_dockerfile "$NEW_RELEASE_TAG"
-    update_docker_compose "$NEW_RELEASE_TAG"
     update_makefile "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_build_script "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_workflows "$NEW_RELEASE_TAG" "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER" "$NEW_SEMANTIC"

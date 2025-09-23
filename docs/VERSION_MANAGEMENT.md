@@ -47,8 +47,8 @@ The system updates version information in:
 | `README.md` | Version display, download URLs |
 | `CHANGELOG.md` | New version entry |
 | `SECURITY.md` | Download URLs and references |
-| `Dockerfile` | Version labels and comments |
-| `docker-compose.yml` | Image tags |
+| ~~`Dockerfile`~~ | ~~Version labels and comments~~ (removed) |
+| ~~`docker-compose.yml`~~ | ~~Image tags~~ (removed) |
 | `Makefile` | Version comments |
 | `build.sh` | Version display |
 | `.github/workflows/ci.yml` | Release tags |

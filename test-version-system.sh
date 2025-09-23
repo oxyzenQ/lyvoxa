@@ -116,8 +116,6 @@ target_files=(
     "README.md" 
     "CHANGELOG.md"
     "SECURITY.md"
-    "Dockerfile"
-    "docker-compose.yml"
     "Makefile"
     "build.sh"
     ".github/workflows/ci.yml"

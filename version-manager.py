@@ -58,15 +58,6 @@ class VersionManager:
                 (r'stellar-1\.5', r'{release_tag}'),
                 (r'Stellar 1\.5', r'{release_name} {release_number}')
             ],
-            "Dockerfile": [
-                (r'# Version: [^\n]+', r'# Version: {release_name} {release_number}'),
-                (r'version="[^"]+"', r'version="{release_tag}"'),
-                (r'stellar-1\.5', r'{release_tag}')
-            ],
-            "docker-compose.yml": [
-                (r'# Version: [^\n]+', r'# Version: {release_name} {release_number}'),
-                (r'lyvoxa:stellar-1\.5', r'lyvoxa:{release_tag}')
-            ],
             "Makefile": [
                 (r'# Version: [^\n]+', r'# Version: {release_name} {release_number}')
             ],

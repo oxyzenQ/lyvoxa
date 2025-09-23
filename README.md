@@ -66,14 +66,15 @@ bun install  # Install any additional tools
 make all     # Full build cycle
 ```
 
-#### Docker Build
+#### Manual Build
 ```bash
-# Build and run with Docker (CPU limited)
-docker build --cpus=3 -t lyvoxa:stellar-1.5 .
-docker run --rm --cpus=3 --privileged --pid=host lyvoxa:stellar-1.5
+# Build from source
+git clone https://github.com/oxyzenQ/lyvoxa.git
+cd lyvoxa
+./build.sh release
 
-# Or use Docker Compose
-docker-compose up lyvoxa
+# Run the application
+./target/x86_64-unknown-linux-gnu/release/lyvoxa
 ```
 
 ### Controls
