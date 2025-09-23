@@ -1,6 +1,8 @@
-# 🦀 Rust System Monitor
+# 🔍 Lyvoxa - System Monitor
 
-A high-performance, low-memory system monitor written in Rust, designed to be a fast alternative to htop with beautiful terminal UI.
+A high-performance, low-memory system monitoring tool written in Rust, designed to be a fast alternative to htop with beautiful terminal UI. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
+
+**Current Version**: Stellar 1.5 (v1.5.0)
 
 ## Features
 
@@ -14,20 +16,25 @@ A high-performance, low-memory system monitor written in Rust, designed to be a 
 
 ## Installation & Usage
 
+### Quick Install (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/lyvoxa/releases) for your platform.
+
 ### Build from source
 
 ```bash
-# Clone or navigate to the project directory
-cd rust-monitor
+# Clone the repository
+git clone https://github.com/oxyzenQ/lyvoxa.git
+cd lyvoxa
 
 # Build the release version for optimal performance
 cargo build --release
 
 # Run the full TUI version (htop-like interface)
-./target/release/rust-monitor
+./target/release/lyvoxa
 
 # Or run the simple terminal version
-./target/release/simple-monitor
+./target/release/lyvoxa-simple
 ```
 
 ### Controls
@@ -66,8 +73,8 @@ The project is structured into two main components:
 
 ## Comparison with htop
 
-| Feature | htop | rust-monitor |
-|---------|------|--------------|
+| Feature | htop | lyvoxa |
+|---------|------|--------|
 | Memory Usage | ~2-4 MB | ~1-2 MB |
 | CPU Overhead | Medium | Low |
 | Startup Time | Fast | Very Fast |
@@ -86,8 +93,20 @@ The project is structured into two main components:
 
 ## Contributing
 
-Feel free to contribute improvements, bug fixes, or new features!
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is open source. Feel free to use and modify as needed.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+## Repository
+
+- **GitHub**: [https://github.com/oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
+- **Issues**: [https://github.com/oxyzenQ/lyvoxa/issues](https://github.com/oxyzenQ/lyvoxa/issues)
+- **Releases**: [https://github.com/oxyzenQ/lyvoxa/releases](https://github.com/oxyzenQ/lyvoxa/releases)
