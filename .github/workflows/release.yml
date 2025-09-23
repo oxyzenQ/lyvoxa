@@ -251,9 +251,24 @@ jobs:
               echo "🔓 Removing passphrase from private key for CI use (temporary copy)"
               cp "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_ed25519_work"
               chmod 600 "$HOME/.ssh/id_ed25519_work"
-              if ! ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" >/dev/null 2>&1; then
-                echo "❌ Failed to remove passphrase from key. Check SSH_PASSPHRASE."
-                exit 1
+              echo "🔍 Attempting to remove passphrase..."
+              if ! ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" 2>&1; then
+                echo "❌ Failed to remove passphrase with ssh-keygen -p"
+                echo "🔧 Trying alternative: convert via openssl..."
+                
+                # Alternative approach: try using openssl if available
+                if command -v openssl >/dev/null 2>&1; then
+                  echo "$SSH_PASSPHRASE" | ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" 2>/dev/null || {
+                    echo "❌ Both ssh-keygen and openssl methods failed"
+                    echo "🔍 SSH key might be in unsupported format or passphrase is incorrect"
+                    echo "💡 Consider using a dedicated unencrypted signing key for CI"
+                    exit 1
+                  }
+                else
+                  echo "❌ ssh-keygen -p failed and openssl not available"
+                  echo "🔍 Check that SSH_SIGN_PASSPHRASE matches your private key passphrase"
+                  exit 1
+                fi
               fi
               SIGN_KEY_PATH="$HOME/.ssh/id_ed25519_work"
             fi
