@@ -140,7 +140,7 @@ fn ui(f: &mut Frame, app: &App) {
             Constraint::Length(12), // CPU and Memory charts
             Constraint::Min(0),     // Process list
         ])
-        .split(f.size());
+        .split(f.area());
 
     // Header
     let header = Paragraph::new("Rust System Monitor - Press 'q' to quit, 'Esc' to exit")
@@ -251,22 +251,24 @@ fn ui(f: &mut Frame, app: &App) {
         })
         .collect();
 
-    let process_table = Table::new(process_items)
-        .header(
-            Row::new(vec!["PID", "Name", "CPU%", "Memory", "Status"])
-                .style(Style::default().fg(Color::Yellow)),
-        )
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Top Processes"),
-        )
-        .widths(&[
+    let process_table = Table::new(
+        process_items,
+        [
             Constraint::Length(8),
             Constraint::Min(20),
             Constraint::Length(8),
             Constraint::Length(12),
             Constraint::Length(10),
-        ]);
+        ],
+    )
+    .header(
+        Row::new(vec!["PID", "Name", "CPU%", "Memory", "Status"])
+            .style(Style::default().fg(Color::Yellow)),
+    )
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Top Processes"),
+    );
     f.render_widget(process_table, chunks[3]);
 }
