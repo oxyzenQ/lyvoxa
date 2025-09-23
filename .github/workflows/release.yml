@@ -201,8 +201,23 @@ jobs:
           if [ -n "$SSH_PRIVATE_KEY" ]; then
             # Setup SSH key for signing
             mkdir -p ~/.ssh
-            echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+            
+            # Handle SSH key format properly (preserve newlines)
+            echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null || {
+              # If not base64 encoded, write directly with proper formatting
+              printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+            }
+            
             chmod 600 ~/.ssh/id_ed25519
+            
+            # Validate SSH key format
+            if ! ssh-keygen -l -f ~/.ssh/id_ed25519 >/dev/null 2>&1; then
+              echo "❌ Invalid SSH key format. Please check your SSH_SIGN_KEY secret."
+              echo "Key should be in OpenSSH private key format or base64 encoded."
+              exit 1
+            fi
+            
+            echo "✅ SSH key loaded and validated"
             
             # Sign the package
             echo "🔑 Signing package with SSH key..."
