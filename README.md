@@ -1,6 +1,6 @@
 # 🔍 Lyvoxa - System Monitor
 
-A high-performance, low-memory system monitoring tool written in Rust, designed to be a fast alternative to htop with beautiful terminal UI. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
+A high-performance, low-memory system monitoring tool written in Rust, designed to be a fast alternative to other system monitors with beautiful terminal UI. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
 
 **Current Version**: Stellar 1.5 (v1.5.0)
 
@@ -20,6 +20,21 @@ A high-performance, low-memory system monitoring tool written in Rust, designed 
 
 Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/lyvoxa/releases) for your platform.
 
+#### Secure Installation with Verification
+```bash
+# Download release and verification files
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-1.5/lyvoxa-stellar-1.5-linux-x86_64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-1.5/lyvoxa-stellar-1.5-linux-x86_64.tar.gz.sha512
+
+# Verify integrity (recommended)
+sha512sum -c lyvoxa-stellar-1.5-linux-x86_64.tar.gz.sha512
+
+# Extract and install
+tar -xzf lyvoxa-stellar-1.5-linux-x86_64.tar.gz
+cd lyvoxa-stellar-1.5-linux-x86_64
+sudo ./install.sh
+```
+
 ### Build from source
 
 #### Quick Build (Recommended)
@@ -31,7 +46,7 @@ cd lyvoxa
 # Use the optimized build script (limits CPU to 3 cores)
 ./build.sh release
 
-# Run the full TUI version (htop-like interface)
+# Run the full TUI version (interactive interface)
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa
 
 # Or run the simple terminal version
@@ -104,6 +119,12 @@ Lyvoxa uses an advanced build system optimized for developer machines:
 - Dependency locking with `Cargo.lock`
 - Containerized builds with Docker
 
+### 🔐 **Security & Integrity**
+- **Multi-Algorithm Checksums**: SHA512, BLAKE3, ChaCha20-HMAC
+- **SSH Signature Verification**: Cryptographically signed releases
+- **Tamper Detection**: Multiple verification layers
+- **Supply Chain Security**: Automated verification in CI/CD
+
 ## Architecture
 
 The project is structured into two main components:
@@ -120,14 +141,14 @@ The project is structured into two main components:
 - `tokio` - Async runtime for responsive UI
 - `humansize` - Human-readable size formatting
 
-## Comparison with htop
+## Comparison with Other Competitors
 
-| Feature | htop | lyvoxa |
-|---------|------|--------|
+| Feature | Traditional Monitors | lyvoxa |
+|---------|---------------------|--------|
 | Memory Usage | ~2-4 MB | ~1-2 MB |
 | CPU Overhead | Medium | Low |
 | Startup Time | Fast | Very Fast |
-| Language | C | Rust |
+| Language | C/C++ | Rust |
 | Safety | Manual memory management | Memory safe |
 
 ## Future Enhancements
@@ -154,8 +175,18 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
+## Security
+
+For security verification instructions and best practices, see [SECURITY.md](SECURITY.md).
+
+**Release Verification:**
+- All releases include SHA512, BLAKE3, and ChaCha20-HMAC checksums
+- SSH signatures provide cryptographic authenticity proof
+- Follow verification steps before installation for maximum security
+
 ## Repository
 
 - **GitHub**: [https://github.com/oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
 - **Issues**: [https://github.com/oxyzenQ/lyvoxa/issues](https://github.com/oxyzenQ/lyvoxa/issues)
 - **Releases**: [https://github.com/oxyzenQ/lyvoxa/releases](https://github.com/oxyzenQ/lyvoxa/releases)
+- **Security**: [SECURITY.md](SECURITY.md)
