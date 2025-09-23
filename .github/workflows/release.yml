@@ -245,43 +245,42 @@ jobs:
               echo "✅ SSH key loaded and validated"
             fi
             
-            # Prepare signing environment (handle passphrase-protected keys)
+            # Prepare signing key path (handle passphrase-protected keys without interaction)
+            SIGN_KEY_PATH="$HOME/.ssh/id_ed25519"
             if [ -n "$SSH_PASSPHRASE" ]; then
-              echo "🔐 Passphrase provided; using ssh-agent + askpass"
-              eval "$(ssh-agent -s)"
-              echo '#!/bin/sh' > /tmp/askpass.sh
-              echo 'echo "$SSH_PASSPHRASE"' >> /tmp/askpass.sh
-              chmod +x /tmp/askpass.sh
-              export SSH_ASKPASS=/tmp/askpass.sh
-              export DISPLAY=:0
-              setsid -w ssh-add ~/.ssh/id_ed25519 >/dev/null 2>&1 || {
-                echo "❌ Failed to add key to ssh-agent (check passphrase)"; exit 1; }
-              # Generate public key for agent-backed signing
-              ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
-              TEST_SIGN_CMD="ssh-keygen -Y sign -f ~/.ssh/id_ed25519.pub -n test /dev/null"
-            else
-              TEST_SIGN_CMD="ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n test /dev/null"
+              echo "🔓 Removing passphrase from private key for CI use (temporary copy)"
+              cp "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_ed25519_work"
+              chmod 600 "$HOME/.ssh/id_ed25519_work"
+              if ! ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" >/dev/null 2>&1; then
+                echo "❌ Failed to remove passphrase from key. Check SSH_PASSPHRASE."
+                exit 1
+              fi
+              SIGN_KEY_PATH="$HOME/.ssh/id_ed25519_work"
             fi
+            TEST_SIGN_CMD="ssh-keygen -Y sign -f '$SIGN_KEY_PATH' -n test /dev/null"
 
-            # Final verification that signing will work
+            # Final verification that signing will work (use temp file)
             echo "🧪 Testing SSH key for signing capability..."
-            if ! $TEST_SIGN_CMD >/dev/null 2>&1; then
+            TMP_SIGN_FILE=$(mktemp lyvoxa-sign-test.XXXXXX)
+            echo "lyvoxa test" > "$TMP_SIGN_FILE"
+            if ! $TEST_SIGN_CMD "$TMP_SIGN_FILE" >/dev/null 2>&1; then
               echo "❌ SSH key cannot be used for signing. Possibly passphrase-protected or invalid."
               echo "If this key has a passphrase, add it as repository secret 'SSH_SIGN_PASSPHRASE'."
               exit 1
             fi
             echo "✅ SSH key ready for signing"
 
+            # Clean up temp test files
+            rm -f "$TMP_SIGN_FILE" "$TMP_SIGN_FILE.sig" || true
+
             # Sign the package
             echo "🔑 Signing package with SSH key..."
-            if [ -n "$SSH_PASSPHRASE" ]; then
-              ssh-keygen -Y sign -f ~/.ssh/id_ed25519.pub -n file "$PACKAGE" > "$PACKAGE.sig"
-              # Cleanup agent and temporary files
-              ssh-agent -k >/dev/null 2>&1 || true
-              rm -f /tmp/askpass.sh
-            else
-              ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n file "$PACKAGE" > "$PACKAGE.sig"
+            if ! ssh-keygen -Y sign -f "$SIGN_KEY_PATH" -n file "$PACKAGE" > "$PACKAGE.sig"; then
+              echo "❌ Failed to sign package with SSH key"
+              exit 1
             fi
+            # Cleanup temporary key copy if created
+            [ -f "$HOME/.ssh/id_ed25519_work" ] && shred -u "$HOME/.ssh/id_ed25519_work" || true
             
             # Create signature verification info
             cat > "$PACKAGE.sig.info" << EOF
