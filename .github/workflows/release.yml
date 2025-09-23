@@ -272,13 +272,11 @@ jobs:
               fi
               SIGN_KEY_PATH="$HOME/.ssh/id_ed25519_work"
             fi
-            TEST_SIGN_CMD="ssh-keygen -Y sign -f '$SIGN_KEY_PATH' -n test /dev/null"
-
             # Final verification that signing will work (use temp file)
             echo "🧪 Testing SSH key for signing capability..."
             TMP_SIGN_FILE=$(mktemp lyvoxa-sign-test.XXXXXX)
             echo "lyvoxa test" > "$TMP_SIGN_FILE"
-            if ! $TEST_SIGN_CMD "$TMP_SIGN_FILE" >/dev/null 2>&1; then
+            if ! ssh-keygen -Y sign -f "$SIGN_KEY_PATH" -n test "$TMP_SIGN_FILE" >/dev/null 2>&1; then
               echo "❌ SSH key cannot be used for signing. Possibly passphrase-protected or invalid."
               echo "If this key has a passphrase, add it as repository secret 'SSH_SIGN_PASSPHRASE'."
               exit 1
