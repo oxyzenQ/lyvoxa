@@ -20,6 +20,9 @@ MAX_JOBS=3
 TARGET="x86_64-unknown-linux-gnu"
 PROJECT_NAME="lyvoxa"
 
+# Override system MAKEFLAGS for heat control
+export MAKEFLAGS="-j${MAX_JOBS}"
+
 # Functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
