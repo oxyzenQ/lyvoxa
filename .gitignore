@@ -5,10 +5,20 @@
 # -----------------------------------------------------------------------------
 # Rust/Cargo Generated Files
 # -----------------------------------------------------------------------------
-# Build artifacts
+# Build artifacts - STRICT RULES
 /target/
 **/target/
 Cargo.lock  # Keep for executables, remove for libraries
+
+# Rust compiled artifacts (should never be committed)
+**/*.d
+**/*.rlib
+**/*.rmeta
+**/.fingerprint/
+**/deps/
+**/.cargo-lock
+*.rustc_info.json
+**/CACHEDIR.TAG
 
 # Rustfmt backup files
 **/*.rs.bk
