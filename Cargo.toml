@@ -1,0 +1,20 @@
+[package]
+name = "rust-monitor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rust-monitor"
+path = "src/main.rs"
+
+[[bin]]
+name = "simple-monitor"
+path = "src/simple.rs"
+
+[dependencies]
+sysinfo = "0.29"
+crossterm = "0.27"
+ratatui = "0.24"
+tokio = { version = "1.0", features = ["full"] }
+chrono = "0.4"
+humansize = "2.1"
