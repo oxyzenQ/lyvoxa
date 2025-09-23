@@ -19,9 +19,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   # Use GitHub Actions default cores (no custom limits)
-  # Cache configuration
-  RUSTC_WRAPPER: sccache
-  SCCACHE_GHA_ENABLED: true
+  # Cache configuration (optional, fallback if sccache fails)
+  SCCACHE_GHA_ENABLED: false
 
 jobs:
   # =============================================================================
@@ -39,8 +38,11 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Setup sccache
+      - name: Setup sccache (optional)
         uses: mozilla-actions/sccache-action@v0.0.3
+        continue-on-error: true
+        with:
+          version: "v0.5.4"
 
       - name: Cache Cargo registry
         uses: actions/cache@v3
@@ -57,7 +59,10 @@ jobs:
         run: cargo fmt --check
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          # Disable sccache if it's causing issues
+          unset RUSTC_WRAPPER
+          cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Audit dependencies
         uses: actions-rs/audit-check@v1
@@ -84,8 +89,11 @@ jobs:
         with:
           targets: x86_64-unknown-linux-gnu
 
-      - name: Setup sccache
+      - name: Setup sccache (optional)
         uses: mozilla-actions/sccache-action@v0.0.3
+        continue-on-error: true
+        with:
+          version: "v0.5.4"
 
       - name: Cache Cargo target
         uses: actions/cache@v3
@@ -105,22 +113,26 @@ jobs:
         if: matrix.profile == 'debug'
         run: |
           echo "Building debug version with GitHub Actions default cores..."
+          unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo build --target x86_64-unknown-linux-gnu
 
       - name: Build (Release)
         if: matrix.profile == 'release'
         run: |
           echo "Building release version with GitHub Actions default cores..."
+          unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Run tests
         run: |
           echo "Running tests with GitHub Actions default cores..."
+          unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo test --target x86_64-unknown-linux-gnu
 
       - name: Run benchmarks
         if: matrix.profile == 'release'
         run: |
+          unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo bench --target x86_64-unknown-linux-gnu
 
       - name: Check binary size

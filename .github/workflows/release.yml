@@ -23,6 +23,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   PROJECT_NAME: lyvoxa
+  # Disable sccache to avoid GitHub Actions cache issues
+  SCCACHE_GHA_ENABLED: false
   
 jobs:
   # =============================================================================
