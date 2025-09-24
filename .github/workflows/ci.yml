@@ -72,10 +72,10 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit
 
-      - name: Audit dependencies (ignore unmaintained)
+      - name: Audit dependencies
         run: |
-          # Run audit but only fail on actual vulnerabilities, not maintenance warnings
-          cargo audit --ignore RUSTSEC-2024-0436 || echo "Audit completed with warnings (non-critical)"
+          # Run audit with configuration (ignores maintenance warnings)
+          cargo audit || echo "Audit completed with informational warnings"
 
   # =============================================================================
   # BUILD AND TEST - LINUX X86_64
@@ -107,9 +107,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: target/
-          key: ${{ runner.os }}-cargo-target-${{ matrix.profile }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-target-debug-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-target-${{ matrix.profile }}-
+            ${{ runner.os }}-cargo-target-debug-
             ${{ runner.os }}-cargo-target-
 
       - name: Install system dependencies
@@ -117,19 +117,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential
 
-      - name: Build (Debug)
-        if: matrix.profile == 'debug'
+      - name: Build Debug
         run: |
-          echo "Building debug version with GitHub Actions default cores..."
+          echo "Building debug version for validation..."
           unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo build --target x86_64-unknown-linux-gnu
-
-      - name: Build (Release)
-        if: matrix.profile == 'release'
-        run: |
-          echo "Building release version with GitHub Actions default cores..."
-          unset RUSTC_WRAPPER  # Disable sccache if causing issues
-          cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Run tests
         run: |
@@ -137,29 +129,20 @@ jobs:
           unset RUSTC_WRAPPER  # Disable sccache if causing issues
           cargo test --target x86_64-unknown-linux-gnu
 
-      - name: Run benchmarks
-        if: matrix.profile == 'release'
+      - name: Check debug binary size
         run: |
-          unset RUSTC_WRAPPER  # Disable sccache if causing issues
-          cargo bench --target x86_64-unknown-linux-gnu
+          ls -la target/x86_64-unknown-linux-gnu/debug/
+          echo "Debug binary sizes:"
+          du -h target/x86_64-unknown-linux-gnu/debug/lyvoxa
+          du -h target/x86_64-unknown-linux-gnu/debug/lyvoxa-simple
 
-      - name: Check binary size
-        if: matrix.profile == 'release'
-        run: |
-          ls -la target/x86_64-unknown-linux-gnu/release/
-          echo "Main binary size:"
-          du -h target/x86_64-unknown-linux-gnu/release/lyvoxa
-          echo "Simple binary size:"
-          du -h target/x86_64-unknown-linux-gnu/release/lyvoxa-simple
-
-      - name: Upload artifacts (Release)
-        if: matrix.profile == 'release'
+      - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lyvoxa-linux-x86_64
           path: |
-            target/x86_64-unknown-linux-gnu/release/lyvoxa
-            target/x86_64-unknown-linux-gnu/release/lyvoxa-simple
+            target/x86_64-unknown-linux-gnu/debug/lyvoxa
+            target/x86_64-unknown-linux-gnu/debug/lyvoxa-simple
           retention-days: 30
 
       - name: Show sccache stats

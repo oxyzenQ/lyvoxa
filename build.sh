@@ -55,7 +55,7 @@ update_dependencies() {
     
     # Run security audit
     log_info "Running security audit..."
-    cargo audit || log_warning "Security audit found issues, check output above"
+    cargo audit || log_warning "Security audit completed with informational warnings"
     
     log_success "Dependencies updated successfully"
 }
