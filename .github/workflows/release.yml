@@ -328,33 +328,15 @@ jobs:
           APPRUN_EOF
           chmod +x AppDir/AppRun
           
-          # Create AppImage (with timeout to prevent hanging)
-          echo "📦 Creating AppImage (with 2-minute timeout)..."
-          
-          # Quick check if we can create AppImage without heavy dependencies
-          timeout 120 bash -c '
-            # Download appimagetool (lightweight approach)
-            echo "📥 Downloading appimagetool..."
-            if ! wget -q --timeout=30 https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage; then
-              echo "⚠️ Failed to download appimagetool, skipping AppImage"
-              exit 1
-            fi
-            
-            chmod +x appimagetool-x86_64.AppImage
-            
-            # Try to create AppImage without installing system packages
-            echo "🔧 Creating AppImage..."
-            if ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null; then
-              echo "✅ AppImage created: lyvoxa-$VERSION-linux-x86_64.AppImage"
-              ls -la "lyvoxa-$VERSION-linux-x86_64.AppImage"
-            else
-              echo "⚠️ AppImage creation failed (likely FUSE issue in CI)"
-              exit 1
-            fi
-          ' || {
-            echo "⚠️ AppImage creation timed out or failed, continuing without AppImage..."
-            echo "   (AppImage requires FUSE which may not be available in GitHub Actions)"
-          }
+          # Create .zst package for Arch Linux users
+          echo "📦 Creating .zst package for Arch Linux..."
+          if command -v zstd >/dev/null 2>&1; then
+            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 > "lyvoxa-$VERSION-linux-x86_64.tar.zst"
+            echo "✅ .zst package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
+            ls -la "lyvoxa-$VERSION-linux-x86_64.tar.zst"
+          else
+            echo "⚠️ zstd not available, skipping .zst package"
+          fi
           
           # Create .deb package (Debian/Ubuntu)
           echo "📦 Creating .deb package..."
@@ -370,12 +352,22 @@ jobs:
           cp lyvoxa-$VERSION-linux-x86_64/CHANGELOG.md deb-package/usr/share/doc/lyvoxa/
           
           # Create desktop file for .deb
-          cp AppDir/usr/share/applications/lyvoxa.desktop deb-package/usr/share/applications/
+          cat > deb-package/usr/share/applications/lyvoxa.desktop << 'DESKTOP_EOF'
+          [Desktop Entry]
+          Name=Lyvoxa System Monitor
+          Comment=High-performance system monitoring tool
+          Exec=lyvoxa
+          Icon=utilities-system-monitor
+          Type=Application
+          Categories=System;Monitor;
+          Terminal=true
+          DESKTOP_EOF
           
-          # Create DEBIAN control file
+          # Create DEBIAN control file (fix version format - remove 'v' prefix)
+          DEB_VERSION=${VERSION#v}
           cat > deb-package/DEBIAN/control << DEB_CONTROL_EOF
           Package: lyvoxa
-          Version: $VERSION
+          Version: $DEB_VERSION
           Section: utils
           Priority: optional
           Architecture: amd64
@@ -402,77 +394,6 @@ jobs:
             dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb" || true
           fi
           
-          # Create .rpm package (RedHat/Fedora) - with timeout
-          echo "📦 Creating .rpm package (with 3-minute timeout)..."
-          
-          # Check if rpm tools are available or can be quickly installed
-          timeout 180 bash -c '
-          if command -v rpmbuild >/dev/null 2>&1; then
-            echo "✅ rpmbuild already available"
-          elif command -v apt-get >/dev/null 2>&1; then
-            echo "📥 Installing rpm tools..."
-            sudo apt-get update -qq >/dev/null 2>&1 || exit 1
-            sudo apt-get install -y rpm >/dev/null 2>&1 || exit 1
-          else
-            echo "⚠️ Package manager not available"
-            exit 1
-          fi
-          ' && RPM_AVAILABLE=true || {
-            echo "⚠️ RPM tools installation timed out or failed, skipping .rpm package"
-            RPM_AVAILABLE=false
-          }
-          
-          if [ "$RPM_AVAILABLE" = "true" ]; then
-            mkdir -p rpm-build/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-            
-            # Create RPM spec file
-            cat > rpm-build/SPECS/lyvoxa.spec << RPM_SPEC_EOF
-          Name: lyvoxa
-          Version: $VERSION
-          Release: 1
-          Summary: High-performance system monitoring tool
-          License: GPL-3.0
-          URL: https://github.com/oxyzenQ/lyvoxa
-          BuildArch: x86_64
-          
-          %description
-          Lyvoxa is a modern system monitoring tool for Linux written in Rust.
-          Features include real-time CPU, memory, disk, and network monitoring
-          with both TUI and CLI interfaces.
-          
-          %install
-          mkdir -p %{buildroot}/usr/bin
-          mkdir -p %{buildroot}/usr/share/doc/lyvoxa
-          mkdir -p %{buildroot}/usr/share/applications
-          cp $PWD/../lyvoxa-$VERSION-linux-x86_64/bin/* %{buildroot}/usr/bin/
-          cp $PWD/../lyvoxa-$VERSION-linux-x86_64/README.md %{buildroot}/usr/share/doc/lyvoxa/
-          cp $PWD/../lyvoxa-$VERSION-linux-x86_64/LICENSE %{buildroot}/usr/share/doc/lyvoxa/
-          cp $PWD/../lyvoxa-$VERSION-linux-x86_64/CHANGELOG.md %{buildroot}/usr/share/doc/lyvoxa/
-          cp $PWD/../AppDir/usr/share/applications/lyvoxa.desktop %{buildroot}/usr/share/applications/
-          
-          %files
-          /usr/bin/lyvoxa
-          /usr/bin/lyvoxa-simple
-          /usr/share/doc/lyvoxa/*
-          /usr/share/applications/lyvoxa.desktop
-          
-          RPM_SPEC_EOF
-            
-            # Build RPM
-            cd rpm-build
-            rpmbuild --define "_topdir $PWD" -bb SPECS/lyvoxa.spec
-            cd ..
-            
-            if [ -f "rpm-build/RPMS/x86_64/lyvoxa-$VERSION-1.x86_64.rpm" ]; then
-              cp rpm-build/RPMS/x86_64/lyvoxa-$VERSION-1.x86_64.rpm .
-              echo "✅ .rpm package created: lyvoxa-$VERSION-1.x86_64.rpm"
-              ls -la "lyvoxa-$VERSION-1.x86_64.rpm"
-            else
-              echo "⚠️ .rpm package creation failed, but continuing..."
-            fi
-          else
-            echo "⚠️ Skipping .rpm package creation (tools not available or timeout)"
-          fi
           
           # List all created files for debugging
           echo "📋 Created package files:"
@@ -710,27 +631,24 @@ jobs:
           
           ### 📦 Alternative Formats
           
-          #### AppImage (Single-file, Universal)
+          #### Debian/Ubuntu (.deb)
           \`\`\`bash
-          # Download and run directly
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
-          chmod +x lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
-          ./lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
-          \`\`\`
-          
-          #### Package Managers
-          \`\`\`bash
-          # Debian/Ubuntu (.deb)
+          # Download and install .deb package
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa_$RELEASE_VERSION-1_amd64.deb
           sudo dpkg -i lyvoxa_$RELEASE_VERSION-1_amd64.deb
           
-          # RedHat/Fedora (.rpm)  
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-1.x86_64.rpm
-          sudo rpm -i lyvoxa-$RELEASE_VERSION-1.x86_64.rpm
+          # Or with apt (if repository configured)
+          sudo apt install ./lyvoxa_$RELEASE_VERSION-1_amd64.deb
           \`\`\`
           
-          #### Coming Soon
-          - \`AUR\` for Arch Linux
+          #### Arch Linux (.zst)
+          \`\`\`bash
+          # Download optimized .zst package (smaller size, faster)
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
+          tar -xf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
+          cd lyvoxa-$RELEASE_VERSION-linux-x86_64
+          sudo ./install.sh
+          \`\`\`
           
           ### Manual Install
           \`\`\`bash
@@ -842,9 +760,8 @@ jobs:
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig.info"
           
           # Optional files (only if they exist)
-          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage"
           [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
-          [ -f "lyvoxa-$RELEASE_VERSION-1.x86_64.rpm" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-1.x86_64.rpm"
+          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
           
           echo "Files to upload:"
           for f in $FILES; do
@@ -878,9 +795,8 @@ jobs:
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.checksums
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig.info
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.AppImage
             dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-1.x86_64.rpm
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
