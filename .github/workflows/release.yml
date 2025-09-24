@@ -373,7 +373,7 @@ jobs:
           cp AppDir/usr/share/applications/lyvoxa.desktop deb-package/usr/share/applications/
           
           # Create DEBIAN control file
-          cat > deb-package/DEBIAN/control << 'DEB_CONTROL_EOF'
+          cat > deb-package/DEBIAN/control << DEB_CONTROL_EOF
           Package: lyvoxa
           Version: $VERSION
           Section: utils
@@ -389,11 +389,17 @@ jobs:
           
           # Build .deb package
           echo "🔧 Building .deb package..."
-          if dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb" 2>/dev/null; then
+          echo "📋 Debug: .deb structure:"
+          find deb-package -type f | head -10
+          echo "📋 Debug: control file content:"
+          cat deb-package/DEBIAN/control | head -5
+          
+          if dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb"; then
             echo "✅ .deb package created: lyvoxa_$VERSION-1_amd64.deb"
             ls -la "lyvoxa_$VERSION-1_amd64.deb"
           else
-            echo "⚠️ .deb package creation failed, but continuing..."
+            echo "⚠️ .deb package creation failed, showing error details..."
+            dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb" || true
           fi
           
           # Create .rpm package (RedHat/Fedora) - with timeout
@@ -420,7 +426,7 @@ jobs:
             mkdir -p rpm-build/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
             
             # Create RPM spec file
-            cat > rpm-build/SPECS/lyvoxa.spec << 'RPM_SPEC_EOF'
+            cat > rpm-build/SPECS/lyvoxa.spec << RPM_SPEC_EOF
           Name: lyvoxa
           Version: $VERSION
           Release: 1
