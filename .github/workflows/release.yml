@@ -92,7 +92,7 @@ jobs:
             echo "Simple binary info: $(file $SIMPLE_BIN)"
           fi
 
-      - name: 📦 Professional Package Creation
+      - name: 📦 Create Professional Release Package
         run: |
           echo "📦 Creating professional release package..."
           
@@ -104,6 +104,18 @@ jobs:
           fi
           
           echo "Version: $VERSION"
+          echo "GitHub Ref: $GITHUB_REF"
+          echo "Event Name: ${{ github.event_name }}"
+          
+          # Validate version is not empty
+          if [ -z "$VERSION" ]; then
+            echo "❌ Error: VERSION is empty!"
+            echo "GITHUB_REF: $GITHUB_REF"
+            echo "Falling back to timestamp version"
+            VERSION="dev-$(date +%Y%m%d-%H%M%S)"
+          fi
+          
+          echo "Final Version: $VERSION"
           
           # Create distribution directory
           mkdir -p dist/lyvoxa-$VERSION-linux-x86_64
@@ -316,18 +328,29 @@ jobs:
           APPRUN_EOF
           chmod +x AppDir/AppRun
           
-          # Download and install appimagetool
-          echo "📥 Installing appimagetool..."
+          # Install FUSE for AppImage support
+          echo "📥 Installing FUSE and appimagetool..."
+          sudo apt-get update -qq
+          sudo apt-get install -y fuse libfuse2 >/dev/null 2>&1
+          
+          # Download appimagetool
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
           
-          # Create AppImage
-          ./appimagetool-x86_64.AppImage AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream
-          if [ $? -eq 0 ]; then
+          # Create AppImage with error handling
+          echo "🔧 Creating AppImage..."
+          if ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null; then
             echo "✅ AppImage created: lyvoxa-$VERSION-linux-x86_64.AppImage"
             ls -la "lyvoxa-$VERSION-linux-x86_64.AppImage"
           else
-            echo "⚠️ AppImage creation failed, but continuing..."
+            echo "⚠️ AppImage creation failed, trying alternative method..."
+            # Alternative: extract and manually create
+            ./appimagetool-x86_64.AppImage --appimage-extract >/dev/null 2>&1
+            if [ -d "squashfs-root" ]; then
+              ./squashfs-root/AppRun AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null || {
+                echo "⚠️ AppImage creation failed, but continuing with other packages..."
+              }
+            fi
           fi
           
           # Create .deb package (Debian/Ubuntu)
@@ -362,8 +385,8 @@ jobs:
           DEB_CONTROL_EOF
           
           # Build .deb package
-          dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb"
-          if [ $? -eq 0 ]; then
+          echo "🔧 Building .deb package..."
+          if dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb" 2>/dev/null; then
             echo "✅ .deb package created: lyvoxa_$VERSION-1_amd64.deb"
             ls -la "lyvoxa_$VERSION-1_amd64.deb"
           else
@@ -425,6 +448,10 @@ jobs:
           else
             echo "⚠️ rpm tools not available, skipping .rpm package creation"
           fi
+          
+          # List all created files for debugging
+          echo "📋 Created package files:"
+          find . -name "lyvoxa*" -type f | sort
           
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
@@ -775,6 +802,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
+      - name: 📋 Prepare Release Files List
+        run: |
+          echo "📋 Preparing list of files to upload..."
+          cd dist
+          
+          # Base files (always created)
+          FILES="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.blake3"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.chacha"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.checksums"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig.info"
+          
+          # Optional files (only if they exist)
+          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage"
+          [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
+          [ -f "lyvoxa-$RELEASE_VERSION-1.x86_64.rpm" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-1.x86_64.rpm"
+          
+          echo "Files to upload:"
+          for f in $FILES; do
+            if [ -f "$f" ]; then
+              echo "  ✅ $f ($(du -h "$f" | cut -f1))"
+            else
+              echo "  ❌ $f (missing)"
+            fi
+          done
+          
+          # Create upload list file
+          echo "$FILES" | tr ' ' '\n' | sed 's|^|dist/|' > ../upload_files.txt
+          echo "📄 Upload files list:"
+          cat ../upload_files.txt
+
       - name: 🚀 Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
