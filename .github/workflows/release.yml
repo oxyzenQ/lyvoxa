@@ -767,9 +767,14 @@ jobs:
         with:
           name: lyvoxa-${{ env.RELEASE_VERSION }}-build-artifacts
           path: |
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.checksums
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig
+            dist/lyvoxa-*-linux-x86_64.tar.gz
+            dist/lyvoxa_*_amd64.deb
+            dist/lyvoxa-*-linux-x86_64.tar.zst
+            dist/*.sha256
+            dist/*.sha512
+            dist/*.sig
+            dist/*.checksums
+            dist/*.sig.info
           retention-days: 1
           compression-level: 6
         if: always()
