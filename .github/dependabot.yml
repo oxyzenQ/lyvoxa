@@ -24,24 +24,14 @@ updates:
       - "dependencies"
       - "rust"
       - "automated"
-    # Group minor and patch updates together
+    # Group updates for easier management
     groups:
-      rust-minor-patch:
+      rust-dependencies:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
-      rust-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-    # Ignore pre-release and major version updates for stability
-    ignore:
-      # Ignore major version updates that might break compatibility
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
       
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
