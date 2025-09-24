@@ -441,6 +441,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 📤 Upload Build Artifacts (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lyvoxa-${{ env.RELEASE_VERSION }}-build-artifacts
+          path: |
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.checksums
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig
+          retention-days: 30
+          compression-level: 6
+        if: always()
+
       - name: 📈 Portfolio Summary
         run: |
           echo "🎯 Portfolio-Grade Release Summary"
@@ -459,6 +471,9 @@ jobs:
           echo ""
           echo "📦 Release Artifacts:"
           cd dist && ls -la lyvoxa-$RELEASE_VERSION-*
+          echo ""
+          echo "📤 Artifact Retention: 30 days (workflow artifacts)"
+          echo "🚀 GitHub Release: Permanent (release artifacts)"
           echo ""
           echo "✅ Portfolio-ready release completed!"
           echo "🌟 This demonstrates enterprise-grade software engineering practices"
@@ -487,5 +502,19 @@ jobs:
 #   1. Add SSH private key to GitHub Secrets as 'SSH_SIGN_KEY'
 #   2. Optional: Add HMAC key to Secrets as 'HMAC_SECRET_KEY'
 #   3. Tag releases with 'stellar-*' pattern
+# 
+# ⚖️ Artifact Retention & Tips:
+#   - Default retention: Repository setting (usually 1-90 days)
+#   - Maximum limit: 90 days (GitHub Actions constraint)
+#   - Custom retention: Override per workflow using retention-days
+#   - Best practice: 30-90 days for production projects
+#   - Example override:
+#     - uses: actions/upload-artifact@v4
+#       with:
+#         name: build-artifacts
+#         path: dist/
+#         retention-days: 7
+#   - Release artifacts are separate from workflow artifacts
+#   - GitHub Releases don't count toward Actions storage limits
 # 
 # =============================================================================
