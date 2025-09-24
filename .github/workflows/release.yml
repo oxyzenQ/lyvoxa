@@ -420,10 +420,36 @@ jobs:
           **Author**: rezky_nightky | **License**: GPL-3.0 | **Repository**: [oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
           EOF
 
+      - name: 🔍 Verify Release Files
+        run: |
+          echo "📋 Listing all files in dist directory:"
+          ls -la dist/
+          echo ""
+          echo "🎯 Files to be uploaded:"
+          find dist/ -name "lyvoxa-$RELEASE_VERSION-*" -type f | while read file; do
+            echo "  - $file ($(du -h "$file" | cut -f1))"
+          done
+          echo ""
+          echo "✅ File verification completed"
+
+      - name: 🗑️ Delete Existing Release (if exists)
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking for existing release..."
+          if gh release view $RELEASE_VERSION >/dev/null 2>&1; then
+            echo "🗑️ Deleting existing release: $RELEASE_VERSION"
+            gh release delete $RELEASE_VERSION --yes --cleanup-tag
+            echo "✅ Existing release deleted"
+          else
+            echo "✅ No existing release found"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: "🌟 Lyvoxa Stellar ${{ env.RELEASE_VERSION }}"
+          name: "🌟 Lyvoxa Stellar Release"
           tag_name: ${{ env.RELEASE_VERSION }}
           body_path: RELEASE_NOTES.md
           draft: false
