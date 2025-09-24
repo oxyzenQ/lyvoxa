@@ -26,7 +26,7 @@ fn print_help() {
     println!();
     println!("EXAMPLES:");
     println!("    {}              Start simple monitor", NAME);
-    println!("    lyvoxa               Start interactive TUI", NAME.trim_end_matches("-simple"));
+    println!("    lyvoxa               Start interactive TUI");
     println!();
     println!("REPOSITORY:");
     println!("    https://github.com/oxyzenQ/lyvoxa");
