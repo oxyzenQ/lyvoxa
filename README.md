@@ -21,36 +21,32 @@ A high-performance, low-memory system monitoring tool written in Rust, designed 
 
 Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/lyvoxa/releases) for your platform.
 
-#### ArchLinux Installation (Recommended - Smaller Size)
+#### Linux Universal Installation
 
 ```bash
-# Download ArchLinux optimized package (.zst - smaller size)
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.zst
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.zst.sha256
+# Download universal Linux package
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
 
 # Verify integrity (SHA256 - universal standard)
-sha256sum -c lyvoxa-stellar-2.0-linux-x86_64.tar.zst.sha256
-
-# Extract and install (requires zstd)
-tar -xf lyvoxa-stellar-2.0-linux-x86_64.tar.zst
-cd lyvoxa-stellar-2.0-linux-x86_64
-sudo ./install.sh
-```
-
-#### Linux Universal Installation (Maximum Compatibility)
-
-````bash
-# Download Linux universal package (.gz - maximum compatibility)
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.gz.sha256
-
-# Verify integrity (SHA256 - universal standard)
-sha256sum -c lyvoxa-stellar-2.0-linux-x86_64.tar.gz.sha256
+sha256sum -c lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
 
 # Extract and install
-tar -xzf lyvoxa-stellar-2.0-linux-x86_64.tar.gz
-cd lyvoxa-stellar-2.0-linux-x86_64
-sudo ./install.sh
+tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
+
+# Copy to system path
+sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
+```
+
+#### ArchLinux Installation (PKGBUILD)
+
+```bash
+# For proper system integration
+git clone https://github.com/oxyzenQ/lyvoxa.git
+cd lyvoxa
+make arch-pkg
+sudo pacman -U lyvoxa-*.pkg.tar.zst
+```
 
 ### Build from source
 
