@@ -26,7 +26,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = env!("CARGO_PKG_NAME");
 
 fn print_help() {
-    println!("🌟 {} v{} - High-performance system monitoring tool", NAME, VERSION);
+    println!(
+        "🌟 {} v{} - High-performance system monitoring tool",
+        NAME, VERSION
+    );
     println!();
     println!("USAGE:");
     println!("    {} [OPTIONS]", NAME);
