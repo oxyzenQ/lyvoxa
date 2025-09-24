@@ -39,7 +39,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Setup sccache (optional)
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
         continue-on-error: true
         with:
           version: "v0.5.4"
@@ -98,7 +98,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Setup sccache (optional)
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
         continue-on-error: true
         with:
           version: "v0.5.4"
