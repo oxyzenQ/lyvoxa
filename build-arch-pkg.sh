@@ -102,45 +102,6 @@ build_source_package() {
     fi
 }
 
-# Build binary package
-build_binary_package() {
-    log_header "📦 Building Binary Package"
-    
-    if [ ! -f "PKGBUILD-bin" ]; then
-        log_warning "PKGBUILD-bin not found, skipping binary package"
-        return 0
-    fi
-    
-    log_info "Building from PKGBUILD-bin (pre-built binaries)..."
-    
-    # Create temporary directory for binary build
-    TEMP_DIR=$(mktemp -d)
-    cp PKGBUILD-bin "$TEMP_DIR/PKGBUILD"
-    
-    cd "$TEMP_DIR"
-    
-    # Clean and build
-    log_info "Running makepkg for binary package..."
-    if makepkg -sf --noconfirm; then
-        log_success "Binary package built successfully!"
-        
-        # Move result back
-        RESULT_PKG=$(ls lyvoxa-bin-*.pkg.tar.* 2>/dev/null | head -1)
-        if [ -n "$RESULT_PKG" ]; then
-            mv "$RESULT_PKG" "$OLDPWD/"
-            log_info "Created package: $RESULT_PKG"
-            log_info "Package size: $(du -h "$OLDPWD/$RESULT_PKG" | cut -f1)"
-        fi
-    else
-        log_error "Binary package build failed!"
-        cd "$OLDPWD"
-        rm -rf "$TEMP_DIR"
-        return 1
-    fi
-    
-    cd "$OLDPWD"
-    rm -rf "$TEMP_DIR"
-}
 
 # Test package installation
 test_package() {
@@ -216,38 +177,13 @@ main() {
     log_header "🏗️ LYVOXA ARCH LINUX PACKAGE BUILDER"
     echo ""
     
-    case "${1:-both}" in
+    case "${1:-source}" in
         "source")
             check_arch_linux
             check_dependencies
             build_source_package
             if ls lyvoxa-[0-9]*.pkg.tar.* >/dev/null 2>&1; then
                 test_package "$(ls lyvoxa-[0-9]*.pkg.tar.* | head -1)"
-            fi
-            ;;
-        "binary")
-            check_arch_linux
-            check_dependencies
-            build_binary_package
-            if ls lyvoxa-bin-*.pkg.tar.* >/dev/null 2>&1; then
-                test_package "$(ls lyvoxa-bin-*.pkg.tar.* | head -1)"
-            fi
-            ;;
-        "both")
-            check_arch_linux
-            check_dependencies
-            
-            log_info "Building both source and binary packages..."
-            echo ""
-            
-            build_source_package || log_error "Source build failed"
-            echo ""
-            build_binary_package || log_error "Binary build failed"
-            echo ""
-            
-            # Test first available package
-            if ls *.pkg.tar.* >/dev/null 2>&1; then
-                test_package "$(ls *.pkg.tar.* | head -1)"
             fi
             ;;
         "clean")
@@ -262,16 +198,14 @@ main() {
             echo "Usage: $0 [COMMAND]"
             echo ""
             echo "Commands:"
-            echo "  source    Build source-based package only"
-            echo "  binary    Build binary package only"
-            echo "  both      Build both packages (default)"
+            echo "  source    Build source-based package (default)"
             echo "  clean     Clean build artifacts"
             echo "  help      Show this help"
             echo ""
             echo "Examples:"
-            echo "  $0              # Build both packages"
-            echo "  $0 source       # Build from source only"
-            echo "  $0 binary       # Build binary package only"
+            echo "  $0              # Build source package"
+            echo "  $0 source       # Build from source"
+            echo "  $0 clean        # Clean build files"
             exit 0
             ;;
         *)

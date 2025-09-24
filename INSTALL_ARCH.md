@@ -4,11 +4,11 @@ This guide explains how to properly install Lyvoxa on Arch Linux systems.
 
 ## 🚨 The Issue You Encountered
 
-The release `.tar.zst` file from GitHub is a **regular compressed tarball**, not an Arch Linux package. That's why `pacman -U` failed with:
+The release `.tar.gz` file from GitHub is a **regular compressed tarball**, not an Arch Linux package. That's why `pacman -U` failed with:
 
 ```
-error: missing package metadata in lyvoxa-Stellar-2.0-linux-x86_64.tar.zst
-error: 'lyvoxa-Stellar-2.0-linux-x86_64.tar.zst': invalid or corrupted package
+error: missing package metadata in lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
+error: 'lyvoxa-Stellar-2.0-linux-x86_64.tar.gz': invalid or corrupted package
 ```
 
 Pacman expects `.pkg.tar.zst` files with proper PKGINFO metadata, not generic tarballs.
@@ -21,14 +21,14 @@ Pacman expects `.pkg.tar.zst` files with proper PKGINFO metadata, not generic ta
 
 ```bash
 # Download and verify
-curl -LO https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.zst
-curl -LO https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.zst.sha256
+curl -LO https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
+curl -LO https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
 
 # Verify integrity
-sha256sum -c lyvoxa-Stellar-2.0-linux-x86_64.tar.zst.sha256
+sha256sum -c lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
 
 # Extract
-tar --zstd -xvf lyvoxa-Stellar-2.0-linux-x86_64.tar.zst
+tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 
 # Run directly
 ./lyvoxa --version
@@ -47,13 +47,11 @@ sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
 git clone https://github.com/oxyzenQ/lyvoxa.git
 cd lyvoxa
 
-# Build Arch packages
+# Build Arch package
 make arch-pkg
 
-# Install the package you prefer
-sudo pacman -U lyvoxa-2.0.0-1-x86_64.pkg.tar.zst        # Source-built (optimized)
-# OR
-sudo pacman -U lyvoxa-bin-2.0.0-1-x86_64.pkg.tar.zst    # Pre-built binaries (faster)
+# Install the package
+sudo pacman -U lyvoxa-2.0.0-1-x86_64.pkg.tar.zst       # Source-built (optimized)
 ```
 
 ### Method 3: Manual PKGBUILD (Advanced)
@@ -76,28 +74,20 @@ makepkg -si    # Build and install binary package
 |--------|------|-------------------|-------------------|-------------------|
 | **Extract Binary** | Direct | ⚡ Instant | 🔥 Good | ❌ None |
 | **Source Package** | PKGBUILD | 🐌 Slow (compile) | 🚀 Best (native) | ✅ Full |
-| **Binary Package** | PKGBUILD | ⚡ Fast | 🔥 Good | ✅ Full |
 
 ## 🎯 Recommendations
 
-### For Daily Use:
+### For System Integration:
 ```bash
-# Quick installation with system integration
-make arch-pkg-binary
-sudo pacman -U lyvoxa-bin-*.pkg.tar.zst
-```
-
-### For Maximum Performance:
-```bash
-# Compile with native optimizations
-make arch-pkg-source  
+# Build and install source package with native optimizations
+make arch-pkg
 sudo pacman -U lyvoxa-*.pkg.tar.zst
 ```
 
 ### For Testing/Development:
 ```bash
 # Extract and run directly
-tar --zstd -xvf lyvoxa-Stellar-2.0-linux-x86_64.tar.zst
+tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 ./lyvoxa
 ```
 
@@ -122,7 +112,6 @@ lyvoxa --help
 ```bash
 # If installed via pacman
 sudo pacman -R lyvoxa      # Source package
-sudo pacman -R lyvoxa-bin  # Binary package
 
 # If copied to /usr/local/bin
 sudo rm /usr/local/bin/lyvoxa /usr/local/bin/lyvoxa-simple
@@ -134,27 +123,21 @@ The repository includes everything needed:
 
 ```bash
 # Available make targets
-make arch-pkg           # Build both source and binary packages
-make arch-pkg-source    # Build source package only  
-make arch-pkg-binary    # Build binary package only
+make arch-pkg           # Build source package
 make arch-pkg-clean     # Clean build artifacts
 
 # Or use the script directly
-./build-arch-pkg.sh both     # Build both
-./build-arch-pkg.sh source   # Source only
-./build-arch-pkg.sh binary   # Binary only  
+./build-arch-pkg.sh source   # Build source package
 ./build-arch-pkg.sh clean    # Clean up
 ```
 
 ## 🔍 Package Contents
 
-Both packages install:
+The source package installs:
 - `/usr/bin/lyvoxa` - Main TUI application
 - `/usr/bin/lyvoxa-simple` - Lightweight version
 - `/usr/share/doc/lyvoxa/` - Documentation
 - `/usr/share/licenses/lyvoxa/` - License files
-
-The source package additionally includes:
 - Shell completions (if available)
 - Man pages (if available)
 - Optimized binaries for your specific CPU

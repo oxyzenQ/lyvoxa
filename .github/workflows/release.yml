@@ -286,191 +286,24 @@ jobs:
           # Create optimized packages for different platforms
           cd dist
 
-          # Create .tar.gz for Linux universal (gzip compression)
-          echo "📦 Creating Linux universal package (.tar.gz)..."
-          tar -czf lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa-$VERSION-linux-x86_64/
-          echo "✅ Linux universal package created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
+          # Create optimized release package
+          echo "📦 Creating release package..."
 
-          # Create .tar.zst for ArchLinux (zstd compression - smaller & faster)
-          echo "📦 Creating ArchLinux optimized package (.tar.zst)..."
-          if command -v zstd >/dev/null 2>&1; then
-            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 -o lyvoxa-$VERSION-linux-x86_64.tar.zst
-            echo "✅ ArchLinux optimized package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
-            echo "📊 Package sizes:"
-            ls -lh lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa-$VERSION-linux-x86_64.tar.zst | while read line; do
-              echo "  $line"
-            done
-          else
-            echo "⚠️ zstd not available, installing..."
-            sudo apt-get update && sudo apt-get install -y zstd
-            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 -o lyvoxa-$VERSION-linux-x86_64.tar.zst
-            echo "✅ ArchLinux optimized package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
-          fi
+          # Create standard .tar.gz (universal compatibility)
+          tar -czf "lyvoxa-$VERSION-linux-x86_64.tar.gz" lyvoxa lyvoxa-simple
+          echo "✅ Created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
 
-          # Create AppImage (alternative format)
-          echo "📦 Creating AppImage alternative format..."
-          mkdir -p AppDir/usr/{bin,share/applications,share/icons/hicolor/256x256/apps}
+          # Generate SHA256 checksum
+          echo "🔐 Generating SHA256 checksum..."
+          sha256sum "lyvoxa-$VERSION-linux-x86_64.tar.gz" > "lyvoxa-$VERSION-linux-x86_64.tar.gz.sha256"
+          
+          echo "📊 Package size:"
+          ls -lh lyvoxa-$VERSION-linux-x86_64.tar.gz
 
-          # Copy binaries for AppImage
-          cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa AppDir/usr/bin/
-          cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa-simple AppDir/usr/bin/
-
-          # Create AppImage desktop file
-          cat > AppDir/usr/share/applications/lyvoxa.desktop << 'DESKTOP_EOF'
-          [Desktop Entry]
-          Name=Lyvoxa System Monitor
-          Comment=High-performance system monitoring tool
-          Exec=lyvoxa
-          Icon=lyvoxa
-          Type=Application
-          Categories=System;Monitor;
-          Terminal=true
-          DESKTOP_EOF
-
-          # Create simple icon (text-based for now)
-          echo "📊" > AppDir/usr/share/icons/hicolor/256x256/apps/lyvoxa.png
-
-          # Create AppRun
-          cat > AppDir/AppRun << 'APPRUN_EOF'
-          #!/bin/bash
-          # AppImage AppRun script
-          SELF=$(readlink -f "$0")
-          HERE=${SELF%/*}
-          export PATH="${HERE}/usr/bin:${PATH}"
-          exec "${HERE}/usr/bin/lyvoxa" "$@"
-          APPRUN_EOF
-          chmod +x AppDir/AppRun
-
-          echo "📦 Two optimized packages created:"
-          echo "  ✅ .tar.gz - Linux universal (gzip compression)"
-          echo "  ✅ .tar.zst - ArchLinux optimized (zstd compression, smaller size)"
-
-
-          # List all created files for debugging
-          echo "📋 Created package files:"
-          find . -name "lyvoxa*" -type f | sort
+          echo "✅ Release package created successfully!"
 
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "DEB_VERSION=${VERSION#v}" >> $GITHUB_ENV
-
-      - name: 🔐 Generate SHA256 Checksums
-        run: |
-          echo "🔐 Generating SHA256 checksums for both packages..."
-          cd dist
-
-          # Create SHA256 checksums for both package types
-          PACKAGES=("lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz" "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst")
-
-          for PACKAGE in "${PACKAGES[@]}"; do
-            if [ -f "$PACKAGE" ]; then
-              echo "📊 Processing: $PACKAGE"
-
-              # Generate SHA256 checksum
-              sha256sum "$PACKAGE" > "$PACKAGE.sha256"
-              echo "  ✅ SHA256: $PACKAGE.sha256"
-
-              # Show package info
-              echo "  📋 Size: $(du -h "$PACKAGE" | cut -f1)"
-            else
-              echo "❌ Package not found: $PACKAGE"
-              exit 1
-            fi
-          done
-
-          # Create unified checksums file for documentation
-          cat > "lyvoxa-$RELEASE_VERSION.checksums" << EOF
-          # Lyvoxa v$RELEASE_VERSION - Release Checksums (SHA256)
-          # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          # Repository: https://github.com/oxyzenQ/lyvoxa
-          #
-          # Package Types:
-          # - .tar.gz: Linux universal (gzip compression)
-          # - .tar.zst: ArchLinux optimized (zstd compression, smaller size)
-
-          EOF
-
-          # Add SHA256 checksums to unified file
-          echo "## SHA256 Checksums" >> "lyvoxa-$RELEASE_VERSION.checksums"
-          for PACKAGE in "${PACKAGES[@]}"; do
-            if [ -f "$PACKAGE.sha256" ]; then
-              echo "" >> "lyvoxa-$RELEASE_VERSION.checksums"
-              echo "### $PACKAGE" >> "lyvoxa-$RELEASE_VERSION.checksums"
-              cat "$PACKAGE.sha256" >> "lyvoxa-$RELEASE_VERSION.checksums"
-            fi
-          done
-          echo "" >> "lyvoxa-$RELEASE_VERSION.checksums"
-
-          echo "✅ SHA256 checksums generated for both packages"
-          echo "📋 Generated files:"
-          ls -la *.checksums *.sha256 2>/dev/null || true
-
-      - name: ✍️ Package Verification Guide
-        run: |
-          echo "✍️ Creating package verification guide..."
-          cd dist
-
-          # Create verification info file
-          cat > "lyvoxa-$RELEASE_VERSION.verification" << EOF
-          # Lyvoxa v$RELEASE_VERSION - Package Verification Guide
-          # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-          ## Dual-Package Distribution
-          This release provides two optimized packages with SHA256 checksums:
-
-          - **SHA256**: Universal cryptographic hash algorithm
-          - **Dual Formats**: Optimized for both ArchLinux (.zst) and Linux universal (.gz)
-          - **Compression**: ArchLinux uses zstd for smaller size, Linux uses gzip for compatibility
-          - **Reliable**: Industry standard for package verification
-
-          ## Verification Instructions:
-
-          ### ArchLinux Package (Recommended for Arch users)
-          \`\`\`bash
-          # Download ArchLinux optimized package
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
-
-          # Verify SHA256 checksum
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
-
-          # Extract (requires zstd)
-          tar -xf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
-          \`\`\`
-
-          ### Linux Universal Package
-          \`\`\`bash
-          # Download Linux universal package
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
-
-          # Verify SHA256 checksum
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
-
-          # Extract
-          tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          \`\`\`
-
-          ### Repository Integrity
-          Package is built from verified source code at:
-          https://github.com/oxyzenQ/lyvoxa/tree/$RELEASE_VERSION
-
-          ### Build Reproducibility
-          This release is built using GitHub Actions with:
-          - Rust toolchain: stable
-          - Build environment: Ubuntu 22.04
-          - Checksum: SHA256 (universal standard)
-
-          ## Package Formats
-
-          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst**: ArchLinux optimized (smaller, faster)
-          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz**: Linux universal (maximum compatibility)
-
-          Both packages contain identical statically linked binaries for maximum compatibility.
-          EOF
-
-          echo "✅ Package verification guide created"
-          echo "📋 SHA256 provides reliable cryptographic verification"
 
       - name: 📋 Generate Changelog
         id: changelog
@@ -700,10 +533,6 @@ jobs:
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha256
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha256
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}.checksums
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}.verification
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
