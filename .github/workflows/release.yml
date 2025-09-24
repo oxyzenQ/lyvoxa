@@ -466,16 +466,30 @@ jobs:
             echo "$SSH_PRIVATE_KEY" > ssh_sign_key
             chmod 600 ssh_sign_key
             
+            # Test SSH key format and permissions
+            echo "🔍 Testing SSH key format..."
+            chmod 600 ssh_sign_key
+            ssh-keygen -l -f ssh_sign_key || {
+              echo "❌ SSH key format invalid"
+              exit 1
+            }
+            
             # Sign each package individually (following distro standards)
             for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_$RELEASE_VERSION-1_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
               if [ -f "$package" ]; then
                 echo "✍️ Signing: $package"
                 
-                # Create SSH signature
-                if ssh-keygen -Y sign -f ssh_sign_key -n file "$package" 2>/dev/null; then
-                  echo "  ✅ Signature: $package.sig"
+                # Create SSH signature with explicit output and error handling
+                if ssh-keygen -Y sign -f ssh_sign_key -n file "$package"; then
+                  # Verify signature was actually created and has content
+                  if [ -f "$package.sig" ] && [ -s "$package.sig" ]; then
+                    echo "  ✅ Signature created: $package.sig ($(wc -c < "$package.sig") bytes)"
+                  else
+                    echo "  ❌ Signature file empty or missing: $package.sig"
+                  fi
                 else
-                  echo "  ⚠️ Signing failed for $package"
+                  echo "  ❌ SSH signing command failed for $package"
+                  echo "  📋 Debug: SSH key type: $(ssh-keygen -l -f ssh_sign_key | cut -d' ' -f4)"
                 fi
               fi
             done
