@@ -1,0 +1,62 @@
+# =============================================================================
+# DEPENDABOT CONFIGURATION - AUTOMATIC DEPENDENCY UPDATES
+# =============================================================================
+# Automatically creates PRs for dependency updates
+# Author: rezky_nightky
+# Version: Stellar 2.0
+
+version: 2
+updates:
+  # Rust/Cargo dependencies
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    assignees:
+      - "rezky_nightky"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
+      - "automated"
+    # Group minor and patch updates together
+    groups:
+      rust-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      rust-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    # Ignore dev dependencies for certain packages
+    ignore:
+      # Ignore alpha, beta, rc versions
+      - dependency-name: "*"
+        versions: ["< 1.0.0", "*-alpha*", "*-beta*", "*-rc*"]
+      
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+    open-pull-requests-limit: 3
+    assignees:
+      - "rezky_nightky"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"

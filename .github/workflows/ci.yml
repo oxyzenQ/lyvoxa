@@ -55,12 +55,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
-      - name: Check code formatting
+      - name: Update dependencies
+        run: |
+          echo "📦 Updating dependencies..."
+          cargo update
+          echo "✅ Dependencies updated"
+
+      - name: Run code formatting check
         run: cargo fmt --check
 
       - name: Run Clippy
         run: |
-          # Disable sccache if it's causing issues
           unset RUSTC_WRAPPER
           cargo clippy --all-targets --all-features -- -D warnings
 

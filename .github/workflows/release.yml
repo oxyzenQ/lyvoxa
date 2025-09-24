@@ -64,6 +64,11 @@ jobs:
           echo "🚀 Building Lyvoxa Stellar Edition..."
           echo "Target: x86_64-unknown-linux-gnu"
           echo "Optimization: Maximum performance"
+          
+          # Update dependencies to latest compatible versions
+          echo "📦 Updating dependencies to latest compatible versions..."
+          cargo update
+          echo "✅ Dependencies updated"
 
           # Build with GitHub Actions default cores for maximum performance
           cargo build --release --target x86_64-unknown-linux-gnu

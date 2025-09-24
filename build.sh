@@ -40,6 +40,26 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+update_dependencies() {
+    log_info "Updating Rust dependencies..."
+    
+    # Update dependencies within semver constraints
+    log_info "Running cargo update..."
+    cargo update
+    
+    # Install cargo-audit for security checks if not present
+    if ! command -v cargo-audit &> /dev/null; then
+        log_info "Installing cargo-audit for security checks..."
+        cargo install cargo-audit
+    fi
+    
+    # Run security audit
+    log_info "Running security audit..."
+    cargo audit || log_warning "Security audit found issues, check output above"
+    
+    log_success "Dependencies updated successfully"
+}
+
 check_dependencies() {
     log_info "Checking build dependencies..."
     
@@ -190,6 +210,7 @@ show_help() {
     echo "  test           Run all tests"
     echo "  check          Run quick checks (clippy + fmt)"
     echo "  clean          Clean build artifacts"
+    echo "  update         Update dependencies and run security audit"
     echo "  all            Build debug + release + run tests"
     echo "  stats          Show sccache statistics"
     echo "  help           Show this help message"
@@ -220,16 +241,19 @@ main() {
     case "${1:-debug}" in
         "debug")
             check_dependencies
+            update_dependencies
             show_system_info
             build_debug
             ;;
         "release")
             check_dependencies
+            update_dependencies
             show_system_info
             build_release
             ;;
         "release-debug")
             check_dependencies
+            update_dependencies
             show_system_info
             build_release_with_debug
             ;;
@@ -244,8 +268,12 @@ main() {
         "clean")
             clean_build
             ;;
+        "update")
+            update_dependencies
+            ;;
         "all")
             check_dependencies
+            update_dependencies
             show_system_info
             run_fmt_check
             run_clippy
