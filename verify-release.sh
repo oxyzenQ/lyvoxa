@@ -26,8 +26,9 @@ curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.gz.sha512" "$BASE_URL/lyvoxa-$VE
 
 # Debian package
 echo "  → Debian package (.deb)"
-curl -fsSL -o "lyvoxa_$VERSION-1_amd64.deb" "$BASE_URL/lyvoxa_$VERSION-1_amd64.deb" || echo "    ⚠️  .deb not found"
-curl -fsSL -o "lyvoxa_$VERSION-1_amd64.deb.sha512" "$BASE_URL/lyvoxa_$VERSION-1_amd64.deb.sha512" || echo "    ⚠️  .deb SHA512 not found"
+DEB_VERSION=${VERSION#v}
+curl -fsSL -o "lyvoxa_${DEB_VERSION}_amd64.deb" "$BASE_URL/lyvoxa_${DEB_VERSION}_amd64.deb" || echo "    ⚠️  .deb not found"
+curl -fsSL -o "lyvoxa_${DEB_VERSION}_amd64.deb.sha512" "$BASE_URL/lyvoxa_${DEB_VERSION}_amd64.deb.sha512" || echo "    ⚠️  .deb SHA512 not found"
 
 # Arch package
 echo "  → Arch package (.zst)"  
@@ -46,7 +47,7 @@ echo
 echo "🔍 Verifying SHA512 checksums..."
 
 # SHA512 verification for all packages
-for file in lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa_$VERSION-1_amd64.deb lyvoxa-$VERSION-linux-x86_64.tar.zst; do
+for file in lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa_${DEB_VERSION}_amd64.deb lyvoxa-$VERSION-linux-x86_64.tar.zst; do
   if [ -f "$file.sha512" ]; then
     echo "  → Verifying SHA512: $file"
     if sha512sum -c "$file.sha512"; then

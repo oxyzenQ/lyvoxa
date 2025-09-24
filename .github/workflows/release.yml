@@ -363,7 +363,7 @@ jobs:
           Terminal=true
           DESKTOP_EOF
           
-          # Create DEBIAN control file (fix version format - remove 'v' prefix)
+          # Create DEBIAN control file (clean version format)
           DEB_VERSION=${VERSION#v}
           cat > deb-package/DEBIAN/control << DEB_CONTROL_EOF
           Package: lyvoxa
@@ -386,12 +386,14 @@ jobs:
           echo "📋 Debug: control file content:"
           cat deb-package/DEBIAN/control | head -5
           
-          if dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb"; then
-            echo "✅ .deb package created: lyvoxa_$VERSION-1_amd64.deb"
-            ls -la "lyvoxa_$VERSION-1_amd64.deb"
+          # Build .deb package with clean naming (packagename_version_architecture.deb)
+          DEB_FILENAME="lyvoxa_${DEB_VERSION}_amd64.deb"
+          if dpkg-deb --build --root-owner-group deb-package "$DEB_FILENAME"; then
+            echo "✅ .deb package created: $DEB_FILENAME"
+            ls -la "$DEB_FILENAME"
           else
             echo "⚠️ .deb package creation failed, showing error details..."
-            dpkg-deb --build --root-owner-group deb-package "lyvoxa_$VERSION-1_amd64.deb" || true
+            dpkg-deb --build --root-owner-group deb-package "$DEB_FILENAME" || true
           fi
           
           
@@ -401,6 +403,7 @@ jobs:
           
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "DEB_VERSION=${VERSION#v}" >> $GITHUB_ENV
 
       - name: 🔐 Generate Professional Checksums & Signatures
         run: |
@@ -408,7 +411,8 @@ jobs:
           cd dist
           
           # Create SHA512 checksums for all packages (optimized single algorithm)
-          for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_$RELEASE_VERSION-1_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
+          DEB_VERSION=${RELEASE_VERSION#v}
+          for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_${DEB_VERSION}_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
             if [ -f "$package" ]; then
               echo "📊 Processing: $package"
               
@@ -450,6 +454,7 @@ jobs:
           cd dist
           
           # Create signature info file (educational, since SSH signing has issues in CI)
+          DEB_VERSION=${RELEASE_VERSION#v}
           cat > "lyvoxa-$RELEASE_VERSION.sig.info" << EOF
           # Lyvoxa v$RELEASE_VERSION - Package Verification Guide
           # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
@@ -467,7 +472,7 @@ jobs:
           ### SHA512 Checksum Verification (Recommended)
           \`\`\`bash
           # Verify .deb package (Debian/Ubuntu)
-          sha512sum -c lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha512
+          sha512sum -c lyvoxa_${DEB_VERSION}_amd64.deb.sha512
           
           # Verify .zst package (Arch Linux)  
           sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512
@@ -689,9 +694,10 @@ jobs:
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512"
           
           # Package-specific checksums (SHA512 only)
-          [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && {
-            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
-            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha512"
+          DEB_VERSION=${RELEASE_VERSION#v}
+          [ -f "lyvoxa_${DEB_VERSION}_amd64.deb" ] && {
+            FILES="$FILES lyvoxa_${DEB_VERSION}_amd64.deb"
+            FILES="$FILES lyvoxa_${DEB_VERSION}_amd64.deb.sha512"
           }
           
           [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && {
@@ -730,8 +736,8 @@ jobs:
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha512
-            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb
-            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb.sha512
+            dist/lyvoxa_${{ env.DEB_VERSION }}_amd64.deb
+            dist/lyvoxa_${{ env.DEB_VERSION }}_amd64.deb.sha512
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha512
             dist/lyvoxa-${{ env.RELEASE_VERSION }}.checksums
