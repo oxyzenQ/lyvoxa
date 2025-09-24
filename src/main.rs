@@ -13,6 +13,7 @@ use ratatui::{
 };
 use std::{
     collections::VecDeque,
+    env,
     error::Error,
     io,
     time::{Duration, Instant},
@@ -21,8 +22,62 @@ use std::{
 mod monitor;
 use monitor::SystemMonitor;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const NAME: &str = env!("CARGO_PKG_NAME");
+
+fn print_help() {
+    println!("🌟 {} v{} - High-performance system monitoring tool", NAME, VERSION);
+    println!();
+    println!("USAGE:");
+    println!("    {} [OPTIONS]", NAME);
+    println!();
+    println!("OPTIONS:");
+    println!("    -h, --help       Show this help message");
+    println!("    -V, --version    Show version information");
+    println!();
+    println!("DESCRIPTION:");
+    println!("    Interactive TUI system monitor for Linux x86_64");
+    println!("    - Real-time CPU, memory, disk, network monitoring");
+    println!("    - Process management and system information");
+    println!("    - Lightweight (<2MB memory) and efficient");
+    println!();
+    println!("CONTROLS:");
+    println!("    q, Ctrl+C        Quit");
+    println!("    ↑/↓ arrows       Navigate process list");
+    println!();
+    println!("EXAMPLES:");
+    println!("    {}              Start interactive monitor", NAME);
+    println!("    {}-simple       Simple CLI output", NAME);
+    println!();
+    println!("REPOSITORY:");
+    println!("    https://github.com/oxyzenQ/lyvoxa");
+}
+
+fn print_version() {
+    println!("{} {}", NAME, VERSION);
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Handle command line arguments
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-h" | "--help" => {
+                print_help();
+                return Ok(());
+            }
+            "-V" | "--version" => {
+                print_version();
+                return Ok(());
+            }
+            _ => {
+                eprintln!("Unknown option: {}", args[1]);
+                eprintln!("Use --help for usage information");
+                std::process::exit(1);
+            }
+        }
+    }
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();

@@ -155,13 +155,14 @@ jobs:
           ## 📋 Package Contents
           
           \`\`\`
-          lyvoxa-stellar-$VERSION-linux-x86_64/
+          lyvoxa-$VERSION-linux-x86_64/
           ├── bin/
           │   ├── lyvoxa           # Main TUI application
           │   └── lyvoxa-simple    # Simple CLI version
-          ├── docs/               # Documentation
-          ├── config/             # Configuration templates  
+          ├── docs/               # Documentation  
+          ├── config/             # Configuration templates
           ├── README.md          # This file
+          ├── CHANGELOG.md       # Version history
           ├── LICENSE            # GPL-3.0 License
           └── install.sh         # Installation script
           \`\`\`
@@ -216,6 +217,31 @@ jobs:
           - **Author**: rezky_nightky
           README_EOF
           
+          # Create CHANGELOG.md for package
+          cat > dist/lyvoxa-$VERSION-linux-x86_64/CHANGELOG.md << 'CHANGELOG_EOF'
+          # Changelog
+          
+          All notable changes to Lyvoxa will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          ## [$VERSION] - $(date +%Y-%m-%d)
+          
+          $CHANGELOG
+          
+          ### Security
+          - Multi-algorithm checksums (SHA512, BLAKE3, ChaCha20-HMAC)
+          - SSH cryptographic signature verification
+          - Memory-safe Rust implementation
+          
+          ### Performance  
+          - Optimized release build with LTO
+          - Minimal memory footprint (<2MB)
+          - Fast startup time (<100ms)
+          
+          CHANGELOG_EOF
+          
           # Create installation script
           cat > dist/lyvoxa-$VERSION-linux-x86_64/install.sh << 'EOF'
           #!/bin/bash
@@ -255,6 +281,49 @@ jobs:
           tar -czf lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa-$VERSION-linux-x86_64/
           
           echo "✅ Professional package created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
+          
+          # Create AppImage (alternative format)
+          echo "📦 Creating AppImage alternative format..."
+          mkdir -p AppDir/usr/{bin,share/applications,share/icons/hicolor/256x256/apps}
+          
+          # Copy binaries for AppImage
+          cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa AppDir/usr/bin/
+          cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa-simple AppDir/usr/bin/
+          
+          # Create AppImage desktop file
+          cat > AppDir/usr/share/applications/lyvoxa.desktop << 'DESKTOP_EOF'
+          [Desktop Entry]
+          Name=Lyvoxa System Monitor
+          Comment=High-performance system monitoring tool
+          Exec=lyvoxa
+          Icon=lyvoxa
+          Type=Application
+          Categories=System;Monitor;
+          Terminal=true
+          DESKTOP_EOF
+          
+          # Create simple icon (text-based for now)
+          echo "📊" > AppDir/usr/share/icons/hicolor/256x256/apps/lyvoxa.png
+          
+          # Create AppRun
+          cat > AppDir/AppRun << 'APPRUN_EOF'
+          #!/bin/bash
+          # AppImage AppRun script
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+          export PATH="${HERE}/usr/bin:${PATH}"
+          exec "${HERE}/usr/bin/lyvoxa" "$@"
+          APPRUN_EOF
+          chmod +x AppDir/AppRun
+          
+          # Download appimagetool if not exists (lightweight approach)
+          if command -v appimagetool >/dev/null 2>&1; then
+            appimagetool AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage"
+            echo "✅ AppImage created: lyvoxa-$VERSION-linux-x86_64.AppImage"
+          else
+            echo "⚠️ appimagetool not available, skipping AppImage creation"
+            echo "   (AppImage would provide single-file distribution)"
+          fi
           
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
@@ -472,7 +541,7 @@ jobs:
           
           ## 📦 Installation
           
-          ### Quick Install
+          ### 🚀 Quick Install (Recommended)
           \`\`\`bash
           # Download and extract
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
@@ -485,6 +554,21 @@ jobs:
           # Or install to user directory
           ./install.sh
           \`\`\`
+          
+          ### 📦 Alternative Formats
+          
+          #### AppImage (Single-file, Universal)
+          \`\`\`bash
+          # Download and run directly
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
+          chmod +x lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
+          ./lyvoxa-$RELEASE_VERSION-linux-x86_64.AppImage
+          \`\`\`
+          
+          #### Package Managers (Coming Soon)
+          - \`.deb\` for Debian/Ubuntu
+          - \`.rpm\` for RedHat/Fedora
+          - \`AUR\` for Arch Linux
           
           ### Manual Install
           \`\`\`bash

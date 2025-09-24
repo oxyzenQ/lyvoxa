@@ -1,10 +1,61 @@
+use std::env;
 use std::thread;
 use std::time::Duration;
 
 mod monitor;
 use monitor::SystemMonitor;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const NAME: &str = "lyvoxa-simple";
+
+fn print_help() {
+    println!("🌟 {} v{} - Simple system monitoring tool", NAME, VERSION);
+    println!();
+    println!("USAGE:");
+    println!("    {} [OPTIONS]", NAME);
+    println!();
+    println!("OPTIONS:");
+    println!("    -h, --help       Show this help message");
+    println!("    -V, --version    Show version information");
+    println!();
+    println!("DESCRIPTION:");
+    println!("    Simple CLI system monitor for Linux x86_64");
+    println!("    - Continuous terminal output of system stats");
+    println!("    - CPU, memory, disk, network monitoring");
+    println!("    - Process list and system information");
+    println!();
+    println!("EXAMPLES:");
+    println!("    {}              Start simple monitor", NAME);
+    println!("    lyvoxa               Start interactive TUI", NAME.trim_end_matches("-simple"));
+    println!();
+    println!("REPOSITORY:");
+    println!("    https://github.com/oxyzenQ/lyvoxa");
+}
+
+fn print_version() {
+    println!("{} {}", NAME, VERSION);
+}
+
 fn main() {
+    // Handle command line arguments
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-h" | "--help" => {
+                print_help();
+                return;
+            }
+            "-V" | "--version" => {
+                print_version();
+                return;
+            }
+            _ => {
+                eprintln!("Unknown option: {}", args[1]);
+                eprintln!("Use --help for usage information");
+                std::process::exit(1);
+            }
+        }
+    }
     let mut monitor = SystemMonitor::new();
 
     println!("🦀 Rust System Monitor - Simple Version");
