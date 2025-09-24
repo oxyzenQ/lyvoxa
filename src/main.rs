@@ -161,7 +161,9 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
     let tick_rate = Duration::from_millis(250);
 
     loop {
-        terminal.draw(|f| ui(f, &app)).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        terminal
+            .draw(|f| ui(f, &app))
+            .map_err(|e| io::Error::other(e.to_string()))?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
