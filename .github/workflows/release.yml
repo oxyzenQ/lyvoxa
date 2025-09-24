@@ -689,7 +689,7 @@ jobs:
 
       - name: 🚀 Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: "🌟 Lyvoxa Stellar Release"
           tag_name: ${{ env.RELEASE_VERSION }}
