@@ -289,8 +289,8 @@ jobs:
           # Create optimized release package
           echo "📦 Creating release package..."
 
-          # Create standard .tar.gz (universal compatibility)
-          tar -czf "lyvoxa-$VERSION-linux-x86_64.tar.gz" lyvoxa lyvoxa-simple
+          # Create standard .tar.gz (universal compatibility)  
+          tar -czf "lyvoxa-$VERSION-linux-x86_64.tar.gz" -C lyvoxa-$VERSION-linux-x86_64/bin lyvoxa lyvoxa-simple
           echo "✅ Created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
 
           # Generate SHA256 checksum
