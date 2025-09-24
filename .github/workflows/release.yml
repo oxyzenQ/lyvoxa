@@ -428,6 +428,8 @@ jobs:
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
+          make_latest: true
+          fail_on_unmatched_files: false
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha512
