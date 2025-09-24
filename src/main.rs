@@ -1,15 +1,15 @@
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
     widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, Paragraph, Row, Table},
-    Frame, Terminal,
 };
 use std::{
     collections::VecDeque,
@@ -167,13 +167,13 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
-        if crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) => app.on_key(c),
-                    KeyCode::Esc => app.should_quit = true,
-                    _ => {}
-                }
+        if crossterm::event::poll(timeout)?
+            && let Event::Key(key) = event::read()?
+        {
+            match key.code {
+                KeyCode::Char(c) => app.on_key(c),
+                KeyCode::Esc => app.should_quit = true,
+                _ => {}
             }
         }
 
@@ -255,11 +255,13 @@ fn ui(f: &mut Frame, app: &App) {
             .map(|(i, &cpu)| (i as f64, cpu))
             .collect();
 
-        let datasets = vec![Dataset::default()
-            .name("CPU %")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Yellow))
-            .data(&cpu_data)];
+        let datasets = vec![
+            Dataset::default()
+                .name("CPU %")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(Color::Yellow))
+                .data(&cpu_data),
+        ];
 
         let cpu_chart = Chart::new(datasets)
             .block(Block::default().title("CPU History").borders(Borders::ALL))
@@ -277,11 +279,13 @@ fn ui(f: &mut Frame, app: &App) {
             .map(|(i, &mem)| (i as f64, mem))
             .collect();
 
-        let datasets = vec![Dataset::default()
-            .name("Memory %")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Green))
-            .data(&memory_data)];
+        let datasets = vec![
+            Dataset::default()
+                .name("Memory %")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(Color::Green))
+                .data(&memory_data),
+        ];
 
         let memory_chart = Chart::new(datasets)
             .block(
