@@ -14,7 +14,7 @@ license=('GPL3')
 depends=('glibc')
 provides=('lyvoxa')
 conflicts=('lyvoxa' 'lyvoxa-git')
-source=("$pkgname-$pkgver.tar.zst::https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-$pkgver/lyvoxa-Stellar-$pkgver-linux-x86_64.tar.zst")
+source=("$pkgname-$pkgver.tar.zst::https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.zst")
 sha256sums=('8be57c4e6f9dabaf71d4ddc34702812c102dd2e020a2c688e8e8743e8b385798')
 
 package() {

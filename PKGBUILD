@@ -15,12 +15,12 @@ depends=('glibc')
 makedepends=('rust' 'cargo')
 provides=('lyvoxa')
 conflicts=('lyvoxa-bin' 'lyvoxa-git')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/oxyzenQ/lyvoxa/archive/refs/tags/Stellar-$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/oxyzenQ/lyvoxa/archive/refs/tags/Stellar-2.0.tar.gz")
 sha256sums=('SKIP')  # Will be updated automatically
 
 # Build from source for maximum optimization on target system
 build() {
-    cd "$pkgname-Stellar-$pkgver"
+    cd "$pkgname-Stellar-2.0"
     
     # Optimize for the target system
     export RUSTFLAGS="-C target-cpu=native -C opt-level=3"
@@ -31,14 +31,14 @@ build() {
 }
 
 check() {
-    cd "$pkgname-Stellar-$pkgver"
+    cd "$pkgname-Stellar-2.0"
     
     # Run tests to ensure everything works
     cargo test --release --target x86_64-unknown-linux-gnu
 }
 
 package() {
-    cd "$pkgname-Stellar-$pkgver"
+    cd "$pkgname-Stellar-2.0"
     
     # Install main binary
     install -Dm755 "target/x86_64-unknown-linux-gnu/release/$pkgname" \
