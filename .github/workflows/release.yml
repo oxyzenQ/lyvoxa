@@ -407,26 +407,14 @@ jobs:
           echo "🔐 Generating professional checksums and signatures..."
           cd dist
           
-          # Create checksums for each package following Linux distribution standards
+          # Create SHA512 checksums for all packages (optimized single algorithm)
           for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_$RELEASE_VERSION-1_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
             if [ -f "$package" ]; then
               echo "📊 Processing: $package"
               
-              # Standard checksums (following distro conventions)
-              if [[ "$package" == *.deb ]]; then
-                # Debian uses SHA256 for .deb packages
-                sha256sum "$package" > "$package.sha256"
-                echo "  ✅ SHA256: $package.sha256"
-              elif [[ "$package" == *.zst ]]; then
-                # Arch uses SHA512 for package integrity
-                sha512sum "$package" > "$package.sha512"
-                echo "  ✅ SHA512: $package.sha512"
-              else
-                # Universal packages get multiple algorithms
-                sha512sum "$package" > "$package.sha512"
-                sha256sum "$package" > "$package.sha256"
-                echo "  ✅ SHA512 + SHA256: $package"
-              fi
+              # SHA512 for all packages (strongest algorithm, single standard)
+              sha512sum "$package" > "$package.sha512"
+              echo "  ✅ SHA512: $package.sha512"
             else
               echo "⚠️ Package not found: $package"
             fi
@@ -440,8 +428,8 @@ jobs:
           
           EOF
           
-          # Add all individual checksums to unified file
-          for checksum_file in *.sha256 *.sha512; do
+          # Add all SHA512 checksums to unified file
+          for checksum_file in *.sha512; do
             if [ -f "$checksum_file" ]; then
               echo "## $checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
               cat "$checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
@@ -449,9 +437,9 @@ jobs:
             fi
           done
           
-          echo "✅ Professional checksums generated"
+          echo "✅ Professional checksums generated (SHA512 optimized)"
           echo "📋 Generated files:"
-          ls -la *.checksums *.sha256 *.sha512 2>/dev/null || true
+          ls -la *.checksums *.sha512 2>/dev/null || true
 
       - name: ✍️ Professional Package Signing
         env:
@@ -467,25 +455,28 @@ jobs:
           # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           
           ## Professional Package Distribution
-          This release follows Linux distribution standards with individual 
-          checksums per package type:
+          This release uses SHA512 checksums for all packages (optimized single algorithm):
           
-          - Debian packages (.deb): SHA256 checksums (Debian standard)
-          - Arch packages (.zst): SHA512 checksums (pacman standard)
-          - Universal packages (.tar.gz): SHA512 + SHA256 for compatibility
+          - SHA512: Strongest cryptographic hash algorithm (64-bit security)
+          - Consistent: Same verification method for all package formats
+          - Optimized: Single algorithm reduces complexity and storage
+          - Professional: Used by enterprise distributions and security-focused projects
           
           ## Verification Instructions:
           
-          ### Checksum Verification (Recommended)
+          ### SHA512 Checksum Verification (Recommended)
           \`\`\`bash
           # Verify .deb package (Debian/Ubuntu)
-          sha256sum -c lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha256
+          sha512sum -c lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha512
           
           # Verify .zst package (Arch Linux)  
           sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512
           
           # Verify universal package
           sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512
+          
+          # Verify all packages at once
+          sha512sum -c lyvoxa-$RELEASE_VERSION.checksums
           \`\`\`
           
           ### Repository Integrity
@@ -696,12 +687,11 @@ jobs:
           # Base files (always created)
           FILES="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256"
           
-          # Package-specific checksums
+          # Package-specific checksums (SHA512 only)
           [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && {
             FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
-            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha256"
+            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha512"
           }
           
           [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && {
@@ -740,9 +730,8 @@ jobs:
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha512
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha256
             dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb
-            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb.sha256
+            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb.sha512
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha512
             dist/lyvoxa-${{ env.RELEASE_VERSION }}.checksums
