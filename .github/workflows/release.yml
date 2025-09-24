@@ -328,30 +328,33 @@ jobs:
           APPRUN_EOF
           chmod +x AppDir/AppRun
           
-          # Install FUSE for AppImage support
-          echo "📥 Installing FUSE and appimagetool..."
-          sudo apt-get update -qq
-          sudo apt-get install -y fuse libfuse2 >/dev/null 2>&1
+          # Create AppImage (with timeout to prevent hanging)
+          echo "📦 Creating AppImage (with 2-minute timeout)..."
           
-          # Download appimagetool
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool-x86_64.AppImage
-          
-          # Create AppImage with error handling
-          echo "🔧 Creating AppImage..."
-          if ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null; then
-            echo "✅ AppImage created: lyvoxa-$VERSION-linux-x86_64.AppImage"
-            ls -la "lyvoxa-$VERSION-linux-x86_64.AppImage"
-          else
-            echo "⚠️ AppImage creation failed, trying alternative method..."
-            # Alternative: extract and manually create
-            ./appimagetool-x86_64.AppImage --appimage-extract >/dev/null 2>&1
-            if [ -d "squashfs-root" ]; then
-              ./squashfs-root/AppRun AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null || {
-                echo "⚠️ AppImage creation failed, but continuing with other packages..."
-              }
+          # Quick check if we can create AppImage without heavy dependencies
+          timeout 120 bash -c '
+            # Download appimagetool (lightweight approach)
+            echo "📥 Downloading appimagetool..."
+            if ! wget -q --timeout=30 https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage; then
+              echo "⚠️ Failed to download appimagetool, skipping AppImage"
+              exit 1
             fi
-          fi
+            
+            chmod +x appimagetool-x86_64.AppImage
+            
+            # Try to create AppImage without installing system packages
+            echo "🔧 Creating AppImage..."
+            if ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir "lyvoxa-$VERSION-linux-x86_64.AppImage" --no-appstream 2>/dev/null; then
+              echo "✅ AppImage created: lyvoxa-$VERSION-linux-x86_64.AppImage"
+              ls -la "lyvoxa-$VERSION-linux-x86_64.AppImage"
+            else
+              echo "⚠️ AppImage creation failed (likely FUSE issue in CI)"
+              exit 1
+            fi
+          ' || {
+            echo "⚠️ AppImage creation timed out or failed, continuing without AppImage..."
+            echo "   (AppImage requires FUSE which may not be available in GitHub Actions)"
+          }
           
           # Create .deb package (Debian/Ubuntu)
           echo "📦 Creating .deb package..."
@@ -393,11 +396,27 @@ jobs:
             echo "⚠️ .deb package creation failed, but continuing..."
           fi
           
-          # Create .rpm package (RedHat/Fedora)
-          echo "📦 Creating .rpm package..."
+          # Create .rpm package (RedHat/Fedora) - with timeout
+          echo "📦 Creating .rpm package (with 3-minute timeout)..."
           
-          # Install rpm tools if available
-          if command -v rpmbuild >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y rpm >/dev/null 2>&1; then
+          # Check if rpm tools are available or can be quickly installed
+          timeout 180 bash -c '
+          if command -v rpmbuild >/dev/null 2>&1; then
+            echo "✅ rpmbuild already available"
+          elif command -v apt-get >/dev/null 2>&1; then
+            echo "📥 Installing rpm tools..."
+            sudo apt-get update -qq >/dev/null 2>&1 || exit 1
+            sudo apt-get install -y rpm >/dev/null 2>&1 || exit 1
+          else
+            echo "⚠️ Package manager not available"
+            exit 1
+          fi
+          ' && RPM_AVAILABLE=true || {
+            echo "⚠️ RPM tools installation timed out or failed, skipping .rpm package"
+            RPM_AVAILABLE=false
+          }
+          
+          if [ "$RPM_AVAILABLE" = "true" ]; then
             mkdir -p rpm-build/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
             
             # Create RPM spec file
@@ -446,7 +465,7 @@ jobs:
               echo "⚠️ .rpm package creation failed, but continuing..."
             fi
           else
-            echo "⚠️ rpm tools not available, skipping .rpm package creation"
+            echo "⚠️ Skipping .rpm package creation (tools not available or timeout)"
           fi
           
           # List all created files for debugging
