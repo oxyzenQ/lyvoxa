@@ -19,6 +19,11 @@ on:
         required: true
         default: 'stellar-1.5'
 
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
