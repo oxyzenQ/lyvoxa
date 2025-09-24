@@ -5,48 +5,48 @@
 # Author: rezky_nightky
 # Version: Stellar 2.0
 
-version: 2
-updates:
-  # Rust/Cargo dependencies
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-      time: "06:00"
-    open-pull-requests-limit: 5
-    assignees:
-      - "rezky_nightky"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "rust"
-      - "automated"
-    # Group updates for easier management
-    groups:
-      rust-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      
-  # GitHub Actions dependencies
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-      time: "06:00"
-    open-pull-requests-limit: 3
-    assignees:
-      - "rezky_nightky"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "automated"
+#version: 2
+#updates:
+# Rust/Cargo dependencies
+#  - package-ecosystem: "cargo"
+#    directory: "/"
+#    schedule:
+#      interval: "weekly"
+#      day: "sunday"
+#      time: "06:00"
+#    open-pull-requests-limit: 5
+#    assignees:
+#      - "rezky_nightky"
+#    commit-message:
+#     prefix: "deps"
+#     include: "scope"
+#    labels:
+#      - "dependencies"
+#      - "rust"
+#      - "automated"
+#    # Group updates for easier management
+#    groups:
+#      rust-dependencies:
+#        patterns:
+#          - "*"
+#        update-types:
+#          - "minor"
+#          - "patch"
+#
+#  # GitHub Actions dependencies
+#  - package-ecosystem: "github-actions"
+#    directory: "/"
+#    schedule:
+#      interval: "weekly"
+#      day: "sunday"
+#      time: "06:00"
+#    open-pull-requests-limit: 3
+#    assignees:
+#      - "rezky_nightky"
+#    commit-message:
+#      prefix: "ci"
+#      include: "scope"
+#    labels:
+#      - "dependencies"
+#      - "github-actions"
+#      - "automated"
