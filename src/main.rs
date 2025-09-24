@@ -1,18 +1,19 @@
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
     widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, Paragraph, Row, Table},
-    Frame, Terminal,
 };
 use std::{
     collections::VecDeque,
+    env,
     error::Error,
     io,
     time::{Duration, Instant},
@@ -21,8 +22,65 @@ use std::{
 mod monitor;
 use monitor::SystemMonitor;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const NAME: &str = env!("CARGO_PKG_NAME");
+
+fn print_help() {
+    println!(
+        "🌟 {} v{} - High-performance system monitoring tool",
+        NAME, VERSION
+    );
+    println!();
+    println!("USAGE:");
+    println!("    {} [OPTIONS]", NAME);
+    println!();
+    println!("OPTIONS:");
+    println!("    -h, --help       Show this help message");
+    println!("    -V, --version    Show version information");
+    println!();
+    println!("DESCRIPTION:");
+    println!("    Interactive TUI system monitor for Linux x86_64");
+    println!("    - Real-time CPU, memory, disk, network monitoring");
+    println!("    - Process management and system information");
+    println!("    - Lightweight (<2MB memory) and efficient");
+    println!();
+    println!("CONTROLS:");
+    println!("    q, Ctrl+C        Quit");
+    println!("    ↑/↓ arrows       Navigate process list");
+    println!();
+    println!("EXAMPLES:");
+    println!("    {}              Start interactive monitor", NAME);
+    println!("    {}-simple       Simple CLI output", NAME);
+    println!();
+    println!("REPOSITORY:");
+    println!("    https://github.com/oxyzenQ/lyvoxa");
+}
+
+fn print_version() {
+    println!("{} {}", NAME, VERSION);
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Handle command line arguments
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-h" | "--help" => {
+                print_help();
+                return Ok(());
+            }
+            "-V" | "--version" => {
+                print_version();
+                return Ok(());
+            }
+            _ => {
+                eprintln!("Unknown option: {}", args[1]);
+                eprintln!("Use --help for usage information");
+                std::process::exit(1);
+            }
+        }
+    }
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -103,19 +161,21 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
     let tick_rate = Duration::from_millis(250);
 
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        terminal
+            .draw(|f| ui(f, &app))
+            .map_err(|e| io::Error::other(e.to_string()))?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
-        if crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) => app.on_key(c),
-                    KeyCode::Esc => app.should_quit = true,
-                    _ => {}
-                }
+        if crossterm::event::poll(timeout)?
+            && let Event::Key(key) = event::read()?
+        {
+            match key.code {
+                KeyCode::Char(c) => app.on_key(c),
+                KeyCode::Esc => app.should_quit = true,
+                _ => {}
             }
         }
 
@@ -197,11 +257,13 @@ fn ui(f: &mut Frame, app: &App) {
             .map(|(i, &cpu)| (i as f64, cpu))
             .collect();
 
-        let datasets = vec![Dataset::default()
-            .name("CPU %")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Yellow))
-            .data(&cpu_data)];
+        let datasets = vec![
+            Dataset::default()
+                .name("CPU %")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(Color::Yellow))
+                .data(&cpu_data),
+        ];
 
         let cpu_chart = Chart::new(datasets)
             .block(Block::default().title("CPU History").borders(Borders::ALL))
@@ -219,11 +281,13 @@ fn ui(f: &mut Frame, app: &App) {
             .map(|(i, &mem)| (i as f64, mem))
             .collect();
 
-        let datasets = vec![Dataset::default()
-            .name("Memory %")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Green))
-            .data(&memory_data)];
+        let datasets = vec![
+            Dataset::default()
+                .name("Memory %")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(Color::Green))
+                .data(&memory_data),
+        ];
 
         let memory_chart = Chart::new(datasets)
             .block(
