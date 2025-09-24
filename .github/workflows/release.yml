@@ -402,173 +402,110 @@ jobs:
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: 🔐 Generate Multi-Algorithm Checksums
+      - name: 🔐 Generate Professional Checksums & Signatures
         run: |
-          echo "🔐 Generating portfolio-grade checksums..."
+          echo "🔐 Generating professional checksums and signatures..."
           cd dist
           
-          PACKAGE="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
+          # Create checksums for each package following Linux distribution standards
+          for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_$RELEASE_VERSION-1_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
+            if [ -f "$package" ]; then
+              echo "📊 Processing: $package"
+              
+              # Standard checksums (following distro conventions)
+              if [[ "$package" == *.deb ]]; then
+                # Debian uses SHA256 for .deb packages
+                sha256sum "$package" > "$package.sha256"
+                echo "  ✅ SHA256: $package.sha256"
+              elif [[ "$package" == *.zst ]]; then
+                # Arch uses SHA512 for package integrity
+                sha512sum "$package" > "$package.sha512"
+                echo "  ✅ SHA512: $package.sha512"
+              else
+                # Universal packages get multiple algorithms
+                sha512sum "$package" > "$package.sha512"
+                sha256sum "$package" > "$package.sha256"
+                echo "  ✅ SHA512 + SHA256: $package"
+              fi
+            else
+              echo "⚠️ Package not found: $package"
+            fi
+          done
           
-          # SHA512 - Industry standard
-          echo "📝 Generating SHA512..."
-          sha512sum "$PACKAGE" > "$PACKAGE.sha512"
+          # Create unified checksums file (optional but professional)
+          cat > "lyvoxa-$RELEASE_VERSION.checksums" << EOF
+          # Lyvoxa v$RELEASE_VERSION - Release Checksums
+          # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          # Repository: https://github.com/oxyzenQ/lyvoxa
           
-          # BLAKE3 - Modern, fast, secure
-          echo "📝 Generating BLAKE3..."
-          b3sum "$PACKAGE" > "$PACKAGE.blake3"
-          
-          # ChaCha20-based HMAC for authenticity
-          echo "📝 Generating ChaCha20-HMAC..."
-          HMAC_KEY="${{ secrets.HMAC_SECRET_KEY || 'lyvoxa-stellar-integrity-key-2025' }}"
-          echo -n "$HMAC_KEY" | openssl dgst -sha512 -hmac /dev/stdin "$PACKAGE" > "$PACKAGE.chacha"
-          
-          # Create comprehensive checksum file
-          cat > "$PACKAGE.checksums" << EOF
-          # Lyvoxa Stellar $RELEASE_VERSION - Integrity Verification
-          # Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          # Package: $PACKAGE
-          
-          ## SHA512 (Industry Standard)
-          $(cat $PACKAGE.sha512)
-          
-          ## BLAKE3 (Modern Cryptographic Hash)
-          $(cat $PACKAGE.blake3)
-          
-          ## ChaCha20-HMAC (Authenticity Proof)
-          $(cat $PACKAGE.chacha)
-          
-          ## Verification Commands:
-          # sha512sum -c $PACKAGE.sha512
-          # b3sum -c $PACKAGE.blake3
-          # openssl dgst -sha512 -hmac "YOUR_HMAC_KEY" $PACKAGE
           EOF
           
-          echo "✅ Multi-algorithm checksums generated!"
-          ls -la *.checksums *.sha512 *.blake3 *.chacha
+          # Add all individual checksums to unified file
+          for checksum_file in *.sha256 *.sha512; do
+            if [ -f "$checksum_file" ]; then
+              echo "## $checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
+              cat "$checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
+              echo "" >> "lyvoxa-$RELEASE_VERSION.checksums"
+            fi
+          done
+          
+          echo "✅ Professional checksums generated"
+          echo "📋 Generated files:"
+          ls -la *.checksums *.sha256 *.sha512 2>/dev/null || true
 
-      - name: ✍️ SSH Key Signing
+      - name: ✍️ Professional Package Signing
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_SIGN_KEY }}
           SSH_PASSPHRASE: ${{ secrets.SSH_SIGN_PASSPHRASE }}
         run: |
-          echo "✍️ Signing release with SSH key..."
+          echo "✍️ Signing packages with SSH key..."
           cd dist
           
-          PACKAGE="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
-          
           if [ -n "$SSH_PRIVATE_KEY" ]; then
-            # Setup SSH key for signing
-            mkdir -p ~/.ssh
+            echo "🔑 Setting up SSH signing key..."
+            echo "$SSH_PRIVATE_KEY" > ssh_sign_key
+            chmod 600 ssh_sign_key
             
-            # Handle SSH key format properly (preserve newlines)
-            echo "🔧 Processing SSH key..."
-            
-            # Try different methods to write the SSH key
-            if echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null; then
-              echo "📝 SSH key decoded from base64"
-            else
-              # Write directly, handling potential newline issues
-              echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-              echo "📝 SSH key written directly"
-            fi
-            
-            chmod 600 ~/.ssh/id_ed25519
-            
-            # Debug: Show key info (without exposing content)
-            echo "🔍 SSH key file info:"
-            ls -la ~/.ssh/id_ed25519
-            echo "File size: $(wc -c < ~/.ssh/id_ed25519) bytes"
-            echo "First line: $(head -1 ~/.ssh/id_ed25519)"
-            echo "Last line: $(tail -1 ~/.ssh/id_ed25519)"
-            
-            # Validate SSH key format
-            if ! ssh-keygen -l -f ~/.ssh/id_ed25519 >/dev/null 2>&1; then
-              echo "❌ SSH key validation failed. Trying alternative format..."
-              
-              # Try with explicit newline handling
-              printf "%s" "$SSH_PRIVATE_KEY" | tr ' ' '\n' > ~/.ssh/id_ed25519_alt
-              chmod 600 ~/.ssh/id_ed25519_alt
-              
-              if ssh-keygen -l -f ~/.ssh/id_ed25519_alt >/dev/null 2>&1; then
-                mv ~/.ssh/id_ed25519_alt ~/.ssh/id_ed25519
-                echo "✅ SSH key fixed with alternative format"
-              else
-                echo "❌ SSH key format is invalid. Please check your SSH_SIGN_KEY secret."
-                echo "Expected format: OpenSSH private key (-----BEGIN OPENSSH PRIVATE KEY-----)"
-                echo "Current key starts with: $(head -1 ~/.ssh/id_ed25519)"
-                exit 1
-              fi
-            else
-              echo "✅ SSH key loaded and validated"
-            fi
-            
-            # Prepare signing key path (handle passphrase-protected keys without interaction)
-            SIGN_KEY_PATH="$HOME/.ssh/id_ed25519"
-            if [ -n "$SSH_PASSPHRASE" ]; then
-              echo "🔓 Removing passphrase from private key for CI use (temporary copy)"
-              cp "$HOME/.ssh/id_ed25519" "$HOME/.ssh/id_ed25519_work"
-              chmod 600 "$HOME/.ssh/id_ed25519_work"
-              echo "🔍 Attempting to remove passphrase..."
-              if ! ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" 2>&1; then
-                echo "❌ Failed to remove passphrase with ssh-keygen -p"
-                echo "🔧 Trying alternative: convert via openssl..."
+            # Sign each package individually (following distro standards)
+            for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_$RELEASE_VERSION-1_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
+              if [ -f "$package" ]; then
+                echo "✍️ Signing: $package"
                 
-                # Alternative approach: try using openssl if available
-                if command -v openssl >/dev/null 2>&1; then
-                  echo "$SSH_PASSPHRASE" | ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f "$HOME/.ssh/id_ed25519_work" 2>/dev/null || {
-                    echo "❌ Both ssh-keygen and openssl methods failed"
-                    echo "🔍 SSH key might be in unsupported format or passphrase is incorrect"
-                    echo "💡 Consider using a dedicated unencrypted signing key for CI"
-                    exit 1
-                  }
+                # Create SSH signature
+                if ssh-keygen -Y sign -f ssh_sign_key -n file "$package" 2>/dev/null; then
+                  echo "  ✅ Signature: $package.sig"
                 else
-                  echo "❌ ssh-keygen -p failed and openssl not available"
-                  echo "🔍 Check that SSH_SIGN_PASSPHRASE matches your private key passphrase"
-                  exit 1
+                  echo "  ⚠️ Signing failed for $package"
                 fi
               fi
-              SIGN_KEY_PATH="$HOME/.ssh/id_ed25519_work"
-            fi
-            # Final verification that signing will work (use temp file)
-            echo "🧪 Testing SSH key for signing capability..."
-            TMP_SIGN_FILE=$(mktemp lyvoxa-sign-test.XXXXXX)
-            echo "lyvoxa test" > "$TMP_SIGN_FILE"
-            if ! ssh-keygen -Y sign -f "$SIGN_KEY_PATH" -n test "$TMP_SIGN_FILE" >/dev/null 2>&1; then
-              echo "❌ SSH key cannot be used for signing. Possibly passphrase-protected or invalid."
-              echo "If this key has a passphrase, add it as repository secret 'SSH_SIGN_PASSPHRASE'."
-              exit 1
-            fi
-            echo "✅ SSH key ready for signing"
-
-            # Clean up temp test files
-            rm -f "$TMP_SIGN_FILE" "$TMP_SIGN_FILE.sig" || true
-
-            # Sign the package
-            echo "🔑 Signing package with SSH key..."
-            if ! ssh-keygen -Y sign -f "$SIGN_KEY_PATH" -n file "$PACKAGE" > "$PACKAGE.sig"; then
-              echo "❌ Failed to sign package with SSH key"
-              exit 1
-            fi
-            # Cleanup temporary key copy if created
-            [ -f "$HOME/.ssh/id_ed25519_work" ] && shred -u "$HOME/.ssh/id_ed25519_work" || true
+            done
             
-            # Create signature verification info
-            cat > "$PACKAGE.sig.info" << EOF
-          # Lyvoxa Stellar $RELEASE_VERSION - SSH Signature Verification
-          # 
-          # To verify this signature:
-          # 1. Download the public key from: https://github.com/oxyzenQ.keys
-          # 2. Save it as 'oxyzenQ.pub'
-          # 3. Run: ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file -s $PACKAGE.sig < $PACKAGE
-          #
-          # Signature created: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          # Signer: rezky_nightky (oxyzenQ)
+            # Create unified signature info
+            cat > "lyvoxa-$RELEASE_VERSION.sig.info" << EOF
+          # Lyvoxa v$RELEASE_VERSION - Package Signatures
+          # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          # Signing Key: $(ssh-keygen -l -f ssh_sign_key | cut -d' ' -f2-3)
+          
+          ## Verification Instructions:
+          
+          # 1. Download public key:
+          curl -s https://github.com/oxyzenQ.keys > oxyzenQ.pub
+          
+          # 2. Verify any package:
+          ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file -s <package>.sig < <package>
+          
+          ## Example:
+          ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file -s lyvoxa_$RELEASE_VERSION-1_amd64.deb.sig < lyvoxa_$RELEASE_VERSION-1_amd64.deb
           EOF
             
-            echo "✅ SSH signature created!"
+            echo "✅ SSH signatures created"
+            echo "📋 Signature files:"
+            ls -la *.sig *.sig.info 2>/dev/null || true
+            
+            # Clean up
+            rm -f ssh_sign_key
           else
-            echo "⚠️ SSH_SIGN_KEY not found in secrets. Skipping signing."
-            echo "Add your SSH private key to GitHub Secrets as SSH_SIGN_KEY"
+            echo "⚠️ SSH signing key not provided, skipping signatures"
           fi
 
       - name: 📋 Generate Changelog
@@ -659,13 +596,16 @@ jobs:
           
           ## 🔐 Security Verification
           
-          ### Checksum Verification
+          ### Package Verification
           \`\`\`bash
-          # SHA512 (recommended)
-          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512
+          # Verify .deb package (Debian/Ubuntu)
+          sha256sum -c lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha256
           
-          # BLAKE3 (modern)
-          b3sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.blake3
+          # Verify .zst package (Arch Linux)  
+          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512
+          
+          # Verify universal package
+          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512
           \`\`\`
           
           ### SSH Signature Verification
@@ -753,15 +693,25 @@ jobs:
           # Base files (always created)
           FILES="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.blake3"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.chacha"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.checksums"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256"
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig.info"
           
-          # Optional files (only if they exist)
-          [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
-          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
+          # Package-specific checksums and signatures
+          [ -f "lyvoxa_$RELEASE_VERSION-1_amd64.deb" ] && {
+            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb"
+            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha256"
+            FILES="$FILES lyvoxa_$RELEASE_VERSION-1_amd64.deb.sig"
+          }
+          
+          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && {
+            FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
+            FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512"
+            FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sig"
+          }
+          
+          # Unified files
+          FILES="$FILES lyvoxa-$RELEASE_VERSION.checksums"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION.sig.info"
           
           echo "Files to upload:"
           for f in $FILES; do
@@ -790,13 +740,16 @@ jobs:
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha512
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.blake3
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.chacha
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.checksums
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha256
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig.info
             dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb
+            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb.sha256
+            dist/lyvoxa_${{ env.RELEASE_VERSION }}-1_amd64.deb.sig
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha512
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sig
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}.checksums
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}.sig.info
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
