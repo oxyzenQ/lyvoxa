@@ -447,14 +447,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: 🚀 Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           name: "🌟 Lyvoxa Stellar Release"
           tag_name: ${{ env.RELEASE_VERSION }}
           body_path: RELEASE_NOTES.md
-          draft: false
+          draft: true
           prerelease: false
-          make_latest: true
           fail_on_unmatched_files: false
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
@@ -467,6 +467,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 📢 Publish Release
+        run: |
+          echo "📢 Publishing draft release as final..."
+          sleep 2  # Brief pause for API consistency
+          gh release edit $RELEASE_VERSION --draft=false
+          echo "✅ Release published successfully!"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 📤 Upload Build Artifacts (Optional)
         uses: actions/upload-artifact@v4
         with:
@@ -475,7 +484,7 @@ jobs:
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.checksums
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sig
-          retention-days: 30
+          retention-days: 1
           compression-level: 6
         if: always()
 
@@ -498,7 +507,7 @@ jobs:
           echo "📦 Release Artifacts:"
           cd dist && ls -la lyvoxa-$RELEASE_VERSION-*
           echo ""
-          echo "📤 Artifact Retention: 30 days (workflow artifacts)"
+          echo "📤 Artifact Retention: 1 day (workflow artifacts)"
           echo "🚀 GitHub Release: Permanent (release artifacts)"
           echo ""
           echo "✅ Portfolio-ready release completed!"
