@@ -1,23 +1,22 @@
 # =============================================================================
 # LYVOXA STELLAR RELEASE PIPELINE - PORTFOLIO GRADE
 # =============================================================================
-# Professional release workflow with multi-checksum and SSH signing
+# Professional release workflow with SHA256 checksum for ArchLinux and Linux universal
 # Author: rezky_nightky
-# Version: Stellar 1.5
+# Version: Stellar 2.0
 
 name: 🌟 Stellar Release
 
 on:
   push:
     tags:
-      - 'stellar-*'
-      - 'v*'
+      - "Stellar-*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., stellar-1.5)'
+        description: "Release version (e.g., Stellar-1.5)"
         required: true
-        default: 'stellar-1.5'
+        default: "stellar-1.5"
 
 permissions:
   contents: write
@@ -30,7 +29,7 @@ env:
   PROJECT_NAME: lyvoxa
   # Disable sccache to avoid GitHub Actions cache issues
   SCCACHE_GHA_ENABLED: false
-  
+
 jobs:
   # =============================================================================
   # PORTFOLIO-GRADE RELEASE BUILD
@@ -38,12 +37,12 @@ jobs:
   stellar-release:
     name: 🚀 Stellar Release Build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for changelog generation
+          fetch-depth: 0 # Full history for changelog generation
 
       - name: 🦀 Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -54,10 +53,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential openssl libssl-dev
-          
-          # Install BLAKE3 for checksums
-          cargo install b3sum
-          
+
+          # System tools for checksums (SHA256 is built-in)
+          echo "SHA256 checksum tools ready"
+
           echo "🔧 Build environment ready"
 
       - name: 🏗️ Build Optimized Release Binary
@@ -65,28 +64,28 @@ jobs:
           echo "🚀 Building Lyvoxa Stellar Edition..."
           echo "Target: x86_64-unknown-linux-gnu"
           echo "Optimization: Maximum performance"
-          
+
           # Build with GitHub Actions default cores for maximum performance
           cargo build --release --target x86_64-unknown-linux-gnu
-          
+
           # Verify binaries exist
           ls -la target/x86_64-unknown-linux-gnu/release/
-          
+
           echo "✅ Build completed successfully!"
 
       - name: 📊 Binary Analysis
         run: |
           echo "📊 Binary Analysis Report:"
           echo "=========================="
-          
+
           MAIN_BIN="target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME"
           SIMPLE_BIN="target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME-simple"
-          
+
           if [ -f "$MAIN_BIN" ]; then
             echo "Main binary size: $(du -h $MAIN_BIN | cut -f1)"
             echo "Main binary info: $(file $MAIN_BIN)"
           fi
-          
+
           if [ -f "$SIMPLE_BIN" ]; then
             echo "Simple binary size: $(du -h $SIMPLE_BIN | cut -f1)"
             echo "Simple binary info: $(file $SIMPLE_BIN)"
@@ -95,18 +94,18 @@ jobs:
       - name: 📦 Create Professional Release Package
         run: |
           echo "📦 Creating professional release package..."
-          
+
           # Determine version from tag or input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
-          
+
           echo "Version: $VERSION"
           echo "GitHub Ref: $GITHUB_REF"
           echo "Event Name: ${{ github.event_name }}"
-          
+
           # Validate version is not empty
           if [ -z "$VERSION" ]; then
             echo "❌ Error: VERSION is empty!"
@@ -114,152 +113,143 @@ jobs:
             echo "Falling back to timestamp version"
             VERSION="dev-$(date +%Y%m%d-%H%M%S)"
           fi
-          
+
           echo "Final Version: $VERSION"
-          
+
           # Create distribution directory
           mkdir -p dist/lyvoxa-$VERSION-linux-x86_64
-          
+
           # Create professional directory structure
           mkdir -p dist/lyvoxa-$VERSION-linux-x86_64/{bin,docs,config}
-          
+
           # Copy binaries to bin/
           cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME dist/lyvoxa-$VERSION-linux-x86_64/bin/
           cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME-simple dist/lyvoxa-$VERSION-linux-x86_64/bin/
-          
+
           # Copy documentation to docs/
           cp README.md dist/lyvoxa-$VERSION-linux-x86_64/
           cp LICENSE dist/lyvoxa-$VERSION-linux-x86_64/
-          
+
           # Create enhanced README for package
           cat > dist/lyvoxa-$VERSION-linux-x86_64/README.md << 'README_EOF'
           # 🌟 Lyvoxa Stellar - System Monitor
-          
+
           **High-performance system monitoring tool for Linux x86_64**
-          
+
           ## 🚀 Quick Start
-          
+
           ### Run Application:
           \`\`\`bash
           # Full TUI interface
           ./bin/lyvoxa
-          
-          # Simple terminal output  
+
+          # Simple terminal output
           ./bin/lyvoxa-simple
-          
+
           # Show version
           ./bin/lyvoxa --version
-          
+
           # Show help
           ./bin/lyvoxa --help
           \`\`\`
-          
+
           ### Installation:
           \`\`\`bash
           # Run the installer
           sudo ./install.sh
-          
+
           # Or manually copy to system PATH
           sudo cp bin/* /usr/local/bin/
           sudo chmod +x /usr/local/bin/lyvoxa*
           \`\`\`
-          
+
           ## 📋 Package Contents
-          
+
           \`\`\`
           lyvoxa-$VERSION-linux-x86_64/
           ├── bin/
           │   ├── lyvoxa           # Main TUI application
           │   └── lyvoxa-simple    # Simple CLI version
-          ├── docs/               # Documentation  
+          ├── docs/               # Documentation
           ├── config/             # Configuration templates
           ├── README.md          # This file
           ├── CHANGELOG.md       # Version history
           ├── LICENSE            # GPL-3.0 License
           └── install.sh         # Installation script
           \`\`\`
-          
+
           ## ⚙️ System Requirements
-          
-          - **OS**: Linux x86_64 (Arch Linux recommended)
+
+          - **OS**: ArchLinux or Linux x86_64 (universal)
           - **Memory**: < 2MB runtime
-          - **CPU**: Any modern x86_64 processor  
+          - **CPU**: Any modern x86_64 processor
           - **Dependencies**: None (statically linked)
-          
+
           ## 📊 Performance
-          
+
           - **Binary Size**: ~2-3 MB
           - **Memory Usage**: < 2 MB
           - **CPU Overhead**: < 1%
           - **Startup Time**: < 100ms
-          
+
           ## 🔐 Security & Verification
-          
-          This package is cryptographically signed and checksummed:
-          
+
+          This package is cryptographically checksummed with SHA256:
+
           \`\`\`bash
-          # Verify SHA512 checksum
-          sha512sum -c lyvoxa-stellar-$VERSION-linux-x86_64.tar.gz.sha512
-          
-          # Verify BLAKE3 hash
-          b3sum -c lyvoxa-stellar-$VERSION-linux-x86_64.tar.gz.blake3
-          
-          # Verify SSH signature  
-          curl -s https://github.com/oxyzenQ.keys > oxyzenQ.pub
-          ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file \\
-            -s lyvoxa-stellar-$VERSION-linux-x86_64.tar.gz.sig \\
-            < lyvoxa-stellar-$VERSION-linux-x86_64.tar.gz
+          # Verify SHA256 checksum (universal standard)
+          sha256sum -c lyvoxa-stellar-$VERSION-linux-x86_64.tar.gz.sha256
           \`\`\`
-          
+
           ## 🛠️ Build Info
-          
+
           - **Language**: Rust (stable)
           - **Target**: x86_64-unknown-linux-gnu
           - **Optimization**: Release profile with LTO
           - **Security**: Memory-safe, no undefined behavior
-          
+
           ## 📄 License
-          
+
           GPL-3.0 - see LICENSE file for details
-          
+
           ## 👥 Support
-          
+
           - **Repository**: [oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
           - **Issues**: https://github.com/oxyzenQ/lyvoxa/issues
           - **Author**: rezky_nightky
           README_EOF
-          
+
           # Create CHANGELOG.md for package
           cat > dist/lyvoxa-$VERSION-linux-x86_64/CHANGELOG.md << 'CHANGELOG_EOF'
           # Changelog
-          
+
           All notable changes to Lyvoxa will be documented in this file.
-          
+
           The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
           and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-          
+
           ## [$VERSION] - $(date +%Y-%m-%d)
-          
+
           $CHANGELOG
-          
+
           ### Security
-          - Multi-algorithm checksums (SHA512, BLAKE3, ChaCha20-HMAC)
-          - SSH cryptographic signature verification
+          - SHA256 checksum verification (universal standard)
           - Memory-safe Rust implementation
-          
-          ### Performance  
+          - Reproducible builds
+
+          ### Performance
           - Optimized release build with LTO
           - Minimal memory footprint (<2MB)
           - Fast startup time (<100ms)
-          
+
           CHANGELOG_EOF
-          
+
           # Create installation script
           cat > dist/lyvoxa-$VERSION-linux-x86_64/install.sh << 'EOF'
           #!/bin/bash
           # Lyvoxa Installation Script
           echo "🔍 Installing Lyvoxa System Monitor..."
-          
+
           # Check if running as root
           if [ "$EUID" -eq 0 ]; then
             INSTALL_DIR="/usr/local/bin"
@@ -267,12 +257,12 @@ jobs:
             INSTALL_DIR="$HOME/.local/bin"
             mkdir -p "$INSTALL_DIR"
           fi
-          
+
           # Install binaries from bin/ directory
           cp bin/lyvoxa "$INSTALL_DIR/"
           cp bin/lyvoxa-simple "$INSTALL_DIR/"
           chmod +x "$INSTALL_DIR/lyvoxa" "$INSTALL_DIR/lyvoxa-simple"
-          
+
           # Test installation
           if command -v lyvoxa >/dev/null 2>&1; then
             echo "✅ Lyvoxa installed to $INSTALL_DIR"
@@ -285,23 +275,41 @@ jobs:
             echo "   $INSTALL_DIR/lyvoxa"
           fi
           EOF
-          
+
           chmod +x dist/lyvoxa-$VERSION-linux-x86_64/install.sh
-          
-          # Create professional tar.gz
+
+          # Create optimized packages for different platforms
           cd dist
+
+          # Create .tar.gz for Linux universal (gzip compression)
+          echo "📦 Creating Linux universal package (.tar.gz)..."
           tar -czf lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa-$VERSION-linux-x86_64/
-          
-          echo "✅ Professional package created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
-          
+          echo "✅ Linux universal package created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
+
+          # Create .tar.zst for ArchLinux (zstd compression - smaller & faster)
+          echo "📦 Creating ArchLinux optimized package (.tar.zst)..."
+          if command -v zstd >/dev/null 2>&1; then
+            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 -o lyvoxa-$VERSION-linux-x86_64.tar.zst
+            echo "✅ ArchLinux optimized package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
+            echo "📊 Package sizes:"
+            ls -lh lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa-$VERSION-linux-x86_64.tar.zst | while read line; do
+              echo "  $line"
+            done
+          else
+            echo "⚠️ zstd not available, installing..."
+            sudo apt-get update && sudo apt-get install -y zstd
+            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 -o lyvoxa-$VERSION-linux-x86_64.tar.zst
+            echo "✅ ArchLinux optimized package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
+          fi
+
           # Create AppImage (alternative format)
           echo "📦 Creating AppImage alternative format..."
           mkdir -p AppDir/usr/{bin,share/applications,share/icons/hicolor/256x256/apps}
-          
+
           # Copy binaries for AppImage
           cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa AppDir/usr/bin/
           cp lyvoxa-$VERSION-linux-x86_64/bin/lyvoxa-simple AppDir/usr/bin/
-          
+
           # Create AppImage desktop file
           cat > AppDir/usr/share/applications/lyvoxa.desktop << 'DESKTOP_EOF'
           [Desktop Entry]
@@ -313,10 +321,10 @@ jobs:
           Categories=System;Monitor;
           Terminal=true
           DESKTOP_EOF
-          
+
           # Create simple icon (text-based for now)
           echo "📊" > AppDir/usr/share/icons/hicolor/256x256/apps/lyvoxa.png
-          
+
           # Create AppRun
           cat > AppDir/AppRun << 'APPRUN_EOF'
           #!/bin/bash
@@ -327,191 +335,143 @@ jobs:
           exec "${HERE}/usr/bin/lyvoxa" "$@"
           APPRUN_EOF
           chmod +x AppDir/AppRun
-          
-          # Create .zst package for Arch Linux users
-          echo "📦 Creating .zst package for Arch Linux..."
-          if command -v zstd >/dev/null 2>&1; then
-            tar -cf - lyvoxa-$VERSION-linux-x86_64/ | zstd -T0 -19 > "lyvoxa-$VERSION-linux-x86_64.tar.zst"
-            echo "✅ .zst package created: lyvoxa-$VERSION-linux-x86_64.tar.zst"
-            ls -la "lyvoxa-$VERSION-linux-x86_64.tar.zst"
-          else
-            echo "⚠️ zstd not available, skipping .zst package"
-          fi
-          
-          # Create .deb package (Debian/Ubuntu)
-          echo "📦 Creating .deb package..."
-          mkdir -p deb-package/DEBIAN
-          mkdir -p deb-package/usr/bin
-          mkdir -p deb-package/usr/share/doc/lyvoxa
-          mkdir -p deb-package/usr/share/applications
-          
-          # Copy binaries for .deb
-          cp lyvoxa-$VERSION-linux-x86_64/bin/* deb-package/usr/bin/
-          cp lyvoxa-$VERSION-linux-x86_64/README.md deb-package/usr/share/doc/lyvoxa/
-          cp lyvoxa-$VERSION-linux-x86_64/LICENSE deb-package/usr/share/doc/lyvoxa/
-          cp lyvoxa-$VERSION-linux-x86_64/CHANGELOG.md deb-package/usr/share/doc/lyvoxa/
-          
-          # Create desktop file for .deb
-          cat > deb-package/usr/share/applications/lyvoxa.desktop << 'DESKTOP_EOF'
-          [Desktop Entry]
-          Name=Lyvoxa System Monitor
-          Comment=High-performance system monitoring tool
-          Exec=lyvoxa
-          Icon=utilities-system-monitor
-          Type=Application
-          Categories=System;Monitor;
-          Terminal=true
-          DESKTOP_EOF
-          
-          # Create DEBIAN control file (clean version format)
-          DEB_VERSION=${VERSION#v}
-          cat > deb-package/DEBIAN/control << DEB_CONTROL_EOF
-          Package: lyvoxa
-          Version: $DEB_VERSION
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Maintainer: rezky_nightky <github@oxyzenQ>
-          Description: High-performance system monitoring tool
-           Lyvoxa is a modern system monitoring tool for Linux written in Rust.
-           Features include real-time CPU, memory, disk, and network monitoring
-           with both TUI and CLI interfaces.
-          Homepage: https://github.com/oxyzenQ/lyvoxa
-          DEB_CONTROL_EOF
-          
-          # Build .deb package
-          echo "🔧 Building .deb package..."
-          echo "📋 Debug: .deb structure:"
-          find deb-package -type f | head -10
-          echo "📋 Debug: control file content:"
-          cat deb-package/DEBIAN/control | head -5
-          
-          # Build .deb package with clean naming (packagename_version_architecture.deb)
-          DEB_FILENAME="lyvoxa_${DEB_VERSION}_amd64.deb"
-          if dpkg-deb --build --root-owner-group deb-package "$DEB_FILENAME"; then
-            echo "✅ .deb package created: $DEB_FILENAME"
-            ls -la "$DEB_FILENAME"
-          else
-            echo "⚠️ .deb package creation failed, showing error details..."
-            dpkg-deb --build --root-owner-group deb-package "$DEB_FILENAME" || true
-          fi
-          
-          
+
+          echo "📦 Two optimized packages created:"
+          echo "  ✅ .tar.gz - Linux universal (gzip compression)"
+          echo "  ✅ .tar.zst - ArchLinux optimized (zstd compression, smaller size)"
+
+
           # List all created files for debugging
           echo "📋 Created package files:"
           find . -name "lyvoxa*" -type f | sort
-          
+
           # Store version for later steps
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
           echo "DEB_VERSION=${VERSION#v}" >> $GITHUB_ENV
 
-      - name: 🔐 Generate Professional Checksums & Signatures
+      - name: 🔐 Generate SHA256 Checksums
         run: |
-          echo "🔐 Generating professional checksums and signatures..."
+          echo "🔐 Generating SHA256 checksums for both packages..."
           cd dist
-          
-          # Create SHA512 checksums for all packages (optimized single algorithm)
-          DEB_VERSION=${RELEASE_VERSION#v}
-          for package in lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz lyvoxa_${DEB_VERSION}_amd64.deb lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst; do
-            if [ -f "$package" ]; then
-              echo "📊 Processing: $package"
-              
-              # SHA512 for all packages (strongest algorithm, single standard)
-              sha512sum "$package" > "$package.sha512"
-              echo "  ✅ SHA512: $package.sha512"
+
+          # Create SHA256 checksums for both package types
+          PACKAGES=("lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz" "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst")
+
+          for PACKAGE in "${PACKAGES[@]}"; do
+            if [ -f "$PACKAGE" ]; then
+              echo "📊 Processing: $PACKAGE"
+
+              # Generate SHA256 checksum
+              sha256sum "$PACKAGE" > "$PACKAGE.sha256"
+              echo "  ✅ SHA256: $PACKAGE.sha256"
+
+              # Show package info
+              echo "  📋 Size: $(du -h "$PACKAGE" | cut -f1)"
             else
-              echo "⚠️ Package not found: $package"
+              echo "❌ Package not found: $PACKAGE"
+              exit 1
             fi
           done
-          
-          # Create unified checksums file (optional but professional)
+
+          # Create unified checksums file for documentation
           cat > "lyvoxa-$RELEASE_VERSION.checksums" << EOF
-          # Lyvoxa v$RELEASE_VERSION - Release Checksums
+          # Lyvoxa v$RELEASE_VERSION - Release Checksums (SHA256)
           # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           # Repository: https://github.com/oxyzenQ/lyvoxa
-          
+          #
+          # Package Types:
+          # - .tar.gz: Linux universal (gzip compression)
+          # - .tar.zst: ArchLinux optimized (zstd compression, smaller size)
+
           EOF
-          
-          # Add all SHA512 checksums to unified file
-          for checksum_file in *.sha512; do
-            if [ -f "$checksum_file" ]; then
-              echo "## $checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
-              cat "$checksum_file" >> "lyvoxa-$RELEASE_VERSION.checksums"
+
+          # Add SHA256 checksums to unified file
+          echo "## SHA256 Checksums" >> "lyvoxa-$RELEASE_VERSION.checksums"
+          for PACKAGE in "${PACKAGES[@]}"; do
+            if [ -f "$PACKAGE.sha256" ]; then
               echo "" >> "lyvoxa-$RELEASE_VERSION.checksums"
+              echo "### $PACKAGE" >> "lyvoxa-$RELEASE_VERSION.checksums"
+              cat "$PACKAGE.sha256" >> "lyvoxa-$RELEASE_VERSION.checksums"
             fi
           done
-          
-          echo "✅ Professional checksums generated (SHA512 optimized)"
-          echo "📋 Generated files:"
-          ls -la *.checksums *.sha512 2>/dev/null || true
+          echo "" >> "lyvoxa-$RELEASE_VERSION.checksums"
 
-      - name: ✍️ Professional Package Signing
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_SIGN_KEY }}
-          SSH_PASSPHRASE: ${{ secrets.SSH_SIGN_PASSPHRASE }}
+          echo "✅ SHA256 checksums generated for both packages"
+          echo "📋 Generated files:"
+          ls -la *.checksums *.sha256 2>/dev/null || true
+
+      - name: ✍️ Package Verification Guide
         run: |
-          echo "✍️ Preparing signature information..."
+          echo "✍️ Creating package verification guide..."
           cd dist
-          
-          # Create signature info file (educational, since SSH signing has issues in CI)
-          DEB_VERSION=${RELEASE_VERSION#v}
-          cat > "lyvoxa-$RELEASE_VERSION.sig.info" << EOF
+
+          # Create verification info file
+          cat > "lyvoxa-$RELEASE_VERSION.verification" << EOF
           # Lyvoxa v$RELEASE_VERSION - Package Verification Guide
           # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          
-          ## Professional Package Distribution
-          This release uses SHA512 checksums for all packages (optimized single algorithm):
-          
-          - SHA512: Strongest cryptographic hash algorithm (64-bit security)
-          - Consistent: Same verification method for all package formats
-          - Optimized: Single algorithm reduces complexity and storage
-          - Professional: Used by enterprise distributions and security-focused projects
-          
+
+          ## Dual-Package Distribution
+          This release provides two optimized packages with SHA256 checksums:
+
+          - **SHA256**: Universal cryptographic hash algorithm
+          - **Dual Formats**: Optimized for both ArchLinux (.zst) and Linux universal (.gz)
+          - **Compression**: ArchLinux uses zstd for smaller size, Linux uses gzip for compatibility
+          - **Reliable**: Industry standard for package verification
+
           ## Verification Instructions:
-          
-          ### SHA512 Checksum Verification (Recommended)
+
+          ### ArchLinux Package (Recommended for Arch users)
           \`\`\`bash
-          # Verify .deb package (Debian/Ubuntu)
-          sha512sum -c lyvoxa_${DEB_VERSION}_amd64.deb.sha512
-          
-          # Verify .zst package (Arch Linux)  
-          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512
-          
-          # Verify universal package
-          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512
-          
-          # Verify all packages at once
-          sha512sum -c lyvoxa-$RELEASE_VERSION.checksums
+          # Download ArchLinux optimized package
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
+
+          # Verify SHA256 checksum
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
+
+          # Extract (requires zstd)
+          tar -xf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
           \`\`\`
-          
+
+          ### Linux Universal Package
+          \`\`\`bash
+          # Download Linux universal package
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+
+          # Verify SHA256 checksum
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+
+          # Extract
+          tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          \`\`\`
+
           ### Repository Integrity
-          All packages are built from verified source code at:
+          Package is built from verified source code at:
           https://github.com/oxyzenQ/lyvoxa/tree/$RELEASE_VERSION
-          
+
           ### Build Reproducibility
           This release is built using GitHub Actions with:
           - Rust toolchain: stable
           - Build environment: Ubuntu 22.04
-          - Checksums: Multiple algorithms (SHA256, SHA512)
-          
+          - Checksum: SHA256 (universal standard)
+
           ## Package Formats
-          
-          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz**: Universal (all distros)
-          - **lyvoxa_$RELEASE_VERSION-1_amd64.deb**: Debian/Ubuntu native
-          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst**: Arch Linux optimized
-          
-          All packages contain the same binaries with distro-specific packaging.
+
+          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst**: ArchLinux optimized (smaller, faster)
+          - **lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz**: Linux universal (maximum compatibility)
+
+          Both packages contain identical statically linked binaries for maximum compatibility.
           EOF
-          
+
           echo "✅ Package verification guide created"
-          echo "📋 Note: SSH signing disabled due to CI environment limitations"
-          echo "📋 Checksums provide cryptographic verification of package integrity"
+          echo "📋 SHA256 provides reliable cryptographic verification"
 
       - name: 📋 Generate Changelog
         id: changelog
         run: |
           echo "📋 Generating automatic changelog..."
-          
+
           # Get previous tag for changelog
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -z "$PREV_TAG" ]; then
@@ -521,140 +481,149 @@ jobs:
             echo "📈 Generating changelog since $PREV_TAG"
             CHANGELOG=$(git log $PREV_TAG..HEAD --oneline --pretty="- %s")
           fi
-          
+
           # Save changelog to environment
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          
+
           echo "✅ Changelog generated successfully"
 
       - name: 📋 Generate Release Notes
         run: |
           echo "📋 Generating professional release notes with changelog..."
-          
+
           cat > RELEASE_NOTES.md << EOF
           # 🌟 Lyvoxa Stellar $RELEASE_VERSION
-          
+
           > **High-performance system monitoring tool for Linux x86_64**
-          
+
           ## 🚀 What's New in Stellar $RELEASE_VERSION
-          
+
           ### ✨ Key Features:
-          - **Optimized Performance**: Built with maximum optimization for production use
-          - **Enhanced Security**: Multi-algorithm checksums (SHA512, BLAKE3, ChaCha20-HMAC)
-          - **SSH Signing**: Cryptographically signed binaries for authenticity verification
+          - **Dual Package Formats**: Optimized .zst for ArchLinux, .gz for Linux universal
+          - **ArchLinux Optimized**: Smaller .zst packages with zstd compression
+          - **Universal Compatibility**: .gz packages work on all Linux x86_64 distributions
+          - **SHA256 Verification**: Industry-standard checksums for both package types
           - **Professional Packaging**: Clean installation with automated setup script
-          
+
           ### 📝 Changelog:
           $CHANGELOG
-          
+
           ## 📦 Installation
-          
+
           ### 🚀 Quick Install (Recommended)
           \`\`\`bash
           # Download and extract
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
           tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
           cd lyvoxa-$RELEASE_VERSION-linux-x86_64
-          
+
           # Install (requires sudo for system-wide installation)
           sudo ./install.sh
-          
+
           # Or install to user directory
           ./install.sh
           \`\`\`
-          
+
           ### 📦 Alternative Formats
-          
-          #### Debian/Ubuntu (.deb)
+
+          #### ArchLinux (Recommended - Smaller Size)
           \`\`\`bash
-          # Download and install .deb package
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa_$RELEASE_VERSION-1_amd64.deb
-          sudo dpkg -i lyvoxa_$RELEASE_VERSION-1_amd64.deb
-          
-          # Or with apt (if repository configured)
-          sudo apt install ./lyvoxa_$RELEASE_VERSION-1_amd64.deb
-          \`\`\`
-          
-          #### Arch Linux (.zst)
-          \`\`\`bash
-          # Download optimized .zst package (smaller size, faster)
+          # Download ArchLinux optimized package (.zst - smaller size)
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
+
+          # Verify integrity
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
+
+          # Extract and install
           tar -xf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
           cd lyvoxa-$RELEASE_VERSION-linux-x86_64
           sudo ./install.sh
+
+          #### Linux Universal (Maximum Compatibility)
+          \`\`\`bash
+          # Download Linux universal package (.gz - maximum compatibility)
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+
+          # Verify integrity
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+
+          # Extract and install
+          tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          cd lyvoxa-$RELEASE_VERSION-linux-x86_64
+          sudo ./install.sh
           \`\`\`
-          
+
           ### Manual Install
           \`\`\`bash
           # Copy binaries to your PATH
           sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
           chmod +x /usr/local/bin/lyvoxa /usr/local/bin/lyvoxa-simple
           \`\`\`
-          
+
           ## 🔐 Security Verification
-          
+
           ### Package Verification
           \`\`\`bash
-          # Verify .deb package (Debian/Ubuntu)
-          sha256sum -c lyvoxa_$RELEASE_VERSION-1_amd64.deb.sha256
-          
-          # Verify .zst package (Arch Linux)  
-          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512
-          
-          # Verify universal package
-          sha512sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512
+          # Verify ArchLinux package (.zst)
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
+
+          # Verify Linux universal package (.gz)
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+
+          # Or verify both using unified checksums file
+          sha256sum -c lyvoxa-$RELEASE_VERSION.checksums
           \`\`\`
-          
-          ### SSH Signature Verification
+
+          ### Build Verification
           \`\`\`bash
-          # Download public key
-          curl -s https://github.com/oxyzenQ.keys > oxyzenQ.pub
-          
-          # Verify signature
-          ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file \\
-            -s lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sig \\
-            < lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          # Check build information
+          ./bin/lyvoxa --version
+
+          # Verify binary architecture
+          file ./bin/lyvoxa
           \`\`\`
-          
+
           ## 🎯 System Requirements
-          
-          - **OS**: Linux x86_64 (Arch Linux recommended)
+
+          - **OS**: ArchLinux or Linux x86_64 (universal)
           - **Memory**: Minimal (< 2MB runtime)
           - **CPU**: Any modern x86_64 processor
           - **Dependencies**: None (statically linked)
-          
+
           ## 🔍 Usage
-          
+
           \`\`\`bash
           # Full TUI interface
           lyvoxa
-          
+
           # Simple terminal output
           lyvoxa-simple
           \`\`\`
-          
+
           ## 📊 Performance Metrics
-          
+
           | Metric | Value |
           |--------|-------|
           | Binary Size | ~2-3 MB |
           | Memory Usage | < 2 MB |
           | CPU Overhead | < 1% |
           | Startup Time | < 100ms |
-          
+
           ## 🛠️ Built With
-          
+
           - **Language**: Rust (stable)
           - **Target**: x86_64-unknown-linux-gnu
           - **Optimization**: Release profile with LTO
           - **Security**: Memory-safe, no undefined behavior
-          
+
           ---
-          
-          **Portfolio Project**: This release demonstrates professional software engineering practices including multi-algorithm integrity verification, cryptographic signing, and enterprise-grade packaging.
-          
+
+          **Portfolio Project**: This release demonstrates professional software engineering practices including SHA256 integrity verification, ArchLinux optimization, and enterprise-grade packaging.
+
           **Author**: rezky_nightky | **License**: GPL-3.0 | **Repository**: [oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
           EOF
 
@@ -683,32 +652,22 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: 📋 Prepare Release Files List
         run: |
           echo "📋 Preparing list of files to upload..."
           cd dist
-          
-          # Base files (always created)
+
+          # Both package formats with checksums
           FILES="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha512"
-          
-          # Package-specific checksums (SHA512 only)
-          DEB_VERSION=${RELEASE_VERSION#v}
-          [ -f "lyvoxa_${DEB_VERSION}_amd64.deb" ] && {
-            FILES="$FILES lyvoxa_${DEB_VERSION}_amd64.deb"
-            FILES="$FILES lyvoxa_${DEB_VERSION}_amd64.deb.sha512"
-          }
-          
-          [ -f "lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst" ] && {
-            FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
-            FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha512"
-          }
-          
-          # Unified files
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
+          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256"
+
+          # Documentation files
           FILES="$FILES lyvoxa-$RELEASE_VERSION.checksums"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION.sig.info"
-          
+          FILES="$FILES lyvoxa-$RELEASE_VERSION.verification"
+
           echo "Files to upload:"
           for f in $FILES; do
             if [ -f "$f" ]; then
@@ -717,7 +676,7 @@ jobs:
               echo "  ❌ $f (missing)"
             fi
           done
-          
+
           # Create upload list file
           echo "$FILES" | tr ' ' '\n' | sed 's|^|dist/|' > ../upload_files.txt
           echo "📄 Upload files list:"
@@ -735,13 +694,11 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha512
-            dist/lyvoxa_${{ env.DEB_VERSION }}_amd64.deb
-            dist/lyvoxa_${{ env.DEB_VERSION }}_amd64.deb.sha512
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.gz.sha256
             dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha512
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}-linux-x86_64.tar.zst.sha256
             dist/lyvoxa-${{ env.RELEASE_VERSION }}.checksums
-            dist/lyvoxa-${{ env.RELEASE_VERSION }}.sig.info
+            dist/lyvoxa-${{ env.RELEASE_VERSION }}.verification
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -760,13 +717,10 @@ jobs:
           name: lyvoxa-${{ env.RELEASE_VERSION }}-build-artifacts
           path: |
             dist/lyvoxa-*-linux-x86_64.tar.gz
-            dist/lyvoxa_*_amd64.deb
             dist/lyvoxa-*-linux-x86_64.tar.zst
             dist/*.sha256
-            dist/*.sha512
-            dist/*.sig
             dist/*.checksums
-            dist/*.sig.info
+            dist/*.verification
           retention-days: 1
           compression-level: 6
         if: always()
@@ -782,13 +736,16 @@ jobs:
           echo "Package: Professional tar.gz with installer"
           echo ""
           echo "🔐 Security Features:"
-          echo "- SHA512 checksum (industry standard)"
-          echo "- BLAKE3 hash (modern cryptography)"  
-          echo "- ChaCha20-HMAC (authenticity proof)"
-          echo "- SSH signature (cryptographic verification)"
+          echo "- SHA256 checksums for both package formats"
+          echo "- Reproducible builds (source verification)"
+          echo "- Memory-safe Rust implementation"
           echo ""
-          echo "📦 Release Artifacts:"
-          cd dist && ls -la lyvoxa-$RELEASE_VERSION-*
+          echo "📦 Release Packages:"
+          echo "- .tar.zst: ArchLinux optimized (zstd compression)"
+          echo "- .tar.gz: Linux universal (gzip compression)"
+          echo ""
+          echo "📊 Package Sizes:"
+          cd dist && ls -lh lyvoxa-$RELEASE_VERSION-* | grep -E '\.(tar\.gz|tar\.zst)$'
           echo ""
           echo "📤 Artifact Retention: 1 day (workflow artifacts)"
           echo "🚀 GitHub Release: Permanent (release artifacts)"
@@ -799,28 +756,28 @@ jobs:
 # =============================================================================
 # WORKFLOW FEATURES
 # =============================================================================
-# 
+#
 # 🔐 Security Features:
-#   - Multi-algorithm checksums (SHA512, BLAKE3, ChaCha20-HMAC)
-#   - SSH key signing for authenticity verification
-#   - Comprehensive integrity verification documentation
-# 
+#   - SHA256 checksum (universal standard)
+#   - Reproducible builds for source verification
+#   - Memory-safe Rust implementation
+#
 # 📦 Professional Packaging:
 #   - Clean tar.gz with version naming
 #   - Automated installation script
 #   - Complete documentation included
-# 
+#
 # 🚀 Portfolio Benefits:
 #   - Demonstrates security-first approach
 #   - Shows understanding of cryptographic verification
 #   - Enterprise-grade release process
 #   - Future-proof and extensible workflow
-# 
+#
 # 🛠️ Setup Requirements:
 #   1. Add SSH private key to GitHub Secrets as 'SSH_SIGN_KEY'
 #   2. Optional: Add HMAC key to Secrets as 'HMAC_SECRET_KEY'
 #   3. Tag releases with 'stellar-*' pattern
-# 
+#
 # ⚖️ Artifact Retention & Tips:
 #   - Default retention: Repository setting (usually 1-90 days)
 #   - Maximum limit: 90 days (GitHub Actions constraint)
@@ -834,5 +791,5 @@ jobs:
 #         retention-days: 7
 #   - Release artifacts are separate from workflow artifacts
 #   - GitHub Releases don't count toward Actions storage limits
-# 
+#
 # =============================================================================

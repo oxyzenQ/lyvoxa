@@ -1,10 +1,10 @@
 #!/bin/bash
 # Lyvoxa Professional Package Verification Script
-# Usage: ./verify-release.sh v1.5.7
+# Usage: ./verify-release.sh stellar-2.0
 
 set -e
 
-VERSION=${1:-v1.5.7}
+VERSION=${1:-stellar-2.0}
 BASE_URL="https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION"
 
 echo "🔐 Lyvoxa Release Verification - $VERSION"
@@ -16,58 +16,109 @@ cd "$TMP_DIR"
 echo "📁 Working in: $TMP_DIR"
 echo
 
-# Download packages and verification files
-echo "📥 Downloading packages and verification files..."
+# Download both package formats and verification files
+echo "📥 Downloading both package formats and verification files..."
 
-# Universal package
-echo "  → Universal package (.tar.gz)"
-curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.gz" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.gz"
-curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.gz.sha512" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.gz.sha512" || echo "    ⚠️  SHA512 not found"
+# ArchLinux optimized package (.zst)
+echo "  → ArchLinux optimized package (.tar.zst)"
+curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.zst" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.zst" || echo "    ⚠️  .zst package not found"
+curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.zst.sha256" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.zst.sha256" || echo "    ⚠️  .zst SHA256 not found"
 
-# Debian package
-echo "  → Debian package (.deb)"
-DEB_VERSION=${VERSION#v}
-curl -fsSL -o "lyvoxa_${DEB_VERSION}_amd64.deb" "$BASE_URL/lyvoxa_${DEB_VERSION}_amd64.deb" || echo "    ⚠️  .deb not found"
-curl -fsSL -o "lyvoxa_${DEB_VERSION}_amd64.deb.sha512" "$BASE_URL/lyvoxa_${DEB_VERSION}_amd64.deb.sha512" || echo "    ⚠️  .deb SHA512 not found"
+# Linux universal package (.gz)
+echo "  → Linux universal package (.tar.gz)"
+curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.gz" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.gz" || echo "    ⚠️  .gz package not found"
+curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.gz.sha256" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.gz.sha256" || echo "    ⚠️  .gz SHA256 not found"
 
-# Arch package
-echo "  → Arch package (.zst)"  
-curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.zst" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.zst" || echo "    ⚠️  .zst not found"
-curl -fsSL -o "lyvoxa-$VERSION-linux-x86_64.tar.zst.sha512" "$BASE_URL/lyvoxa-$VERSION-linux-x86_64.tar.zst.sha512" || echo "    ⚠️  .zst SHA512 not found"
-
-# Unified files
-echo "  → Unified verification files"
-curl -fsSL -o "lyvoxa-$VERSION.checksums" "$BASE_URL/lyvoxa-$VERSION.checksums" || echo "    ⚠️  Unified checksums not found"
-curl -fsSL -o "lyvoxa-$VERSION.sig.info" "$BASE_URL/lyvoxa-$VERSION.sig.info" || echo "    ⚠️  Signature info not found"
+# Verification files
+echo "  → Verification files"
+curl -fsSL -o "lyvoxa-$VERSION.checksums" "$BASE_URL/lyvoxa-$VERSION.checksums" || echo "    ⚠️  Checksums file not found"
+curl -fsSL -o "lyvoxa-$VERSION.verification" "$BASE_URL/lyvoxa-$VERSION.verification" || echo "    ⚠️  Verification guide not found"
 
 echo "✅ Download complete"
 echo
 
-# Verify checksums
-echo "🔍 Verifying SHA512 checksums..."
+# Verify SHA256 checksums for both packages
+echo "🔍 Verifying SHA256 checksums for both package formats..."
 
-# SHA512 verification for all packages
-for file in lyvoxa-$VERSION-linux-x86_64.tar.gz lyvoxa_${DEB_VERSION}_amd64.deb lyvoxa-$VERSION-linux-x86_64.tar.zst; do
-  if [ -f "$file.sha512" ]; then
-    echo "  → Verifying SHA512: $file"
-    if sha512sum -c "$file.sha512"; then
-      echo "    ✅ SHA512 verified"
+# SHA256 verification for both packages
+PACKAGES=("lyvoxa-$VERSION-linux-x86_64.tar.zst" "lyvoxa-$VERSION-linux-x86_64.tar.gz")
+VERIFIED_COUNT=0
+
+for PACKAGE in "${PACKAGES[@]}"; do
+  if [ -f "$PACKAGE" ] && [ -f "$PACKAGE.sha256" ]; then
+    echo "  → Verifying SHA256: $PACKAGE"
+    if sha256sum -c "$PACKAGE.sha256"; then
+      echo "    ✅ SHA256 verified - $(basename $PACKAGE) integrity confirmed"
+      VERIFIED_COUNT=$((VERIFIED_COUNT + 1))
+      
+      # Show package size
+      echo "    📋 Size: $(du -h "$PACKAGE" | cut -f1)"
     else
-      echo "    ❌ SHA512 failed"
+      echo "    ❌ SHA256 failed - $PACKAGE may be corrupted"
     fi
   else
-    echo "    ⚠️  SHA512 checksum not found for: $file"
+    echo "    ⚠️  Package or checksum not found for: $PACKAGE"
   fi
 done
+
+if [ $VERIFIED_COUNT -eq 0 ]; then
+  echo "    ❌ No packages could be verified"
+  exit 1
+else
+  echo "    ✅ $VERIFIED_COUNT package(s) verified successfully"
+fi
 
 # Verify unified checksums if available
 if [ -f "lyvoxa-$VERSION.checksums" ]; then
   echo "  → Verifying unified checksums file"
-  if sha512sum -c "lyvoxa-$VERSION.checksums"; then
-    echo "    ✅ All unified checksums verified"
+  if sha256sum -c "lyvoxa-$VERSION.checksums"; then
+    echo "    ✅ All checksums verified - ready for ArchLinux/Linux installation"
   else
-    echo "    ❌ Some unified checksums failed"
+    echo "    ❌ Some checksums failed"
+    exit 1
   fi
+fi
+
+# Extract and verify binary info (prefer .zst if available, fallback to .gz)
+echo
+echo "🔍 Extracting and verifying package contents..."
+
+PACKAGE_TO_EXTRACT=""
+if [ -f "lyvoxa-$VERSION-linux-x86_64.tar.zst" ]; then
+  PACKAGE_TO_EXTRACT="lyvoxa-$VERSION-linux-x86_64.tar.zst"
+  echo "  → Using ArchLinux optimized package (.zst)"
+  tar -xf "$PACKAGE_TO_EXTRACT"
+elif [ -f "lyvoxa-$VERSION-linux-x86_64.tar.gz" ]; then
+  PACKAGE_TO_EXTRACT="lyvoxa-$VERSION-linux-x86_64.tar.gz"
+  echo "  → Using Linux universal package (.gz)"
+  tar -xzf "$PACKAGE_TO_EXTRACT"
+else
+  echo "    ❌ No valid package found for extraction"
+  exit 1
+fi
+
+PACKAGE_DIR="lyvoxa-$VERSION-linux-x86_64"
+if [ -d "$PACKAGE_DIR" ]; then
+  echo "  → Package extracted successfully from $PACKAGE_TO_EXTRACT"
+  echo "  → Checking binaries:"
+  if [ -f "$PACKAGE_DIR/bin/lyvoxa" ]; then
+    file "$PACKAGE_DIR/bin/lyvoxa"
+    echo "    ✅ Main binary found and valid"
+  fi
+  if [ -f "$PACKAGE_DIR/bin/lyvoxa-simple" ]; then
+    file "$PACKAGE_DIR/bin/lyvoxa-simple" 
+    echo "    ✅ Simple binary found and valid"
+  fi
+  
+  # Show compression comparison if both packages exist
+  if [ -f "lyvoxa-$VERSION-linux-x86_64.tar.zst" ] && [ -f "lyvoxa-$VERSION-linux-x86_64.tar.gz" ]; then
+    echo "  → Package size comparison:"
+    echo "    .zst (ArchLinux): $(du -h lyvoxa-$VERSION-linux-x86_64.tar.zst | cut -f1)"
+    echo "    .gz (Universal): $(du -h lyvoxa-$VERSION-linux-x86_64.tar.gz | cut -f1)"
+  fi
+else
+  echo "    ❌ Package extraction failed"
+  exit 1
 fi
 
 echo

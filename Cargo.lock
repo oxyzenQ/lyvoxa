@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "lyvoxa"
-version = "1.5.0"
+version = "2.0.0"
 dependencies = [
  "chrono",
  "crossterm 0.27.0",

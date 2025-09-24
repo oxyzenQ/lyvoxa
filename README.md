@@ -1,8 +1,9 @@
 # 🔍 Lyvoxa - System Monitor
 
-A high-performance, low-memory system monitoring tool written in Rust, designed to be a fast alternative to other system monitors with beautiful terminal UI. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
+A high-performance, low-memory system monitoring tool written in Rust, designed for ArchLinux and universal Linux x86_64 systems. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
 
-**Current Version**: Stellar 1.5 (v1.5.0)
+**Current Version**: Stellar 2.0 (v2.0.0)
+**Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
 
 ## Features
 
@@ -12,7 +13,7 @@ A high-performance, low-memory system monitoring tool written in Rust, designed 
 - **Low memory footprint** - built with Rust for optimal performance
 - **Fast updates** - minimal latency system monitoring
 - **Beautiful TUI** - modern terminal interface using ratatui
-- **Cross-platform** - works on Linux, macOS, and Windows
+- **Universal Linux** - compatible with all Linux x86_64 distributions
 
 ## Installation & Usage
 
@@ -20,20 +21,36 @@ A high-performance, low-memory system monitoring tool written in Rust, designed 
 
 Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/lyvoxa/releases) for your platform.
 
-#### Secure Installation with Verification
+#### ArchLinux Installation (Recommended - Smaller Size)
+
 ```bash
-# Download release and verification files
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-1.5/lyvoxa-stellar-1.5-linux-x86_64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-1.5/lyvoxa-stellar-1.5-linux-x86_64.tar.gz.sha512
+# Download ArchLinux optimized package (.zst - smaller size)
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.zst
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.zst.sha256
 
-# Verify integrity (recommended)
-sha512sum -c lyvoxa-stellar-1.5-linux-x86_64.tar.gz.sha512
+# Verify integrity (SHA256 - universal standard)
+sha256sum -c lyvoxa-stellar-2.0-linux-x86_64.tar.zst.sha256
 
-# Extract and install
-tar -xzf lyvoxa-stellar-1.5-linux-x86_64.tar.gz
-cd lyvoxa-stellar-1.5-linux-x86_64
+# Extract and install (requires zstd)
+tar -xf lyvoxa-stellar-2.0-linux-x86_64.tar.zst
+cd lyvoxa-stellar-2.0-linux-x86_64
 sudo ./install.sh
 ```
+
+#### Linux Universal Installation (Maximum Compatibility)
+
+````bash
+# Download Linux universal package (.gz - maximum compatibility)
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/stellar-2.0/lyvoxa-stellar-2.0-linux-x86_64.tar.gz.sha256
+
+# Verify integrity (SHA256 - universal standard)
+sha256sum -c lyvoxa-stellar-2.0-linux-x86_64.tar.gz.sha256
+
+# Extract and install
+tar -xzf lyvoxa-stellar-2.0-linux-x86_64.tar.gz
+cd lyvoxa-stellar-2.0-linux-x86_64
+sudo ./install.sh
 
 ### Build from source
 
@@ -51,9 +68,10 @@ cd lyvoxa
 
 # Or run the simple terminal version
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa-simple
-```
+````
 
 #### Manual Build
+
 ```bash
 # Build with CPU core limits (recommended for heat control)
 cargo build --release --jobs 3 --target x86_64-unknown-linux-gnu
@@ -61,12 +79,11 @@ cargo build --release --jobs 3 --target x86_64-unknown-linux-gnu
 # Or use Make for automation
 make release
 
-# Or use bun for package management (if available)
-bun install  # Install any additional tools
 make all     # Full build cycle
 ```
 
 #### Manual Build
+
 ```bash
 # Build from source
 git clone https://github.com/oxyzenQ/lyvoxa.git
@@ -80,10 +97,12 @@ cd lyvoxa
 ### Controls
 
 **Full TUI Version:**
+
 - `q` - Quit the application
 - `Esc` - Exit the application
 
 **Simple Version:**
+
 - `Ctrl+C` - Exit the application
 
 ## Performance Benefits
@@ -100,30 +119,35 @@ This Rust-based monitor offers several advantages over traditional system monito
 Lyvoxa uses an advanced build system optimized for developer machines:
 
 ### 🔥 **Heat Control**
+
 - **CPU Core Limiting**: All builds limited to 3 cores maximum to prevent overheating
 - **Incremental Compilation**: Faster rebuilds with cached artifacts
 - **sccache Integration**: Shared compilation cache for even faster builds
 
 ### ⚡ **Performance Features**
+
 - **Target-Specific Optimization**: Builds optimized for `x86_64-unknown-linux-gnu`
 - **Link-Time Optimization (LTO)**: Smaller, faster binaries
 - **Native CPU Features**: Automatically uses your CPU's capabilities
 - **Mold Linker Support**: Faster linking when available
 
 ### 🛠️ **Build Profiles**
+
 - `debug`: Fast compilation for development
 - `release`: Maximum optimization for production
 - `release-with-debug`: Optimized with debug info for profiling
 
 ### 📦 **Reproducible Builds**
+
 - Locked Rust toolchain via `rust-toolchain.toml`
 - Dependency locking with `Cargo.lock`
 - Containerized builds with Docker
 
 ### 🔐 **Security & Integrity**
-- **Multi-Algorithm Checksums**: SHA512, BLAKE3, ChaCha20-HMAC
-- **SSH Signature Verification**: Cryptographically signed releases
-- **Tamper Detection**: Multiple verification layers
+
+- **SHA256 Checksum**: Universal standard for integrity verification
+- **Reproducible Builds**: Consistent build environment and toolchain
+- **Memory Safety**: Rust's zero-cost abstractions prevent common vulnerabilities
 - **Supply Chain Security**: Automated verification in CI/CD
 
 ## Architecture
@@ -144,13 +168,14 @@ The project is structured into two main components:
 
 ## Comparison with Other Competitors
 
-| Feature | Traditional Monitors | lyvoxa |
-|---------|---------------------|--------|
-| Memory Usage | ~2-4 MB | ~1-2 MB |
-| CPU Overhead | Medium | Low |
-| Startup Time | Fast | Very Fast |
-| Language | C/C++ | Rust |
-| Safety | Manual memory management | Memory safe |
+| Feature           | Traditional Monitors     | lyvoxa      |
+| ----------------- | ------------------------ | ----------- |
+| Memory Usage      | ~2-4 MB                  | ~1-2 MB     |
+| CPU Overhead      | Medium                   | Low         |
+| Startup Time      | Fast                     | Very Fast   |
+| Language          | C/C++                    | Rust        |
+| Safety            | Manual memory management | Memory safe |
+| ArchLinux Support | Basic                    | Optimized   |
 
 ## Future Enhancements
 
@@ -181,8 +206,9 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 For security verification instructions and best practices, see [SECURITY.md](SECURITY.md).
 
 **Release Verification:**
-- All releases include SHA512, BLAKE3, and ChaCha20-HMAC checksums
-- SSH signatures provide cryptographic authenticity proof
+
+- All releases include SHA256 checksums (universal standard)
+- Reproducible builds ensure consistent binary generation
 - Follow verification steps before installation for maximum security
 
 ## Repository

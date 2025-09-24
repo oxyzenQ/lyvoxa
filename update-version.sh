@@ -90,12 +90,17 @@ update_readme() {
     local new_semantic="$3"
     log_info "Updating README.md..."
     
-    # Update version line
-    sed -i "s/\\*\\*Current Version\\*\\*: .*/\\*\\*Current Version\\*\\*: $new_release_name $new_release_number (v$new_semantic)/" README.md
+    # Update version line (handle both formats)
+    sed -i "s/\*\*Current Version\*\*: .*/\*\*Current Version\*\*: $new_release_name $new_release_number (v$new_semantic)/" README.md
     
-    # Update download URLs
+    # Update download URLs for both package formats
     local new_tag="${new_release_name,,}-${new_release_number}"
-    sed -i "s|stellar-1\\.5|$new_tag|g" README.md
+    
+    # Update .zst package URLs (ArchLinux)
+    sed -i "s|stellar-[0-9.]\+|$new_tag|g" README.md
+    
+    # Update .gz package URLs (Linux universal)
+    sed -i "s|stellar-[0-9.]\+|$new_tag|g" README.md
     
     log_success "✅ README.md updated"
 }
@@ -123,10 +128,15 @@ update_changelog() {
 
 update_security_docs() {
     local new_tag="$1"
+    local new_release_name="$2"
+    local new_release_number="$3"
     log_info "Updating SECURITY.md..."
     
-    # Update all stellar-1.5 references
-    sed -i "s/stellar-1\\.5/$new_tag/g" SECURITY.md
+    # Update all stellar-x.x references
+    sed -i "s/stellar-[0-9.]\+/$new_tag/g" SECURITY.md
+    
+    # Update version in the last updated line
+    sed -i "s/\*\*Version\*\*: .*/\*\*Version\*\*: $new_release_name $new_release_number/" SECURITY.md
     
     log_success "✅ SECURITY.md updated"
 }
@@ -165,22 +175,36 @@ update_workflows() {
     
     # Update CI workflow
     sed -i "s/# Version: .*/# Version: $new_release_name $new_release_number/" .github/workflows/ci.yml
-    sed -i "s/stellar-1\\.5/$new_tag/g" .github/workflows/ci.yml
+    sed -i "s/stellar-[0-9.]\+/$new_tag/g" .github/workflows/ci.yml
     
     # Update release workflow
     sed -i "s/# Version: .*/# Version: $new_release_name $new_release_number/" .github/workflows/release.yml
-    sed -i "s/default: 'stellar-1\\.5'/default: '$new_tag'/" .github/workflows/release.yml
+    sed -i "s/default: 'stellar-[0-9.]\+'/default: '$new_tag'/" .github/workflows/release.yml
     
     log_success "✅ GitHub workflows updated"
+}
+
+update_verify_script() {
+    local new_tag="$1"
+    log_info "Updating verify-release.sh..."
+    
+    # Update default version in verify script
+    sed -i "s/VERSION=\${1:-stellar-[0-9.]\+}/VERSION=\${1:-$new_tag}/" verify-release.sh
+    
+    log_success "✅ verify-release.sh updated"
 }
 
 update_ssh_docs() {
     local new_tag="$1"
     log_info "Updating SSH signing documentation..."
     
-    sed -i "s/stellar-1\\.5/$new_tag/g" docs/SETUP_SSH_SIGNING.md
-    
-    log_success "✅ SSH documentation updated"
+    # Update docs if they exist
+    if [ -f "docs/SETUP_SSH_SIGNING.md" ]; then
+        sed -i "s/stellar-[0-9.]\+/$new_tag/g" docs/SETUP_SSH_SIGNING.md
+        log_success "✅ SSH documentation updated"
+    else
+        log_warning "SSH documentation not found, skipping"
+    fi
 }
 
 # Main function
@@ -234,10 +258,11 @@ main() {
     update_cargo_toml "$NEW_SEMANTIC"
     update_readme "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER" "$NEW_SEMANTIC"
     update_changelog "$NEW_SEMANTIC" "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
-    update_security_docs "$NEW_RELEASE_TAG"
+    update_security_docs "$NEW_RELEASE_TAG" "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_makefile "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_build_script "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER"
     update_workflows "$NEW_RELEASE_TAG" "$NEW_RELEASE_NAME" "$NEW_RELEASE_NUMBER" "$NEW_SEMANTIC"
+    update_verify_script "$NEW_RELEASE_TAG"
     update_ssh_docs "$NEW_RELEASE_TAG"
     
     echo ""

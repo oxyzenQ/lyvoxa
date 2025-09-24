@@ -1,15 +1,15 @@
 [package]
 name = "lyvoxa"
-version = "1.5.0"
-edition = "2021"
-description = "A high-performance system monitoring tool for Linux written in Rust"
+version = "2.0.0"
+edition = "2024"
+description = "High-performance system monitoring tool optimized for ArchLinux and Linux x86_64 integration"
 authors = ["rezky_nightky"]
 license = "GPL-3.0"
 repository = "https://github.com/oxyzenQ/lyvoxa"
 homepage = "https://github.com/oxyzenQ/lyvoxa"
 documentation = "https://github.com/oxyzenQ/lyvoxa"
 readme = "README.md"
-keywords = ["system", "monitor", "performance", "tui", "linux"]
+keywords = ["system", "monitor", "performance", "tui", "archlinux"]
 categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
@@ -34,20 +34,20 @@ humansize = "2.1"
 
 [profile.dev]
 # Development profile - Fast incremental builds with debug info
-opt-level = 0          # No optimization for faster compile times
-debug = true           # Include debug symbols
-split-debuginfo = "unpacked"  # Faster linking on Linux
-incremental = true     # Enable incremental compilation
-codegen-units = 256    # More codegen units for faster parallel compilation
+opt-level = 0                # No optimization for faster compile times
+debug = true                 # Include debug symbols
+split-debuginfo = "unpacked" # Faster linking on Linux
+incremental = true           # Enable incremental compilation
+codegen-units = 256          # More codegen units for faster parallel compilation
 
 [profile.release]
 # Release profile - Optimized for performance and size
-opt-level = 3          # Maximum optimization
-debug = false          # No debug symbols in release
-strip = true           # Strip symbols for smaller binary
-lto = "thin"           # Link-time optimization (thin for faster builds)
-codegen-units = 1      # Single codegen unit for better optimization
-panic = "abort"        # Abort on panic for smaller binary
+opt-level = 3           # Maximum optimization
+debug = false           # No debug symbols in release
+strip = true            # Strip symbols for smaller binary
+lto = "thin"            # Link-time optimization (thin for faster builds)
+codegen-units = 1       # Single codegen unit for better optimization
+panic = "abort"         # Abort on panic for smaller binary
 overflow-checks = false # Disable overflow checks for performance
 
 [profile.release-with-debug]

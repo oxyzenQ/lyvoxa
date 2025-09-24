@@ -83,8 +83,8 @@ openssl rand -hex 32
 
 ```bash
 # Tag a test release
-git tag -a test-stellar-1.5 -m "Test release for SSH signing"
-git push origin test-stellar-1.5
+git tag -a test-stellar-2.0 -m "Test release for SSH signing"
+git push origin test-stellar-2.0
 ```
 
 ### 2. Verify Workflow Execution
@@ -98,16 +98,16 @@ git push origin test-stellar-1.5
 
 ```bash
 # Download test release files
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/test-stellar-1.5/lyvoxa-test-stellar-1.5-linux-x86_64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/test-stellar-1.5/lyvoxa-test-stellar-1.5-linux-x86_64.tar.gz.sig
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/test-stellar-2.0/lyvoxa-test-stellar-2.0-linux-x86_64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/test-stellar-2.0/lyvoxa-test-stellar-2.0-linux-x86_64.tar.gz.sig
 
 # Get public key
 curl -s https://github.com/oxyzenQ.keys > oxyzenQ.pub
 
 # Verify signature
 ssh-keygen -Y verify -f oxyzenQ.pub -I file -n file \
-  -s lyvoxa-test-stellar-1.5-linux-x86_64.tar.gz.sig \
-  < lyvoxa-test-stellar-1.5-linux-x86_64.tar.gz
+  -s lyvoxa-test-stellar-2.0-linux-x86_64.tar.gz.sig \
+  < lyvoxa-test-stellar-2.0-linux-x86_64.tar.gz
 ```
 
 ## 🚨 Troubleshooting
