@@ -154,22 +154,13 @@ show_instructions() {
     fi
     
     echo ""
-    echo "2. Install binary package (faster installation):"
-    if ls lyvoxa-bin-*.pkg.tar.* >/dev/null 2>&1; then
-        BIN_PKG=$(ls lyvoxa-bin-*.pkg.tar.* | head -1)
-        echo "   sudo pacman -U $BIN_PKG"
-    else
-        echo "   (binary package not found)"
-    fi
-    
-    echo ""
     log_info "After installation, you can run:"
     echo "   lyvoxa          # Main TUI application"
     echo "   lyvoxa-simple   # Lightweight version"
     
     echo ""
     log_info "To uninstall:"
-    echo "   sudo pacman -R lyvoxa      # or lyvoxa-bin"
+    echo "   sudo pacman -R lyvoxa"
 }
 
 # Main function

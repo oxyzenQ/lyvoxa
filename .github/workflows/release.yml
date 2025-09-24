@@ -339,11 +339,9 @@ jobs:
           ## 🚀 What's New in Stellar $RELEASE_VERSION
 
           ### ✨ Key Features:
-          - **Dual Package Formats**: Optimized .zst for ArchLinux, .gz for Linux universal
-          - **ArchLinux Optimized**: Smaller .zst packages with zstd compression
-          - **Universal Compatibility**: .gz packages work on all Linux x86_64 distributions
-          - **SHA256 Verification**: Industry-standard checksums for both package types
-          - **Professional Packaging**: Clean installation with automated setup script
+          - **Universal Packaging**: Single .tar.gz for all Linux x86_64 systems
+          - **SHA256 Verification**: Industry-standard checksum for integrity
+          - **Professional Packaging**: Clean tarball + install script in docs
 
           ### 📝 Changelog:
           $CHANGELOG
@@ -351,34 +349,16 @@ jobs:
           ## 📦 Installation
 
           ### 🚀 Quick Install (Recommended)
-          \`\`\`bash
+          ```bash
           # Download and extract
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
           tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          cd lyvoxa-$RELEASE_VERSION-linux-x86_64
-
-          # Install (requires sudo for system-wide installation)
-          sudo ./install.sh
-
-          # Or install to user directory
-          ./install.sh
-          \`\`\`
+          sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
+          ```
 
           ### 📦 Alternative Formats
-
-          #### ArchLinux (Recommended - Smaller Size)
-          \`\`\`bash
-          # Download ArchLinux optimized package (.zst - smaller size)
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
-
-          # Verify integrity
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
-
-          # Extract and install
-          tar -xf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst
-          cd lyvoxa-$RELEASE_VERSION-linux-x86_64
-          sudo ./install.sh
 
           #### Linux Universal (Maximum Compatibility)
           \`\`\`bash
@@ -406,14 +386,8 @@ jobs:
 
           ### Package Verification
           \`\`\`bash
-          # Verify ArchLinux package (.zst)
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256
-
           # Verify Linux universal package (.gz)
           sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
-
-          # Or verify both using unified checksums file
-          sha256sum -c lyvoxa-$RELEASE_VERSION.checksums
           \`\`\`
 
           ### Build Verification
@@ -496,15 +470,9 @@ jobs:
           echo "📋 Preparing list of files to upload..."
           cd dist
 
-          # Both package formats with checksums
+          # Package artifacts to upload (single universal format)
           FILES="lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz"
           FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.zst.sha256"
-
-          # Documentation files
-          FILES="$FILES lyvoxa-$RELEASE_VERSION.checksums"
-          FILES="$FILES lyvoxa-$RELEASE_VERSION.verification"
 
           echo "Files to upload:"
           for f in $FILES; do
@@ -551,10 +519,7 @@ jobs:
           name: lyvoxa-${{ env.RELEASE_VERSION }}-build-artifacts
           path: |
             dist/lyvoxa-*-linux-x86_64.tar.gz
-            dist/lyvoxa-*-linux-x86_64.tar.zst
             dist/*.sha256
-            dist/*.checksums
-            dist/*.verification
           retention-days: 1
           compression-level: 6
         if: always()
@@ -566,20 +531,18 @@ jobs:
           echo "Project: Lyvoxa System Monitor"
           echo "Version: $RELEASE_VERSION"
           echo "Target: Linux x86_64"
-          echo "Security: Multi-checksum + SSH signing"
+          echo "Security: SHA256 checksum"
           echo "Package: Professional tar.gz with installer"
           echo ""
           echo "🔐 Security Features:"
-          echo "- SHA256 checksums for both package formats"
+          echo "- SHA256 checksum (universal standard)"
           echo "- Reproducible builds (source verification)"
           echo "- Memory-safe Rust implementation"
           echo ""
-          echo "📦 Release Packages:"
-          echo "- .tar.zst: ArchLinux optimized (zstd compression)"
-          echo "- .tar.gz: Linux universal (gzip compression)"
+          echo "📦 Release Package: .tar.gz (Linux universal)"
           echo ""
-          echo "📊 Package Sizes:"
-          cd dist && ls -lh lyvoxa-$RELEASE_VERSION-* | grep -E '\.(tar\.gz|tar\.zst)$'
+          echo "📊 Package Size:"
+          cd dist && ls -lh lyvoxa-$RELEASE_VERSION-*.tar.gz
           echo ""
           echo "📤 Artifact Retention: 1 day (workflow artifacts)"
           echo "🚀 GitHub Release: Permanent (release artifacts)"
