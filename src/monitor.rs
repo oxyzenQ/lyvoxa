@@ -1,9 +1,9 @@
-use sysinfo::{CpuExt, PidExt, ProcessExt, System, SystemExt};
-use procfs::{process::Stat, process::StatM};
-use users::{get_user_by_uid};
-use std::time::Instant;
+use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid as NixPid;
-use nix::sys::signal::{kill, Signal};
+use procfs::{process::Stat, process::StatM};
+use std::time::Instant;
+use sysinfo::{CpuExt, PidExt, ProcessExt, System, SystemExt};
+use users::get_user_by_uid;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -12,16 +12,16 @@ pub struct ProcessInfo {
     pub ppid: Option<u32>,
     pub user: String,
     pub command: String,
-    pub cpu_usage: f32,        // percent
-    pub mem_bytes: u64,        // RSS bytes
-    pub mem_percent: f32,      // percent
-    pub virt: u64,             // bytes
-    pub res: u64,              // bytes
-    pub shr: u64,              // bytes (best-effort)
-    pub state: char,           // process state, e.g., 'S', 'R'
+    pub cpu_usage: f32,   // percent
+    pub mem_bytes: u64,   // RSS bytes
+    pub mem_percent: f32, // percent
+    pub virt: u64,        // bytes
+    pub res: u64,         // bytes
+    pub shr: u64,         // bytes (best-effort)
+    pub state: char,      // process state, e.g., 'S', 'R'
     pub nice: i64,
     pub priority: i64,
-    pub time_total_secs: u64,  // utime + stime (seconds)
+    pub time_total_secs: u64, // utime + stime (seconds)
 }
 
 #[allow(dead_code)]
@@ -46,7 +46,11 @@ impl SystemMonitor {
         system.refresh_all();
         let cpu_count = system.cpus().len();
 
-        Self { system, cpu_count, last_net: None }
+        Self {
+            system,
+            cpu_count,
+            last_net: None,
+        }
     }
 
     pub fn refresh(&mut self) {
@@ -133,13 +137,27 @@ impl SystemMonitor {
             let mut priority = 0i64;
             let mut state = 'S';
             let mut time_total_secs = 0u64;
-            let mut command = if proc_.cmd().is_empty() { proc_.name().to_string() } else { proc_.cmd().join(" ") };
+            let mut command = if proc_.cmd().is_empty() {
+                proc_.name().to_string()
+            } else {
+                proc_.cmd().join(" ")
+            };
             let mut user = String::from("unknown");
 
             // Try procfs for richer details
             if let Ok(procfs_proc) = procfs::process::Process::new(pid_u32 as i32) {
                 if let Ok(stat) = procfs_proc.stat() {
-                    fill_from_stat(&stat, &mut ppid, &mut virt, &mut res, &mut shr, &mut nice, &mut priority, &mut state, &mut time_total_secs);
+                    fill_from_stat(
+                        &stat,
+                        &mut ppid,
+                        &mut virt,
+                        &mut res,
+                        &mut shr,
+                        &mut nice,
+                        &mut priority,
+                        &mut state,
+                        &mut time_total_secs,
+                    );
                 }
                 if let Ok(statm) = procfs_proc.statm() {
                     fill_from_statm(&statm, &mut virt, &mut res, &mut shr);
@@ -150,16 +168,16 @@ impl SystemMonitor {
                         user = uname.name().to_string_lossy().to_string();
                     }
                 }
-                if let Ok(cmdline) = procfs_proc.cmdline() {
-                    if !cmdline.is_empty() {
-                        command = cmdline.join(" ");
-                    }
+                if let Ok(cmdline) = procfs_proc.cmdline()
+                    && !cmdline.is_empty()
+                {
+                    command = cmdline.join(" ");
                 }
             }
 
             let cpu_usage = proc_.cpu_usage();
             let mem_bytes = res;
-            let mem_percent = ((mem_bytes as f64) / ((total_mem as u64) * 1024u64) as f64 * 100.0) as f32;
+            let mem_percent = ((mem_bytes as f64) / (total_mem * 1024u64) as f64 * 100.0) as f32;
 
             processes.push(ProcessInfo {
                 pid: pid_u32,
@@ -180,7 +198,11 @@ impl SystemMonitor {
         }
 
         // Sort by CPU usage (descending)
-        processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap_or(std::cmp::Ordering::Equal));
+        processes.sort_by(|a, b| {
+            b.cpu_usage
+                .partial_cmp(&a.cpu_usage)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         processes.truncate(limit);
         processes
     }
@@ -189,7 +211,9 @@ impl SystemMonitor {
         let term = name.to_lowercase();
         self.get_top_processes(usize::MAX)
             .into_iter()
-            .filter(|p| p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term))
+            .filter(|p| {
+                p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term)
+            })
             .collect()
     }
 
@@ -236,14 +260,19 @@ impl SystemMonitor {
         if let Ok(netdev) = procfs::net::dev_status() {
             for (iface, data) in netdev {
                 // skip loopback
-                if iface == "lo" { continue; }
+                if iface == "lo" {
+                    continue;
+                }
                 rx_total = rx_total.saturating_add(data.recv_bytes);
                 tx_total = tx_total.saturating_add(data.sent_bytes);
             }
         }
 
         let rates = if let Some(prev) = &self.last_net {
-            let dt = now.saturating_duration_since(prev.ts).as_secs_f64().max(0.001);
+            let dt = now
+                .saturating_duration_since(prev.ts)
+                .as_secs_f64()
+                .max(0.001);
             let rx_rate = (rx_total.saturating_sub(prev.rx_total)) as f64 / dt;
             let tx_rate = (tx_total.saturating_sub(prev.tx_total)) as f64 / dt;
             (rx_rate, tx_rate)
@@ -251,11 +280,16 @@ impl SystemMonitor {
             (0.0, 0.0)
         };
 
-        self.last_net = Some(NetSnapshot { ts: now, rx_total, tx_total });
+        self.last_net = Some(NetSnapshot {
+            ts: now,
+            rx_total,
+            tx_total,
+        });
         rates
     }
 
-    pub fn nice_increase(&self, pid: u32) -> Result<(), String> { // F8 Nice+
+    pub fn nice_increase(&self, pid: u32) -> Result<(), String> {
+        // F8 Nice+
         // Use libc directly for getpriority/setpriority since nix 0.27 doesn't have them
         unsafe {
             let cur = libc::getpriority(libc::PRIO_PROCESS, pid);
@@ -270,7 +304,8 @@ impl SystemMonitor {
         Ok(())
     }
 
-    pub fn nice_decrease(&self, pid: u32) -> Result<(), String> { // F7 Nice-
+    pub fn nice_decrease(&self, pid: u32) -> Result<(), String> {
+        // F7 Nice-
         unsafe {
             let cur = libc::getpriority(libc::PRIO_PROCESS, pid);
             if libc::getpriority(libc::PRIO_PROCESS, pid) == -1 && *libc::__errno_location() != 0 {
@@ -286,7 +321,7 @@ impl SystemMonitor {
 
     pub fn kill_process(&self, pid: u32) -> Result<(), String> {
         let npid = NixPid::from_raw(pid as i32);
-        kill(npid, Signal::SIGTERM).map_err(|e| format_nix_error(e))
+        kill(npid, Signal::SIGTERM).map_err(format_nix_error)
     }
 }
 
@@ -302,20 +337,31 @@ fn format_nix_error(e: nix::Error) -> String {
     }
 }
 
-fn fill_from_stat(stat: &Stat, ppid: &mut Option<u32>, virt: &mut u64, _res: &mut u64, _shr: &mut u64, nice: &mut i64, priority: &mut i64, state: &mut char, time_total_secs: &mut u64) {
+#[allow(clippy::too_many_arguments)]
+fn fill_from_stat(
+    stat: &Stat,
+    ppid: &mut Option<u32>,
+    virt: &mut u64,
+    _res: &mut u64,
+    _shr: &mut u64,
+    nice: &mut i64,
+    priority: &mut i64,
+    state: &mut char,
+    time_total_secs: &mut u64,
+) {
     *ppid = Some(stat.ppid as u32);
-    *nice = stat.nice as i64;
-    *priority = stat.priority as i64;
+    *nice = stat.nice;
+    *priority = stat.priority;
     *state = stat.state;
     let clk_tck = procfs::ticks_per_second();
-    let total_jiffies = (stat.utime + stat.stime) as u64;
+    let total_jiffies = stat.utime + stat.stime;
     *time_total_secs = total_jiffies / clk_tck;
     // virt/res from statm instead; here set virt as vsize if available
-    *virt = stat.vsize as u64;
+    *virt = stat.vsize;
 }
 
 fn fill_from_statm(statm: &StatM, virt: &mut u64, res: &mut u64, shr: &mut u64) {
-    let page_size = procfs::page_size() as u64;
+    let page_size = procfs::page_size();
     *virt = statm.size.saturating_mul(page_size);
     *res = statm.resident.saturating_mul(page_size);
     *shr = statm.shared.saturating_mul(page_size);

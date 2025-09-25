@@ -9,7 +9,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
-    widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, Paragraph, Row, Table, Clear},
+    widgets::{Axis, Block, Borders, Chart, Clear, Dataset, Gauge, Paragraph, Row, Table},
 };
 use std::{
     collections::VecDeque,
@@ -28,10 +28,22 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum SortKey { Cpu, Mem, Pid, User, Command }
+enum SortKey {
+    Cpu,
+    Mem,
+    Pid,
+    User,
+    Command,
+}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum Overlay { None, Help, Setup, Search, Filter }
+enum Overlay {
+    None,
+    Help,
+    Setup,
+    Search,
+    Filter,
+}
 
 fn print_help() {
     println!(
@@ -190,19 +202,27 @@ impl App {
             // Update CPU history
             let cpu_usage = self.monitor.get_global_cpu_usage();
             self.cpu_history.push_back(cpu_usage);
-            if self.cpu_history.len() > 120 { self.cpu_history.pop_front(); }
+            if self.cpu_history.len() > 120 {
+                self.cpu_history.pop_front();
+            }
 
             // Update memory history
             let memory_usage = self.monitor.get_memory_usage_percent();
             self.memory_history.push_back(memory_usage);
-            if self.memory_history.len() > 120 { self.memory_history.pop_front(); }
+            if self.memory_history.len() > 120 {
+                self.memory_history.pop_front();
+            }
 
             // Update network history (bytes/sec)
             let (rx, tx) = self.monitor.get_network_rates();
             self.net_rx_history.push_back(rx);
             self.net_tx_history.push_back(tx);
-            if self.net_rx_history.len() > 120 { self.net_rx_history.pop_front(); }
-            if self.net_tx_history.len() > 120 { self.net_tx_history.pop_front(); }
+            if self.net_rx_history.len() > 120 {
+                self.net_rx_history.pop_front();
+            }
+            if self.net_tx_history.len() > 120 {
+                self.net_tx_history.pop_front();
+            }
 
             self.last_update = Instant::now();
         }
@@ -212,18 +232,29 @@ impl App {
         match self.overlay {
             Overlay::Search | Overlay::Filter => {
                 match key.code {
-                    KeyCode::Esc => { self.overlay = Overlay::None; self.input_buffer.clear(); }
+                    KeyCode::Esc => {
+                        self.overlay = Overlay::None;
+                        self.input_buffer.clear();
+                    }
                     KeyCode::Enter => {
                         match self.overlay {
-                            Overlay::Search => { self.search = self.input_buffer.clone(); }
-                            Overlay::Filter => { self.filter = self.input_buffer.clone(); }
+                            Overlay::Search => {
+                                self.search = self.input_buffer.clone();
+                            }
+                            Overlay::Filter => {
+                                self.filter = self.input_buffer.clone();
+                            }
                             _ => {}
                         }
                         self.overlay = Overlay::None;
                         self.input_buffer.clear();
                     }
-                    KeyCode::Backspace => { self.input_buffer.pop(); }
-                    KeyCode::Char(c) => { self.input_buffer.push(c); }
+                    KeyCode::Backspace => {
+                        self.input_buffer.pop();
+                    }
+                    KeyCode::Char(c) => {
+                        self.input_buffer.push(c);
+                    }
                     _ => {}
                 }
                 return;
@@ -233,19 +264,55 @@ impl App {
 
         match key.code {
             KeyCode::Char('q') | KeyCode::F(10) => self.should_quit = true,
-            KeyCode::Up => { if self.selected > 0 { self.selected -= 1; }}
-            KeyCode::Down => { self.selected = self.selected.saturating_add(1); }
-            KeyCode::F(1) => { self.overlay = Overlay::Help; }
-            KeyCode::F(2) => { self.overlay = Overlay::Setup; }
-            KeyCode::F(3) => { self.overlay = Overlay::Search; self.input_buffer = String::new(); }
-            KeyCode::F(4) => { self.overlay = Overlay::Filter; self.input_buffer = self.filter.clone(); }
-            KeyCode::F(5) => { self.tree_view = !self.tree_view; }
-            KeyCode::F(6) => { self.sort_key = match self.sort_key { SortKey::Cpu => SortKey::Mem, SortKey::Mem => SortKey::Pid, SortKey::Pid => SortKey::User, SortKey::User => SortKey::Command, SortKey::Command => SortKey::Cpu }; }
-            KeyCode::F(7) => { self.adjust_nice(false); }
-            KeyCode::F(8) => { self.adjust_nice(true); }
-            KeyCode::F(9) => { self.kill_selected(); }
-            KeyCode::F(11) => { self.cycle_theme(false); }
-            KeyCode::F(12) => { self.cycle_theme(true); }
+            KeyCode::Up => {
+                if self.selected > 0 {
+                    self.selected -= 1;
+                }
+            }
+            KeyCode::Down => {
+                self.selected = self.selected.saturating_add(1);
+            }
+            KeyCode::F(1) => {
+                self.overlay = Overlay::Help;
+            }
+            KeyCode::F(2) => {
+                self.overlay = Overlay::Setup;
+            }
+            KeyCode::F(3) => {
+                self.overlay = Overlay::Search;
+                self.input_buffer = String::new();
+            }
+            KeyCode::F(4) => {
+                self.overlay = Overlay::Filter;
+                self.input_buffer = self.filter.clone();
+            }
+            KeyCode::F(5) => {
+                self.tree_view = !self.tree_view;
+            }
+            KeyCode::F(6) => {
+                self.sort_key = match self.sort_key {
+                    SortKey::Cpu => SortKey::Mem,
+                    SortKey::Mem => SortKey::Pid,
+                    SortKey::Pid => SortKey::User,
+                    SortKey::User => SortKey::Command,
+                    SortKey::Command => SortKey::Cpu,
+                };
+            }
+            KeyCode::F(7) => {
+                self.adjust_nice(false);
+            }
+            KeyCode::F(8) => {
+                self.adjust_nice(true);
+            }
+            KeyCode::F(9) => {
+                self.kill_selected();
+            }
+            KeyCode::F(11) => {
+                self.cycle_theme(false);
+            }
+            KeyCode::F(12) => {
+                self.cycle_theme(true);
+            }
             _ => {}
         }
     }
@@ -254,37 +321,57 @@ impl App {
         let mut procs = self.monitor.get_top_processes(200);
         if !self.filter.is_empty() {
             let term = self.filter.to_lowercase();
-            procs.retain(|p| p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term));
+            procs.retain(|p| {
+                p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term)
+            });
         }
         match self.sort_key {
-            SortKey::Cpu => procs.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap_or(std::cmp::Ordering::Equal)),
+            SortKey::Cpu => procs.sort_by(|a, b| {
+                b.cpu_usage
+                    .partial_cmp(&a.cpu_usage)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }),
             SortKey::Mem => procs.sort_by(|a, b| b.mem_bytes.cmp(&a.mem_bytes)),
             SortKey::Pid => procs.sort_by(|a, b| a.pid.cmp(&b.pid)),
             SortKey::User => procs.sort_by(|a, b| a.user.cmp(&b.user)),
             SortKey::Command => procs.sort_by(|a, b| a.command.cmp(&b.command)),
         }
-        if procs.len() > limit { procs.truncate(limit); }
+        if procs.len() > limit {
+            procs.truncate(limit);
+        }
         procs
     }
 
     fn selected_pid(&self) -> Option<u32> {
         let list = self.collect_processes(200);
-        if list.is_empty() { return None; }
+        if list.is_empty() {
+            return None;
+        }
         let idx = self.selected.min(list.len().saturating_sub(1));
         Some(list[idx].pid)
     }
 
     fn adjust_nice(&mut self, increase: bool) {
         if let Some(pid) = self.selected_pid() {
-            let res = if increase { self.monitor.nice_increase(pid) } else { self.monitor.nice_decrease(pid) };
-            self.status_message = Some(match res { Ok(_) => format!("Nice adjusted for PID {}", pid), Err(e) => format!("Nice change failed: {}", e) });
+            let res = if increase {
+                self.monitor.nice_increase(pid)
+            } else {
+                self.monitor.nice_decrease(pid)
+            };
+            self.status_message = Some(match res {
+                Ok(_) => format!("Nice adjusted for PID {}", pid),
+                Err(e) => format!("Nice change failed: {}", e),
+            });
         }
     }
 
     fn kill_selected(&mut self) {
         if let Some(pid) = self.selected_pid() {
             let res = self.monitor.kill_process(pid);
-            self.status_message = Some(match res { Ok(_) => format!("Sent SIGTERM to PID {}", pid), Err(e) => format!("Kill failed: {}", e) });
+            self.status_message = Some(match res {
+                Ok(_) => format!("Sent SIGTERM to PID {}", pid),
+                Err(e) => format!("Kill failed: {}", e),
+            });
         }
     }
 }
@@ -302,11 +389,10 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
-        if crossterm::event::poll(timeout)? {
-            match event::read()? {
-                Event::Key(key) => app.handle_key(key),
-                _ => {}
-            }
+        if crossterm::event::poll(timeout)?
+            && let Event::Key(key) = event::read()?
+        {
+            app.handle_key(key)
         }
 
         if last_tick.elapsed() >= tick_rate {
@@ -339,12 +425,21 @@ fn ui(f: &mut Frame, app: &App) {
         VERSION,
         app.theme_kind,
         app.sort_key,
-        if app.filter.is_empty() { "(none)".to_string() } else { app.filter.clone() },
+        if app.filter.is_empty() {
+            "(none)".to_string()
+        } else {
+            app.filter.clone()
+        },
         app.status_message.clone().unwrap_or_default()
     );
     let header = Paragraph::new(header_text)
         .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
-        .block(Block::default().borders(Borders::ALL).title("Lyvoxa - F1 Help | F10 Quit").style(Style::default().fg(app.theme.accent)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Lyvoxa - F1 Help | F10 Quit")
+                .style(Style::default().fg(app.theme.accent)),
+        );
     f.render_widget(header, chunks[0]);
 
     // CPU and Memory info layout
@@ -385,14 +480,22 @@ fn ui(f: &mut Frame, app: &App) {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(chunks[2]);
     // Left column 0..n/2, Right column n/2..n
-    let halfway = (n + 1) / 2;
+    let halfway = n.div_ceil(2);
     let left_rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints((0..halfway).map(|_| Constraint::Length(1)).collect::<Vec<_>>())
+        .constraints(
+            (0..halfway)
+                .map(|_| Constraint::Length(1))
+                .collect::<Vec<_>>(),
+        )
         .split(grid[0]);
     let right_rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints((0..(n - halfway)).map(|_| Constraint::Length(1)).collect::<Vec<_>>())
+        .constraints(
+            (0..(n - halfway))
+                .map(|_| Constraint::Length(1))
+                .collect::<Vec<_>>(),
+        )
         .split(grid[1]);
     for (i, &val) in per_core.iter().take(halfway).enumerate() {
         let g = Gauge::default()
@@ -464,7 +567,11 @@ fn ui(f: &mut Frame, app: &App) {
         ];
 
         let memory_chart = Chart::new(datasets)
-            .block(Block::default().title("Memory History").borders(Borders::ALL))
+            .block(
+                Block::default()
+                    .title("Memory History")
+                    .borders(Borders::ALL),
+            )
             .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
             .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
         f.render_widget(memory_chart, chart_chunks[1]);
@@ -485,8 +592,16 @@ fn ui(f: &mut Frame, app: &App) {
             .map(|(i, &v)| (i as f64, v))
             .collect();
         let datasets = vec![
-            Dataset::default().name("RX B/s").marker(symbols::Marker::Dot).style(Style::default().fg(app.theme.net_rx)).data(&rx_data),
-            Dataset::default().name("TX B/s").marker(symbols::Marker::Dot).style(Style::default().fg(app.theme.net_tx)).data(&tx_data),
+            Dataset::default()
+                .name("RX B/s")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(app.theme.net_rx))
+                .data(&rx_data),
+            Dataset::default()
+                .name("TX B/s")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(app.theme.net_tx))
+                .data(&tx_data),
         ];
         // Determine max for bounds
         let max_val = app
@@ -498,7 +613,11 @@ fn ui(f: &mut Frame, app: &App) {
         let net_chart = Chart::new(datasets)
             .block(Block::default().title("Network B/s").borders(Borders::ALL))
             .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
-            .y_axis(Axis::default().title("Bytes/s").bounds([0.0, max_val * 1.2]));
+            .y_axis(
+                Axis::default()
+                    .title("Bytes/s")
+                    .bounds([0.0, max_val * 1.2]),
+            );
         f.render_widget(net_chart, chart_chunks[2]);
     }
 
@@ -509,7 +628,12 @@ fn ui(f: &mut Frame, app: &App) {
         .iter()
         .enumerate()
         .map(|(idx, p)| {
-            let fmt_time = format!("{:02}:{:02}:{:02}", p.time_total_secs/3600, (p.time_total_secs/60)%60, p.time_total_secs%60);
+            let fmt_time = format!(
+                "{:02}:{:02}:{:02}",
+                p.time_total_secs / 3600,
+                (p.time_total_secs / 60) % 60,
+                p.time_total_secs % 60
+            );
             let row = Row::new(vec![
                 p.nice.to_string(),
                 p.priority.to_string(),
@@ -524,32 +648,42 @@ fn ui(f: &mut Frame, app: &App) {
                 humansize::format_size(p.shr, humansize::DECIMAL),
                 p.state.to_string(),
             ]);
-            if idx == selected { row.style(Style::default().bg(app.theme.selection_bg)) } else { row }
+            if idx == selected {
+                row.style(Style::default().bg(app.theme.selection_bg))
+            } else {
+                row
+            }
         })
         .collect();
 
     let process_table = Table::new(
         process_items,
         [
-            Constraint::Length(4),   // NI
-            Constraint::Length(4),   // PRI
-            Constraint::Length(7),   // PID
-            Constraint::Length(10),  // USER
-            Constraint::Min(24),     // COMMAND
-            Constraint::Length(9),   // TIME
-            Constraint::Length(10),  // MEM
-            Constraint::Length(7),   // CPU%
-            Constraint::Length(10),  // VIRT
-            Constraint::Length(10),  // RES
-            Constraint::Length(10),  // SHR
-            Constraint::Length(3),   // S
+            Constraint::Length(4),  // NI
+            Constraint::Length(4),  // PRI
+            Constraint::Length(7),  // PID
+            Constraint::Length(10), // USER
+            Constraint::Min(24),    // COMMAND
+            Constraint::Length(9),  // TIME
+            Constraint::Length(10), // MEM
+            Constraint::Length(7),  // CPU%
+            Constraint::Length(10), // VIRT
+            Constraint::Length(10), // RES
+            Constraint::Length(10), // SHR
+            Constraint::Length(3),  // S
         ],
     )
     .header(
-        Row::new(vec!["NI","PRI","PID","USER","COMMAND","TIME","MEM","CPU%","VIRT","RES","SHR","S"]) 
-            .style(Style::default().fg(app.theme.table_header)),
+        Row::new(vec![
+            "NI", "PRI", "PID", "USER", "COMMAND", "TIME", "MEM", "CPU%", "VIRT", "RES", "SHR", "S",
+        ])
+        .style(Style::default().fg(app.theme.table_header)),
     )
-    .block(Block::default().borders(Borders::ALL).title("Processes (F3 Search, F4 Filter, F6 Sort, F7/F8 Nice, F9 Kill)"));
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Processes (F3 Search, F4 Filter, F6 Sort, F7/F8 Nice, F9 Kill)"),
+    );
     f.render_widget(process_table, chunks[4]);
 
     // Overlays
@@ -558,35 +692,73 @@ fn ui(f: &mut Frame, app: &App) {
             let area = centered_rect(70, 60, f.area());
             let help_text = "F1 Help  F2 Setup  F3 Search  F4 Filter  F5 Tree  F6 Sort  F7 Nice-  F8 Nice+  F9 Kill  F10 Quit\n\nArrows: Navigate selection\nEnter: Confirm in dialogs\nEsc: Close overlays\n\nF11/F12: Cycle themes (extra)\n";
             f.render_widget(Clear, area);
-            let p = Paragraph::new(help_text).style(Style::default().fg(app.theme.fg).bg(app.theme.bg)).block(Block::default().borders(Borders::ALL).title("Help").style(Style::default().fg(app.theme.accent)));
+            let p = Paragraph::new(help_text)
+                .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Help")
+                        .style(Style::default().fg(app.theme.accent)),
+                );
             f.render_widget(p, area);
         }
         Overlay::Setup => {
             let area = centered_rect(60, 40, f.area());
             let setup_text = "Setup (placeholder)\n- Theme: use F11/F12\n- Sorting: F6\n- Filters: F4\n- Search: F3\n";
             f.render_widget(Clear, area);
-            let p = Paragraph::new(setup_text).style(Style::default().fg(app.theme.fg).bg(app.theme.bg)).block(Block::default().borders(Borders::ALL).title("Setup").style(Style::default().fg(app.theme.accent)));
+            let p = Paragraph::new(setup_text)
+                .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Setup")
+                        .style(Style::default().fg(app.theme.accent)),
+                );
             f.render_widget(p, area);
         }
         Overlay::Search => {
             let area = centered_rect(60, 30, f.area());
-            let text = format!("Search query: {}\nPress Enter to apply or Esc to cancel", app.input_buffer);
+            let text = format!(
+                "Search query: {}\nPress Enter to apply or Esc to cancel",
+                app.input_buffer
+            );
             f.render_widget(Clear, area);
-            let p = Paragraph::new(text).style(Style::default().fg(app.theme.fg).bg(app.theme.bg)).block(Block::default().borders(Borders::ALL).title("Search").style(Style::default().fg(app.theme.accent)));
+            let p = Paragraph::new(text)
+                .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Search")
+                        .style(Style::default().fg(app.theme.accent)),
+                );
             f.render_widget(p, area);
         }
         Overlay::Filter => {
             let area = centered_rect(60, 30, f.area());
-            let text = format!("Filter term: {}\nPress Enter to apply or Esc to cancel", app.input_buffer);
+            let text = format!(
+                "Filter term: {}\nPress Enter to apply or Esc to cancel",
+                app.input_buffer
+            );
             f.render_widget(Clear, area);
-            let p = Paragraph::new(text).style(Style::default().fg(app.theme.fg).bg(app.theme.bg)).block(Block::default().borders(Borders::ALL).title("Filter").style(Style::default().fg(app.theme.accent)));
+            let p = Paragraph::new(text)
+                .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Filter")
+                        .style(Style::default().fg(app.theme.accent)),
+                );
             f.render_widget(p, area);
         }
         Overlay::None => {}
     }
 }
 
-fn centered_rect(percent_x: u16, percent_y: u16, r: ratatui::layout::Rect) -> ratatui::layout::Rect {
+fn centered_rect(
+    percent_x: u16,
+    percent_y: u16,
+    r: ratatui::layout::Rect,
+) -> ratatui::layout::Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
