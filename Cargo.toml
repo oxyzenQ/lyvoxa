@@ -16,10 +16,6 @@ categories = ["command-line-utilities", "development-tools"]
 name = "lyvoxa"
 path = "src/main.rs"
 
-[[bin]]
-name = "lyvoxa-simple"
-path = "src/simple.rs"
-
 [dependencies]
 sysinfo = "0.29"
 crossterm = "0.27"
@@ -27,6 +23,10 @@ ratatui = "0.30.0-alpha.5"
 tokio = { version = "1.0", features = ["full"] }
 chrono = "0.4"
 humansize = "2.1"
+procfs = "0.16"
+users = "0.11"
+nix = { version = "0.27", features = ["signal", "resource"] }
+libc = "0.2"
 
 # =============================================================================
 # BUILD PROFILES - OPTIMIZED FOR LYVOXA

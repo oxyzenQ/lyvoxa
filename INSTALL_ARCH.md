@@ -32,10 +32,9 @@ tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 
 # Run directly
 ./lyvoxa --version
-./lyvoxa-simple --version
 
 # Optional: Copy to PATH
-sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
+sudo cp lyvoxa /usr/local/bin/
 ```
 
 ### Method 2: Build Proper Arch Package (Recommended)
@@ -97,8 +96,6 @@ tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 # Main TUI application
 lyvoxa
 
-# Lightweight version
-lyvoxa-simple
 
 # Check version
 lyvoxa --version
@@ -114,7 +111,7 @@ lyvoxa --help
 sudo pacman -R lyvoxa      # Source package
 
 # If copied to /usr/local/bin
-sudo rm /usr/local/bin/lyvoxa /usr/local/bin/lyvoxa-simple
+sudo rm /usr/local/bin/lyvoxa
 ```
 
 ## 🛠️ Building Your Own Package
@@ -135,7 +132,6 @@ make arch-pkg-clean     # Clean build artifacts
 
 The source package installs:
 - `/usr/bin/lyvoxa` - Main TUI application
-- `/usr/bin/lyvoxa-simple` - Lightweight version
 - `/usr/share/doc/lyvoxa/` - Documentation
 - `/usr/share/licenses/lyvoxa/` - License files
 - Shell completions (if available)

@@ -148,14 +148,11 @@ jobs:
           # Full TUI interface
           ./bin/lyvoxa
 
-          # Simple terminal output
-          ./bin/lyvoxa-simple
+          # Show help
+          ./bin/lyvoxa --help
 
           # Show version
           ./bin/lyvoxa --version
-
-          # Show help
-          ./bin/lyvoxa --help
           \`\`\`
 
           ### Installation:
@@ -173,8 +170,7 @@ jobs:
           \`\`\`
           lyvoxa-$VERSION-linux-x86_64/
           ├── bin/
-          │   ├── lyvoxa           # Main TUI application
-          │   └── lyvoxa-simple    # Simple CLI version
+          │   └── lyvoxa           # TUI system monitor
           ├── docs/               # Documentation
           ├── config/             # Configuration templates
           ├── README.md          # This file
@@ -263,10 +259,9 @@ jobs:
             mkdir -p "$INSTALL_DIR"
           fi
 
-          # Install binaries from bin/ directory
+          # Install binary from bin/ directory
           cp bin/lyvoxa "$INSTALL_DIR/"
-          cp bin/lyvoxa-simple "$INSTALL_DIR/"
-          chmod +x "$INSTALL_DIR/lyvoxa" "$INSTALL_DIR/lyvoxa-simple"
+          chmod +x "$INSTALL_DIR/lyvoxa"
 
           # Test installation
           if command -v lyvoxa >/dev/null 2>&1; then
@@ -290,7 +285,7 @@ jobs:
           echo "📦 Creating release package..."
 
           # Create standard .tar.gz (universal compatibility)  
-          tar -czf "lyvoxa-$VERSION-linux-x86_64.tar.gz" -C lyvoxa-$VERSION-linux-x86_64/bin lyvoxa lyvoxa-simple
+          tar -czf "lyvoxa-$VERSION-linux-x86_64.tar.gz" -C lyvoxa-$VERSION-linux-x86_64/bin lyvoxa
           echo "✅ Created: lyvoxa-$VERSION-linux-x86_64.tar.gz"
 
           # Generate SHA256 checksum
@@ -378,8 +373,8 @@ jobs:
           ### Manual Install
           \`\`\`bash
           # Copy binaries to your PATH
-          sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
-          chmod +x /usr/local/bin/lyvoxa /usr/local/bin/lyvoxa-simple
+          sudo cp lyvoxa /usr/local/bin/
+          chmod +x /usr/local/bin/lyvoxa
           \`\`\`
 
           ## 🔐 Security Verification
@@ -412,8 +407,8 @@ jobs:
           # Full TUI interface
           lyvoxa
 
-          # Simple terminal output
-          lyvoxa-simple
+          # Display help
+          lyvoxa --help
           \`\`\`
 
           ## 📊 Performance Metrics

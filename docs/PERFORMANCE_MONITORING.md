@@ -10,7 +10,6 @@ The Performance Monitoring job runs automatically on pushes to the `main` branch
 
 ### Binary Size Analysis
 - **Main Binary (`lyvoxa`)**: Full TUI application with all features
-- **Simple Binary (`lyvoxa-simple`)**: Lightweight version for basic monitoring
 - **Total Package Size**: Combined size for distribution planning
 
 ### Binary Validation
@@ -30,7 +29,6 @@ The Performance Monitoring job runs automatically on pushes to the `main` branch
 ```bash
 📊 Typical Binary Sizes:
 - lyvoxa: ~1.2MB (Full TUI application)
-- lyvoxa-simple: ~636KB (Lightweight version)
 - Total: ~1.8MB (Complete package)
 ```
 
@@ -44,7 +42,6 @@ The Performance Monitoring job runs automatically on pushes to the `main` branch
 📈 Binary Information:
 =====================
 lyvoxa: ELF 64-bit LSB executable, x86-64, dynamically linked, stripped
-lyvoxa-simple: ELF 64-bit LSB executable, x86-64, dynamically linked, stripped
 
 🔍 Binary Dependencies:
 ======================
@@ -59,7 +56,6 @@ Total size: 1.8M
 🧪 Binary Validation:
 ====================
 ✅ lyvoxa: Valid ELF binary
-✅ lyvoxa-simple: Valid ELF binary
 
 🎯 Performance Summary:
 ======================
@@ -92,7 +88,6 @@ For pull requests, performance data is automatically commented:
 | Binary | Size | Description |
 |--------|------|-------------|
 | **lyvoxa** | **1.2M** | Main TUI application |
-| **lyvoxa-simple** | **636K** | Lightweight version |
 | **Total** | **1.8M** | Combined package size |
 
 ### 🔍 Binary Details

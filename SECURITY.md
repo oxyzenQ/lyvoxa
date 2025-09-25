@@ -58,11 +58,9 @@ cd lyvoxa-stellar-2.0-linux-x86_64
 
 # Check binary architecture and linking
 file bin/lyvoxa
-file bin/lyvoxa-simple
 
 # Verify version information
 ./bin/lyvoxa --version
-./bin/lyvoxa-simple --version
 ```
 
 ## 🔍 Security Best Practices

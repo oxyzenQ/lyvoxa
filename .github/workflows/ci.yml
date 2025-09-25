@@ -134,7 +134,6 @@ jobs:
           ls -la target/x86_64-unknown-linux-gnu/debug/
           echo "Debug binary sizes:"
           du -h target/x86_64-unknown-linux-gnu/debug/lyvoxa
-          du -h target/x86_64-unknown-linux-gnu/debug/lyvoxa-simple
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
@@ -142,7 +141,6 @@ jobs:
           name: lyvoxa-linux-x86_64
           path: |
             target/x86_64-unknown-linux-gnu/debug/lyvoxa
-            target/x86_64-unknown-linux-gnu/debug/lyvoxa-simple
           retention-days: 30
 
       - name: Show sccache stats
@@ -207,7 +205,7 @@ jobs:
 
       - name: Run debug build validation
         run: |
-          chmod +x artifacts/lyvoxa artifacts/lyvoxa-simple
+          chmod +x artifacts/lyvoxa
 
           echo "📊 Debug Build Analysis:"
           echo "========================="
@@ -220,7 +218,6 @@ jobs:
           echo "📈 Binary Information:"
           echo "====================="
           file artifacts/lyvoxa
-          file artifacts/lyvoxa-simple
           echo ""
 
           echo "🔍 Binary Dependencies:"
@@ -230,14 +227,11 @@ jobs:
 
           echo "🧪 Debug Build Validation:"
           echo "=========================="
-          echo "Main binary: $(du -h artifacts/lyvoxa | cut -f1)"
-          echo "Simple binary: $(du -h artifacts/lyvoxa-simple | cut -f1)"
+          echo "Binary size: $(du -h artifacts/lyvoxa | cut -f1)"
 
           # Calculate compression ratio
           MAIN_SIZE=$(stat -c%s artifacts/lyvoxa)
-          SIMPLE_SIZE=$(stat -c%s artifacts/lyvoxa-simple)
-          TOTAL_SIZE=$((MAIN_SIZE + SIMPLE_SIZE))
-          echo "Total size: $(numfmt --to=iec $TOTAL_SIZE)"
+          echo "Binary size: $(numfmt --to=iec $MAIN_SIZE)"
 
           # Basic validation (check if binaries are valid ELF)
           echo ""
@@ -250,12 +244,6 @@ jobs:
             exit 1
           fi
 
-          if readelf -h artifacts/lyvoxa-simple > /dev/null 2>&1; then
-            echo "✅ lyvoxa-simple: Valid ELF binary"
-          else
-            echo "❌ lyvoxa-simple: Invalid binary"
-            exit 1
-          fi
 
           echo ""
           echo "🎯 Performance Summary:"
@@ -274,7 +262,6 @@ jobs:
 
             try {
               const binarySize = execSync('du -h artifacts/lyvoxa | cut -f1').toString().trim();
-              const simpleBinarySize = execSync('du -h artifacts/lyvoxa-simple | cut -f1').toString().trim();
               const totalSize = execSync('du -ch artifacts/* | tail -1 | cut -f1').toString().trim();
 
               // Get binary info
@@ -286,8 +273,7 @@ jobs:
               ### 📦 Debug Binary Sizes
               | Binary | Size | Description |
               |--------|------|-------------|
-              | **lyvoxa** | **${binarySize}** | Main TUI application (debug) |
-              | **lyvoxa-simple** | **${simpleBinarySize}** | Lightweight version (debug) |
+              | **lyvoxa** | **${binarySize}** | TUI system monitor (debug) |
               | **Total** | **${totalSize}** | Combined debug package size |
 
               ### 🔍 Binary Details

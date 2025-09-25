@@ -155,8 +155,7 @@ show_instructions() {
     
     echo ""
     log_info "After installation, you can run:"
-    echo "   lyvoxa          # Main TUI application"
-    echo "   lyvoxa-simple   # Lightweight version"
+    echo "   lyvoxa          # TUI system monitor"
     
     echo ""
     log_info "To uninstall:"

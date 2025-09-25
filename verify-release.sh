@@ -77,7 +77,6 @@ fi
 if [ -f "lyvoxa" ]; then
   echo "  → Checking binaries:"
   file "lyvoxa" || true
-  [ -f "lyvoxa-simple" ] && file "lyvoxa-simple" || true
   echo "    ✅ Binaries found and inspected"
 else
   echo "    ❌ Expected binaries not found after extraction"

@@ -1,19 +1,42 @@
-# 🔍 Lyvoxa - System Monitor
+# 🌟 Lyvoxa Stellar - Futuristic System Monitor
 
-A high-performance, low-memory system monitoring tool written in Rust, designed for ArchLinux and universal Linux x86_64 systems. Lyvoxa provides real-time insights into your machine's performance with minimal resource overhead.
+A next-generation system monitoring tool built in Rust, designed as a futuristic alternative to htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and stunning visual themes optimized for ArchLinux and universal Linux x86_64 systems.
 
 **Current Version**: Stellar 2.0 (v2.0.0)
 **Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
 
-## Features
+## ✨ Features
 
-- **Real-time CPU monitoring** with usage graphs
-- **Memory usage tracking** with visual indicators
-- **Process listing** sorted by CPU usage
-- **Low memory footprint** - built with Rust for optimal performance
-- **Fast updates** - minimal latency system monitoring
-- **Beautiful TUI** - modern terminal interface using ratatui
-- **Universal Linux** - compatible with all Linux x86_64 distributions
+### 🖥️ **Advanced Process Management**
+- **Complete process table** with all htop-like columns: NI, PRI, PID, USER, COMMAND, TIME, MEM, CPU%, VIRT, RES, SHR, S
+- **Interactive process control** - adjust nice values, kill processes
+- **Real-time filtering and search** with live updates
+- **Multiple sort modes** - CPU, memory, PID, user, command
+- **Process selection** with arrow key navigation
+
+### 📊 **Real-time System Monitoring**
+- **Per-core CPU monitoring** with individual gauges for all CPU cores
+- **Memory usage tracking** with detailed statistics and visual gauges
+- **Network I/O monitoring** with RX/TX bytes per second
+- **Historical charts** for CPU, memory, and network with 120-point rolling history
+- **Live system metrics** updated every second
+
+### 🎨 **Beautiful Theming System**
+- **Four elegant themes**: Light, Dark, **Stellar** (space/neon), Matrix (green cyber)
+- **Runtime theme switching** with F11/F12 hotkeys
+- **Consistent color schemes** across all UI elements
+- **Futuristic visual design** with smooth transitions
+
+### ⌨️ **Professional Keyboard Controls (F1-F10)**
+- **F1**: Help overlay with all shortcuts
+- **F2**: Setup and configuration
+- **F3**: Live search processes
+- **F4**: Filter processes
+- **F5**: Tree view toggle
+- **F6**: Cycle sort modes
+- **F7/F8**: Adjust process priority (nice)
+- **F9**: Kill selected process
+- **F10**: Quit application
 
 ## Installation & Usage
 
@@ -35,7 +58,7 @@ sha256sum -c lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
 tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 
 # Copy to system path
-sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
+sudo cp lyvoxa /usr/local/bin/
 ```
 
 #### ArchLinux Installation (PKGBUILD)
@@ -59,11 +82,8 @@ cd lyvoxa
 # Use the optimized build script (limits CPU to 3 cores)
 ./build.sh release
 
-# Run the full TUI version (interactive interface)
+# Run the TUI system monitor
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa
-
-# Or run the simple terminal version
-./target/x86_64-unknown-linux-gnu/release/lyvoxa-simple
 ````
 
 #### Manual Build
@@ -90,16 +110,25 @@ cd lyvoxa
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa
 ```
 
-### Controls
+### 🎮 Controls
 
-**Full TUI Version:**
+**Keyboard Shortcuts:**
 
-- `q` - Quit the application
-- `Esc` - Exit the application
-
-**Simple Version:**
-
-- `Ctrl+C` - Exit the application
+- **F1**: Help overlay
+- **F2**: Setup menu
+- **F3**: Search processes  
+- **F4**: Filter processes
+- **F5**: Tree view toggle
+- **F6**: Sort mode cycling
+- **F7**: Decrease process priority (Nice-)
+- **F8**: Increase process priority (Nice+)
+- **F9**: Kill selected process
+- **F10**: Quit application
+- **F11/F12**: Theme cycling (bonus)
+- **↑/↓**: Navigate process list
+- **q**: Quick quit
+- **Enter**: Confirm in dialogs
+- **Esc**: Close overlays
 
 ## Performance Benefits
 
@@ -146,20 +175,24 @@ Lyvoxa uses an advanced build system optimized for developer machines:
 - **Memory Safety**: Rust's zero-cost abstractions prevent common vulnerabilities
 - **Supply Chain Security**: Automated verification in CI/CD
 
-## Architecture
+## 🏗️ Architecture
 
-The project is structured into two main components:
+The project features a clean, modular architecture:
 
-- `src/main.rs` - Full TUI interface with graphs and interactive elements
-- `src/simple.rs` - Lightweight terminal output for minimal resource usage
-- `src/monitor.rs` - Core system monitoring logic using the `sysinfo` crate
+- `src/main.rs` - Advanced TUI interface with real-time charts and interactive controls
+- `src/monitor.rs` - Core system monitoring with procfs integration for detailed process info
+- `src/theme.rs` - Elegant theming system with multiple visual styles
+- Built with modern async Rust using tokio for responsive performance
 
-## Dependencies
+## 📦 Dependencies
 
 - `sysinfo` - Cross-platform system information gathering
-- `ratatui` - Terminal user interface framework
+- `ratatui` - Modern terminal user interface framework
 - `crossterm` - Cross-platform terminal manipulation
 - `tokio` - Async runtime for responsive UI
+- `procfs` - Linux /proc filesystem parsing for detailed process info
+- `users` - User name resolution
+- `nix` - Unix system calls for process control
 - `humansize` - Human-readable size formatting
 
 ## Comparison with Other Competitors
@@ -173,15 +206,15 @@ The project is structured into two main components:
 | Safety            | Manual memory management | Memory safe |
 | ArchLinux Support | Basic                    | Optimized   |
 
-## Future Enhancements
+## 🚀 Future Enhancements
 
-- [ ] Network monitoring
-- [ ] Disk I/O statistics
-- [ ] Process tree view
-- [ ] Configuration file support
-- [ ] Custom color themes
-- [ ] Process filtering and search
-- [ ] Export monitoring data
+- [ ] Disk I/O statistics and charts
+- [ ] Advanced process tree visualization
+- [ ] Configuration file support with persistence
+- [ ] Custom color theme creation
+- [ ] Export monitoring data (CSV, JSON)
+- [ ] Plugin system for extensibility
+- [ ] Remote monitoring capabilities
 
 ## Contributing
 
