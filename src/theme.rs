@@ -2,7 +2,6 @@ use ratatui::style::Color;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ThemeKind {
-    Light,
     Dark,
     Stellar,
     Matrix,
@@ -24,17 +23,6 @@ pub struct Theme {
 impl Theme {
     pub fn palette(kind: ThemeKind) -> Self {
         match kind {
-            ThemeKind::Light => Self {
-                fg: Color::Black,
-                bg: Color::Gray,
-                accent: Color::Blue,
-                cpu: Color::Yellow,
-                mem: Color::Green,
-                net_rx: Color::Cyan,
-                net_tx: Color::Magenta,
-                table_header: Color::Blue,
-                selection_bg: Color::White,
-            },
             ThemeKind::Dark => Self {
                 fg: Color::White,
                 bg: Color::Black,

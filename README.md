@@ -1,6 +1,6 @@
 # 🌟 Lyvoxa Stellar - Futuristic System Monitor
 
-A next-generation system monitoring tool built in Rust, designed as a futuristic alternative to htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and stunning visual themes optimized for ArchLinux and universal Linux x86_64 systems.
+An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
 
 **Current Version**: Stellar 2.0 (v2.0.0)
 **Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
@@ -22,8 +22,8 @@ A next-generation system monitoring tool built in Rust, designed as a futuristic
 - **Live system metrics** updated every second
 
 ### 🎨 **Beautiful Theming System**
-- **Four elegant themes**: Light, Dark, **Stellar** (space/neon), Matrix (green cyber)
-- **Runtime theme switching** with F11/F12 hotkeys
+- **Three elite themes**: Dark (professional), **Stellar** (space/neon), Matrix (green cyber)
+- **Runtime theme switching** with Tab key hotkey
 - **Consistent color schemes** across all UI elements
 - **Futuristic visual design** with smooth transitions
 

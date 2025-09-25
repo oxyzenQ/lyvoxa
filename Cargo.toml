@@ -2,7 +2,7 @@
 name = "lyvoxa"
 version = "2.0.0"
 edition = "2024"
-description = "High-performance system monitoring tool optimized for ArchLinux and Linux x86_64 integration"
+description = "An optimized monitoring system linux"
 authors = ["rezky_nightky"]
 license = "GPL-3.0"
 repository = "https://github.com/oxyzenQ/lyvoxa"
@@ -21,12 +21,14 @@ sysinfo = "0.29"
 crossterm = "0.27"
 ratatui = "0.30.0-alpha.5"
 tokio = { version = "1.0", features = ["full"] }
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 humansize = "2.1"
 procfs = "0.16"
 users = "0.11"
 nix = { version = "0.27", features = ["signal", "resource"] }
 libc = "0.2"
+async-trait = "0.1"
+rand = "0.8"
 
 # =============================================================================
 # BUILD PROFILES - OPTIMIZED FOR LYVOXA

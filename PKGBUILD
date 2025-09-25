@@ -7,7 +7,7 @@
 pkgname=lyvoxa
 pkgver=2.0.0
 pkgrel=1
-pkgdesc="High-performance system monitoring tool optimized for ArchLinux and Linux x86_64"
+pkgdesc="An optimized monitoring system linux"
 arch=('x86_64')
 url="https://github.com/oxyzenQ/lyvoxa"
 license=('GPL3')
@@ -44,9 +44,7 @@ package() {
     install -Dm755 "target/x86_64-unknown-linux-gnu/release/$pkgname" \
         "$pkgdir/usr/bin/$pkgname"
     
-    # Install simple version binary
-    install -Dm755 "target/x86_64-unknown-linux-gnu/release/$pkgname-simple" \
-        "$pkgdir/usr/bin/$pkgname-simple"
+    # Note: lyvoxa-simple binary no longer exists (removed in Stellar 2.0)
     
     # Install documentation
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
