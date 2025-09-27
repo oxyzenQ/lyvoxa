@@ -11,10 +11,6 @@
     <img alt="CodeQL"
          src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge">
   </a>
-  <a href="https://securityscorecards.dev/viewer/?uri=github.com/oxyzenQ/lyvoxa">
-    <img alt="OpenSSF Scorecard"
-         src="https://img.shields.io/ossf-scorecard/github.com/oxyzenQ/lyvoxa?label=OpenSSF%20Scorecard&style=for-the-badge">
-  </a>
   <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/dco.yml">
     <img alt="DCO"
          src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/dco.yml?branch=main&label=dco&style=for-the-badge">
@@ -73,8 +69,6 @@
 
 <!-- Optional badges (uncomment when ready)
 <p align="center">
-  <a href="https://www.bestpractices.dev/"><img alt="OpenSSF Best Practices"
-     src="https://img.shields.io/ossf-scorecard/github.com/oxyzenQ/lyvoxa?label=openssf%20scorecard&style=for-the-badge"></a>
   <a href="https://crates.io/crates/lyvoxa"><img alt="crates.io"
      src="https://img.shields.io/crates/v/lyvoxa?style=for-the-badge"></a>
   <a href="https://aur.archlinux.org/packages/lyvoxa"><img alt="AUR"

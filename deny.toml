@@ -1,0 +1,54 @@
+# cargo-deny policy for Lyvoxa (GPL-3.0 project)
+
+[advisories]
+# Deny known vulnerabilities
+vulnerability = "deny"
+# Warn on unmaintained crates
+unmaintained = "warn"
+# Warn on yanked crates (can be noisy)
+yanked = "warn"
+# Unsound crates should be denied
+unsound = "deny"
+# Explicit ignores (none by default)
+ignore = []
+
+[licenses]
+# Deny crates without a license
+unlicensed = "deny"
+# Allow GPLv3-compatible and permissive licenses
+allow = [
+  "GPL-3.0",
+  "GPL-3.0-only",
+  "GPL-3.0-or-later",
+  "MIT",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-DFS-2016"
+]
+# Disallow copyleft licenses that are incompatible with our distribution policy
+# (Adjust if you decide to accept LGPL/AGPL etc.)
+deny = [
+  "AGPL-3.0",
+  "LGPL-2.1",
+  "LGPL-3.0"
+]
+confidence-threshold = 0.8
+
+[bans]
+# Multiple versions are common in the Rust ecosystem; warn but do not fail.
+multiple-versions = "warn"
+# Explicitly deny known-problematic crates
+deny = [
+  { name = "users", version = "*", note = "RUSTSEC-2025-0040; unmaintained" }
+]
+# Skip tree-bans, we only block direct inclusion of banned crates
+
+[sources]
+# Disallow unknown registries and git sources by default to reduce supply-chain risk
+unknown-registry = "deny"
+unknown-git = "deny"
+# Allow crates.io and GitHub (for actions or examples). Add exceptions as needed.
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -5,11 +5,9 @@
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid as NixPid;
 use procfs::{process::Stat, process::StatM};
+use std::ffi::CStr;
 use std::time::Instant;
 use sysinfo::{CpuExt, PidExt, ProcessExt, System, SystemExt};
-use users::get_user_by_uid;
-
-#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct ProcessInfo {
     pub pid: u32,
@@ -168,8 +166,8 @@ impl SystemMonitor {
                 }
                 if let Ok(status) = procfs_proc.status() {
                     let u = status.ruid;
-                    if let Some(uname) = get_user_by_uid(u) {
-                        user = uname.name().to_string_lossy().to_string();
+                    if let Some(uname) = username_from_uid(u) {
+                        user = uname;
                     }
                 }
                 if let Ok(cmdline) = procfs_proc.cmdline()
@@ -369,4 +367,22 @@ fn fill_from_statm(statm: &StatM, virt: &mut u64, res: &mut u64, shr: &mut u64) 
     *virt = statm.size.saturating_mul(page_size);
     *res = statm.resident.saturating_mul(page_size);
     *shr = statm.shared.saturating_mul(page_size);
+}
+
+#[inline]
+fn username_from_uid(uid: u32) -> Option<String> {
+    // Safe wrapper around libc::getpwuid (non-reentrant). For our usage (brief lookup in UI thread)
+    // this is acceptable. If multi-threaded contention becomes an issue, switch to getpwuid_r.
+    unsafe {
+        let pwd = libc::getpwuid(uid as libc::uid_t);
+        if pwd.is_null() {
+            return None;
+        }
+        let name_ptr = (*pwd).pw_name;
+        if name_ptr.is_null() {
+            return None;
+        }
+        let cstr = CStr::from_ptr(name_ptr);
+        Some(cstr.to_string_lossy().to_string())
+    }
 }
