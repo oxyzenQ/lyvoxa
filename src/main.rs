@@ -9,7 +9,9 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
-    widgets::{Axis, Block, Borders, Chart, Clear, Dataset, Gauge, Paragraph, Row, Table, TableState},
+    widgets::{
+        Axis, Block, Borders, Chart, Clear, Dataset, Gauge, Paragraph, Row, Table, TableState,
+    },
 };
 use std::{
     collections::VecDeque,
@@ -358,11 +360,12 @@ impl App {
         // Update CPU history - reduced buffer size
         let cpu_usage = self.monitor.get_global_cpu_usage();
         self.cpu_history.push_back(cpu_usage);
-        if self.cpu_history.len() > 30 { // Further reduced to 30 points
+        if self.cpu_history.len() > 30 {
+            // Further reduced to 30 points
             self.cpu_history.pop_front();
         }
 
-        // Update memory history - further reduced buffer size  
+        // Update memory history - further reduced buffer size
         let memory_usage = self.monitor.get_memory_usage_percent();
         self.memory_history.push_back(memory_usage);
         if self.memory_history.len() > 30 {
@@ -482,9 +485,13 @@ impl App {
 
     fn collect_processes(&self, limit: usize) -> Vec<monitor::ProcessInfo> {
         // Only get what we need + small buffer for filtering
-        let fetch_limit = if self.filter.is_empty() { limit } else { limit * 2 };
+        let fetch_limit = if self.filter.is_empty() {
+            limit
+        } else {
+            limit * 2
+        };
         let mut procs = self.monitor.get_top_processes(fetch_limit.min(50));
-        
+
         // Filter first to reduce sorting overhead
         if !self.filter.is_empty() {
             let term = self.filter.to_lowercase();
@@ -492,7 +499,7 @@ impl App {
                 p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term)
             });
         }
-        
+
         // Sort only the processes we'll actually display
         match self.sort_key {
             SortKey::Cpu => procs.sort_by(|a, b| {
@@ -505,7 +512,7 @@ impl App {
             SortKey::User => procs.sort_by(|a, b| a.user.cmp(&b.user)),
             SortKey::Command => procs.sort_by(|a, b| a.command.cmp(&b.command)),
         }
-        
+
         // Truncate to requested limit
         if procs.len() > limit {
             procs.truncate(limit);
@@ -551,9 +558,9 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
     let mut last_tick = Instant::now();
     let mut last_data_update = Instant::now();
     let mut last_ui_update = Instant::now();
-    let tick_rate = Duration::from_millis(250);   // Faster for responsiveness
-    let data_rate = Duration::from_millis(5000);  // Keep data updates slow (5 seconds)  
-    let ui_rate = Duration::from_millis(500);     // Faster UI redraws for better UX
+    let tick_rate = Duration::from_millis(250); // Faster for responsiveness
+    let data_rate = Duration::from_millis(5000); // Keep data updates slow (5 seconds)  
+    let ui_rate = Duration::from_millis(500); // Faster UI redraws for better UX
 
     loop {
         // Only redraw UI when needed
@@ -583,7 +590,7 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
         if last_tick.elapsed() >= tick_rate {
             last_tick = Instant::now();
         }
-        
+
         // Update data much less frequently to reduce CPU usage
         if last_data_update.elapsed() >= data_rate {
             app.update();
@@ -593,7 +600,7 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
         if app.should_quit {
             return Ok(());
         }
-        
+
         // Give CPU back to system - reduced for better responsiveness
         tokio::time::sleep(Duration::from_millis(75)).await;
     }
@@ -881,9 +888,14 @@ fn ui(f: &mut Frame, app: &App) {
             .title("Processes (F3 Search, F4 Filter, F6 Sort, F7/F8 Nice, F9 Kill)")
             .border_style(Style::default().fg(app.theme.accent)),
     )
-    .row_highlight_style(Style::default().bg(app.theme.selection_bg).fg(app.theme.accent).add_modifier(Modifier::BOLD))
+    .row_highlight_style(
+        Style::default()
+            .bg(app.theme.selection_bg)
+            .fg(app.theme.accent)
+            .add_modifier(Modifier::BOLD),
+    )
     .highlight_symbol(">> ");
-    
+
     let mut table_state = TableState::default();
     table_state.select(Some(selected));
     f.render_stateful_widget(process_table, chunks[4], &mut table_state);
