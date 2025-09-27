@@ -37,7 +37,7 @@ for PACKAGE in "${PACKAGES[@]}"; do
   if [ -f "$PACKAGE" ] && [ -f "$PACKAGE.sha256" ]; then
     echo "  → Verifying SHA256: $PACKAGE"
     if sha256sum -c "$PACKAGE.sha256"; then
-      echo "    ✅ SHA256 verified - $(basename $PACKAGE) integrity confirmed"
+      echo "    ✅ SHA256 verified - $(basename "$PACKAGE") integrity confirmed"
       VERIFIED_COUNT=$((VERIFIED_COUNT + 1))
       
       # Show package size

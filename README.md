@@ -1,8 +1,90 @@
 # 🌟 Lyvoxa Stellar - Futuristic System Monitor
 
-[![CodeQL](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml/badge.svg)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+<!-- Badges: Build · Security · Release · Platform · Activity · Branding -->
+<p align="center">
+  <!-- Build & CI -->
+  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml">
+    <img alt="Build CI"
+         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml">
+    <img alt="CodeQL"
+         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge">
+  </a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/oxyzenQ/lyvoxa">
+    <img alt="OpenSSF Scorecard"
+         src="https://img.shields.io/ossf-scorecard/github.com/oxyzenQ/lyvoxa?label=OpenSSF%20Scorecard&style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/dco.yml">
+    <img alt="DCO"
+         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/dco.yml?branch=main&label=dco&style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/release.yml">
+    <img alt="Release Pipeline"
+         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/release.yml?branch=main&label=release&style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/clone-detect.yml">
+    <img alt="Clone Detect"
+         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/clone-detect.yml?branch=main&label=clone%20detect&style=for-the-badge">
+  </a>
+  <a href="LICENSE">
+    <img alt="License"
+         src="https://img.shields.io/github/license/oxyzenQ/lyvoxa?style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
+    <img alt="Latest Release"
+         src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=for-the-badge">
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
+    <img alt="Downloads"
+         src="https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge">
+  </a>
+</p>
 
-An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative like htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
+<p align="center">
+  <!-- Platform & Security -->
+  <img alt="Arch Linux"
+       src="https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=for-the-badge">
+  <img alt="Linux x86_64"
+       src="https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=for-the-badge">
+  <img alt="Checksum SHA256"
+       src="https://img.shields.io/badge/checksum-SHA256-blue?style=for-the-badge">
+</p>
+
+<p align="center">
+  <!-- Code & Activity -->
+  <img alt="Lines of Code"
+       src="https://img.shields.io/tokei/lines/github/oxyzenQ/lyvoxa?style=for-the-badge">
+  <img alt="Commit Activity"
+       src="https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge">
+  <img alt="Last Commit"
+       src="https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=for-the-badge">
+</p>
+
+<p align="center">
+  <!-- Branding (futuristic) -->
+  <img alt="Stellar Edition"
+       src="https://img.shields.io/badge/edition-stellar-7D2AE8?style=for-the-badge&logo=starship&logoColor=white">
+  <img alt="Themes"
+       src="https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=for-the-badge">
+  <img alt="Plugin Ready"
+       src="https://img.shields.io/badge/plugin-ready-00bcd4?style=for-the-badge&logo=puzzle&logoColor=white">
+</p>
+
+<!-- Optional badges (uncomment when ready)
+<p align="center">
+  <a href="https://www.bestpractices.dev/"><img alt="OpenSSF Best Practices"
+     src="https://img.shields.io/ossf-scorecard/github.com/oxyzenQ/lyvoxa?label=openssf%20scorecard&style=for-the-badge"></a>
+  <a href="https://crates.io/crates/lyvoxa"><img alt="crates.io"
+     src="https://img.shields.io/crates/v/lyvoxa?style=for-the-badge"></a>
+  <a href="https://aur.archlinux.org/packages/lyvoxa"><img alt="AUR"
+     src="https://img.shields.io/aur/version/lyvoxa?style=for-the-badge"></a>
+  <a href="https://formulae.brew.sh/"><img alt="Homebrew"
+     src="https://img.shields.io/badge/homebrew-coming_soon-orange?logo=homebrew&style=for-the-badge"></a>
+</p>
+-->
+
+An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to traditional system monitors. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
 
 **Current Version**: Stellar 2.0 (v2.0.0)
 **Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
@@ -11,7 +93,7 @@ An optimized monitoring system linux - a next-generation system monitoring tool 
 
 ### 🖥️ **Advanced Process Management**
 
-- **Complete process table** with all htop-like columns: NI, PRI, PID, USER, COMMAND, TIME, MEM, CPU%, VIRT, RES, SHR, S
+- **Complete process table** with all columns found in traditional system monitors: NI, PRI, PID, USER, COMMAND, TIME, MEM, CPU%, VIRT, RES, SHR, S
 - **Interactive process control** - adjust nice values, kill processes
 - **Real-time filtering and search** with live updates
 - **Multiple sort modes** - CPU, memory, PID, user, command

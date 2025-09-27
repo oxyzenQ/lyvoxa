@@ -18,6 +18,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 VERSION_FILE="version.toml"
+# shellcheck disable=SC2034
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Functions
@@ -112,7 +113,8 @@ update_changelog() {
     log_info "Updating CHANGELOG.md..."
     
     # Get current date
-    local current_date=$(date +%Y-%m-%d)
+    local current_date
+    current_date=$(date +%Y-%m-%d)
     
     # Add new version entry at the top
     local new_entry="## [$new_semantic] - $new_release_name Edition - $current_date\\n\\n### 🌟 Major Features\\n- New features will be documented here\\n\\n"
@@ -216,14 +218,15 @@ main() {
     parse_version_config
     
     log_info "Current version: $CURRENT_SEMANTIC ($CURRENT_RELEASE_NAME $CURRENT_RELEASE_NUMBER)"
+    log_info "Current release tag: ${CURRENT_RELEASE_TAG}"
     echo ""
     
     # Get new version from arguments or prompt
     if [[ $# -eq 0 ]]; then
         echo -e "${YELLOW}Enter new version information:${NC}"
-        read -p "Semantic version (e.g., 1.6.0): " NEW_SEMANTIC
-        read -p "Release name (e.g., Matrix): " NEW_RELEASE_NAME
-        read -p "Release number (e.g., 1.6): " NEW_RELEASE_NUMBER
+        read -r -p "Semantic version (e.g., 1.6.0): " NEW_SEMANTIC
+        read -r -p "Release name (e.g., Matrix): " NEW_RELEASE_NAME
+        read -r -p "Release number (e.g., 1.6): " NEW_RELEASE_NUMBER
     elif [[ $# -eq 3 ]]; then
         NEW_SEMANTIC="$1"
         NEW_RELEASE_NAME="$2"
@@ -242,7 +245,7 @@ main() {
     echo ""
     
     # Confirmation
-    read -p "$(echo -e "${YELLOW}Proceed with version update? (y/N): ${NC}")" -n 1 -r
+    read -r -p "$(echo -e "${YELLOW}Proceed with version update? (y/N): ${NC}")" -n 1 REPLY
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log_warning "Version update cancelled"

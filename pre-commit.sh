@@ -18,6 +18,7 @@ MAGENTA='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Configuration
+# shellcheck disable=SC2034
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="lyvoxa"
 RUST_TOOLCHAIN="stable"
@@ -73,7 +74,7 @@ check_git_status() {
         echo "Unstaged files:"
         git diff --name-only
         echo ""
-        read -p "$(echo -e "${YELLOW}Continue anyway? (y/N): ${NC}")" -n 1 -r
+        read -r -p "$(echo -e "${YELLOW}Continue anyway? (y/N): ${NC}")" -n 1 REPLY
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             log_error "Aborted by user"
@@ -172,7 +173,7 @@ security_audit() {
     if ! cargo audit --quiet; then
         log_warning "Security audit found issues (check output above)"
         echo ""
-        read -p "$(echo -e "${YELLOW}Continue despite security warnings? (y/N): ${NC}")" -n 1 -r
+        read -r -p "$(echo -e "${YELLOW}Continue despite security warnings? (y/N): ${NC}")" -n 1 REPLY
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             log_error "Aborted due to security concerns"

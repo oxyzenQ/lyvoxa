@@ -42,7 +42,7 @@ echo "   Expected: Uses 3 cores (Makefile override)"
 echo ""
 
 echo "To monitor CPU usage during build:"
-echo "- Run: htop or top in another terminal"
+echo "- Run: top (or another traditional process monitor) in another terminal"
 echo "- Watch CPU usage percentage"
 echo "- 3 cores ≈ 18.75% max CPU usage (3/16)"
 echo "- 16 cores ≈ 100% max CPU usage"

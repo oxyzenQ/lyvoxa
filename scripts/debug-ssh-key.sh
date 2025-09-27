@@ -48,9 +48,9 @@ echo ""
 # Show key information
 log_info "SSH Key Analysis:"
 echo "================="
-echo "File permissions: $(ls -la $SSH_KEY_PATH | awk '{print $1}')"
-echo "File size: $(wc -c < $SSH_KEY_PATH) bytes"
-echo "File type: $(file $SSH_KEY_PATH)"
+echo "File permissions: $(stat -c %A "$SSH_KEY_PATH")"
+echo "File size: $(wc -c < "$SSH_KEY_PATH") bytes"
+echo "File type: $(file "$SSH_KEY_PATH")"
 echo ""
 
 # Show key fingerprint
@@ -123,7 +123,7 @@ echo ""
 
 echo "📋 Format 3: Single line (spaces instead of newlines):"
 echo "-----------------------------------------------------"
-cat "$SSH_KEY_PATH" | tr '\n' ' '
+tr '\n' ' ' < "$SSH_KEY_PATH"
 echo ""
 echo ""
 

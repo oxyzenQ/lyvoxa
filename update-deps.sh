@@ -91,7 +91,7 @@ security_audit() {
     
     cargo audit --color=always || {
         log_warning "Security audit found issues. Review the output above."
-        read -p "Continue anyway? (y/N): " -n 1 -r
+        read -r -p "Continue anyway? (y/N): " -n 1 REPLY
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             log_error "Security audit failed, aborting"
@@ -140,7 +140,7 @@ interactive_upgrade() {
     echo "$UPGRADES"
     echo ""
     
-    read -p "$(echo -e "${YELLOW}Apply all compatible upgrades? (y/N): ${NC}")" -n 1 -r
+    read -r -p "$(echo -e "${YELLOW}Apply all compatible upgrades? (y/N): ${NC}")" -n 1 REPLY
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         log_info "Applying upgrades..."

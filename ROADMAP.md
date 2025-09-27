@@ -15,7 +15,7 @@
 - **Data Export**: JSON snapshot export with full system metrics
 - **Plugin Architecture**: Modular plugin system with security sandboxing
 - **Advanced Charts**: Real-time CPU, memory, and network visualization
-- **Process Management**: htop-level process control with nice adjustment
+- **Process Management**: traditional-level process control with nice adjustment
 
 ### 🔧 **In Progress**
 - Plugin hot-reload capability
@@ -171,7 +171,7 @@ Examples:
 - [ ] Plugin marketplace with 50+ extensions
 - [ ] Multi-language support (5 languages)
 - [ ] Enterprise adoption (10+ companies)
-- [ ] Performance 2x better than htop
+- [ ] Performance 2x better than traditional
 
 ### **Community Growth**
 - [ ] 100+ contributors

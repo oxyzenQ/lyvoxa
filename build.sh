@@ -99,9 +99,7 @@ build_debug() {
     log_info "Building debug version with ${MAX_JOBS} CPU cores..."
     log_info "Command: cargo build --jobs ${MAX_JOBS} --target ${TARGET}"
     
-    time cargo build --jobs ${MAX_JOBS} --target ${TARGET}
-    
-    if [ $? -eq 0 ]; then
+    if time cargo build --jobs "${MAX_JOBS}" --target "${TARGET}"; then
         log_success "Debug build completed successfully!"
         log_info "Binary location: target/${TARGET}/debug/${PROJECT_NAME}"
     else
@@ -114,16 +112,15 @@ build_release() {
     log_info "Building release version with ${MAX_JOBS} CPU cores..."
     log_info "Command: cargo build --release --jobs ${MAX_JOBS} --target ${TARGET}"
     
-    time cargo build --release --jobs ${MAX_JOBS} --target ${TARGET}
-    
-    if [ $? -eq 0 ]; then
+    if time cargo build --release --jobs "${MAX_JOBS}" --target "${TARGET}"; then
         log_success "Release build completed successfully!"
         log_info "Binary location: target/${TARGET}/release/${PROJECT_NAME}"
         
         # Show binary size
         local binary_path="target/${TARGET}/release/${PROJECT_NAME}"
         if [ -f "$binary_path" ]; then
-            local size=$(du -h "$binary_path" | cut -f1)
+            local size
+            size=$(du -h "$binary_path" | cut -f1)
             log_info "Binary size: ${size}"
         fi
     else
@@ -136,9 +133,7 @@ build_release_with_debug() {
     log_info "Building release with debug info for profiling..."
     log_info "Command: cargo build --profile release-with-debug --jobs ${MAX_JOBS} --target ${TARGET}"
     
-    time cargo build --profile release-with-debug --jobs ${MAX_JOBS} --target ${TARGET}
-    
-    if [ $? -eq 0 ]; then
+    if time cargo build --profile release-with-debug --jobs "${MAX_JOBS}" --target "${TARGET}"; then
         log_success "Release with debug build completed successfully!"
         log_info "Binary location: target/${TARGET}/release-with-debug/${PROJECT_NAME}"
     else
@@ -151,9 +146,7 @@ run_tests() {
     log_info "Running tests with ${MAX_JOBS} CPU cores..."
     log_info "Command: cargo test --jobs ${MAX_JOBS} --target ${TARGET}"
     
-    cargo test --jobs ${MAX_JOBS} --target ${TARGET}
-    
-    if [ $? -eq 0 ]; then
+    if cargo test --jobs "${MAX_JOBS}" --target "${TARGET}"; then
         log_success "All tests passed!"
     else
         log_error "Tests failed!"
@@ -163,9 +156,7 @@ run_tests() {
 
 run_clippy() {
     log_info "Running Clippy linter..."
-    cargo clippy --target ${TARGET} -- -D warnings
-    
-    if [ $? -eq 0 ]; then
+    if cargo clippy --target "${TARGET}" -- -D warnings; then
         log_success "Clippy checks passed!"
     else
         log_error "Clippy found issues!"
@@ -175,9 +166,7 @@ run_clippy() {
 
 run_fmt_check() {
     log_info "Checking code formatting..."
-    cargo fmt --check
-    
-    if [ $? -eq 0 ]; then
+    if cargo fmt --check; then
         log_success "Code formatting is correct!"
     else
         log_error "Code formatting issues found! Run 'cargo fmt' to fix."

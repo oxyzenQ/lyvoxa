@@ -37,6 +37,7 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
+# shellcheck disable=SC2034
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GIT_HOOKS_DIR=".git/hooks"
 

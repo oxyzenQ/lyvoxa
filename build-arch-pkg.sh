@@ -73,7 +73,7 @@ check_dependencies() {
 # Build source-based package
 build_source_package() {
     log_header "🔨 Building Source Package"
-    
+    log_info "Package: ${PKG_NAME} ${PKG_VERSION}"
     log_info "Building from PKGBUILD (source-based)..."
     
     # Clean previous builds
@@ -83,7 +83,7 @@ build_source_package() {
     fi
     
     # Remove existing packages
-    rm -f "$PKG_NAME"-*.pkg.tar.*
+    rm -f ./${PKG_NAME}-*.pkg.tar.* 2>/dev/null || true
     
     # Build package
     log_info "Running makepkg..."
@@ -91,7 +91,7 @@ build_source_package() {
         log_success "Source package built successfully!"
         
         # Show resulting package
-        RESULT_PKG=$(ls "$PKG_NAME"-*.pkg.tar.* 2>/dev/null | head -1)
+        RESULT_PKG=$(find . -maxdepth 1 -type f -name "${PKG_NAME}-*.pkg.tar.*" -print -quit 2>/dev/null || true)
         if [ -n "$RESULT_PKG" ]; then
             log_info "Created package: $RESULT_PKG"
             log_info "Package size: $(du -h "$RESULT_PKG" | cut -f1)"
@@ -140,14 +140,14 @@ show_instructions() {
     
     echo ""
     log_info "Available packages:"
-    ls -la *.pkg.tar.* 2>/dev/null || log_warning "No packages found"
+    ls -la ./*.pkg.tar.* 2>/dev/null || log_warning "No packages found"
     
     echo ""
     log_info "Installation options:"
     echo ""
     echo "1. Install source-built package (recommended for performance):"
-    if ls lyvoxa-[0-9]*.pkg.tar.* >/dev/null 2>&1; then
-        SOURCE_PKG=$(ls lyvoxa-[0-9]*.pkg.tar.* | head -1)
+    SOURCE_PKG=$(find . -maxdepth 1 -type f -name "lyvoxa-[0-9]*.pkg.tar.*" -print -quit 2>/dev/null || true)
+    if [ -n "$SOURCE_PKG" ]; then
         echo "   sudo pacman -U $SOURCE_PKG"
     else
         echo "   (source package not found)"
@@ -172,13 +172,14 @@ main() {
             check_arch_linux
             check_dependencies
             build_source_package
-            if ls lyvoxa-[0-9]*.pkg.tar.* >/dev/null 2>&1; then
-                test_package "$(ls lyvoxa-[0-9]*.pkg.tar.* | head -1)"
+            PKG_FOUND=$(find . -maxdepth 1 -type f -name "lyvoxa-[0-9]*.pkg.tar.*" -print -quit 2>/dev/null || true)
+            if [ -n "$PKG_FOUND" ]; then
+                test_package "$PKG_FOUND"
             fi
             ;;
         "clean")
             log_info "Cleaning build artifacts..."
-            rm -rf pkg src *.pkg.tar.*
+            rm -rf pkg src ./*.pkg.tar.* 2>/dev/null || true
             log_success "Clean completed"
             exit 0
             ;;
