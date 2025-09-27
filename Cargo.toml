@@ -29,6 +29,9 @@ nix = { version = "0.27", features = ["signal", "resource"] }
 libc = "0.2"
 async-trait = "0.1"
 rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+toml = "0.9.7"
+obfstr = "0.4"
 
 # =============================================================================
 # BUILD PROFILES - OPTIMIZED FOR LYVOXA
@@ -47,7 +50,7 @@ codegen-units = 256          # More codegen units for faster parallel compilatio
 opt-level = 3           # Maximum optimization
 debug = false           # No debug symbols in release
 strip = true            # Strip symbols for smaller binary
-lto = "thin"            # Link-time optimization (thin for faster builds)
+lto = "fat"             # Stronger cross-crate inlining for RE resistance
 codegen-units = 1       # Single codegen unit for better optimization
 panic = "abort"         # Abort on panic for smaller binary
 overflow-checks = false # Disable overflow checks for performance

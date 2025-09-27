@@ -1,3 +1,7 @@
+// Lyvoxa — Stellar system monitor
+// Copyright (c) 2025 Rezky Nightky
+// Licensed under GPL-3.0-or-later. See LICENSE in project root.
+
 use ratatui::{Frame, layout::Rect};
 /// Lyvoxa Plugin System - Stellar 2.0
 ///

@@ -1,0 +1,62 @@
+name: Clone Detection
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Search repositories mentioning Lyvoxa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Searching repositories..."
+          curl -sS \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/search/repositories?q=Lyvoxa+in%3Aname%2Cdescription%2Creadme&per_page=50" \
+            > repos.json || true
+
+          echo "Searching code..."
+          curl -sS \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/search/code?q=Lyvoxa+language%3ARust&per_page=50" \
+            > code.json || true
+
+          # Prepare summary
+          TOTAL=$(jq -r '.total_count' repos.json 2>/dev/null || echo 0)
+          {
+            echo "## Clone Detection Summary"
+            echo "- Repositories found: ${TOTAL}"
+            echo
+            echo "Top candidates:"
+            jq -r '.items[:10][] | "- \(.full_name) (★\(.stargazers_count)) — \(.html_url)"' repos.json 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY" || true
+
+          # Additional human-readable summary file
+          jq '.items[] | {full_name, html_url, description, stargazers_count, fork, archived}' repos.json 2>/dev/null \
+            > repos-summary.txt || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: clone-detect-results
+          path: |
+            repos.json
+            code.json
+            repos-summary.txt
+          if-no-files-found: warn

@@ -1,6 +1,8 @@
 # 🌟 Lyvoxa Stellar - Futuristic System Monitor
 
-An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
+[![CodeQL](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml/badge.svg)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+
+An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative like htop. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
 
 **Current Version**: Stellar 2.0 (v2.0.0)
 **Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
@@ -8,6 +10,7 @@ An optimized monitoring system linux - a next-generation system monitoring tool 
 ## ✨ Features
 
 ### 🖥️ **Advanced Process Management**
+
 - **Complete process table** with all htop-like columns: NI, PRI, PID, USER, COMMAND, TIME, MEM, CPU%, VIRT, RES, SHR, S
 - **Interactive process control** - adjust nice values, kill processes
 - **Real-time filtering and search** with live updates
@@ -15,6 +18,7 @@ An optimized monitoring system linux - a next-generation system monitoring tool 
 - **Process selection** with arrow key navigation
 
 ### 📊 **Real-time System Monitoring**
+
 - **Per-core CPU monitoring** with individual gauges for all CPU cores
 - **Memory usage tracking** with detailed statistics and visual gauges
 - **Network I/O monitoring** with RX/TX bytes per second
@@ -22,17 +26,19 @@ An optimized monitoring system linux - a next-generation system monitoring tool 
 - **Live system metrics** updated every second
 
 ### 🎨 **Beautiful Theming System**
+
 - **Three elite themes**: Dark (professional), **Stellar** (space/neon), Matrix (green cyber)
 - **Runtime theme switching** with Tab key hotkey
 - **Consistent color schemes** across all UI elements
 - **Futuristic visual design** with smooth transitions
 
 ### ⌨️ **Professional Keyboard Controls (F1-F10)**
+
 - **F1**: Help overlay with all shortcuts
 - **F2**: Setup and configuration
 - **F3**: Live search processes
 - **F4**: Filter processes
-- **F5**: Tree view toggle
+- **F5**: Charts toggle (on/off)
 - **F6**: Cycle sort modes
 - **F7/F8**: Adjust process priority (nice)
 - **F9**: Kill selected process
@@ -74,6 +80,7 @@ sudo pacman -U lyvoxa-*.pkg.tar.zst
 ### Build from source
 
 #### Quick Build (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/oxyzenQ/lyvoxa.git
@@ -84,7 +91,7 @@ cd lyvoxa
 
 # Run the TUI system monitor
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa
-````
+```
 
 #### Manual Build
 
@@ -116,9 +123,9 @@ cd lyvoxa
 
 - **F1**: Help overlay
 - **F2**: Setup menu
-- **F3**: Search processes  
+- **F3**: Search processes
 - **F4**: Filter processes
-- **F5**: Tree view toggle
+- **F5**: Charts toggle (on/off)
 - **F6**: Sort mode cycling
 - **F7**: Decrease process priority (Nice-)
 - **F8**: Increase process priority (Nice+)
@@ -129,6 +136,48 @@ cd lyvoxa
 - **q**: Quick quit
 - **Enter**: Confirm in dialogs
 - **Esc**: Close overlays
+
+## Configuration
+
+Lyvoxa reads configuration from a simple TOML file and persists your changes automatically.
+
+- **Precedence (highest to lowest):**
+
+  1. `LYVOXA_CONFIG=/path/to/config.toml`
+  2. `./lyvoxa.toml` | `./lyvoxa/config.toml` | `./config/lyvoxa.toml`
+  3. `./config.toml` (only if valid Lyvoxa AppConfig)
+  4. `/etc/lyvoxa/config.toml` (system-wide fallback)
+  5. `~/.config/lyvoxa/config.toml` (XDG-compliant; created on first run)
+
+- **What persists from the TUI:**
+
+  - Theme (Tab cycling)
+  - Sort mode (F6)
+  - Charts on/off (F5)
+
+- **Environment overrides (session-only):** `LYVOXA_UI_MS`, `LYVOXA_DATA_MS`, `LYVOXA_ROWS`, `LYVOXA_SHOW_CHARTS`
+
+Example `config.toml`:
+
+```toml
+# UI redraw interval in milliseconds
+ui_rate_ms = 500
+
+# System data refresh interval in milliseconds
+data_rate_ms = 5000
+
+# Maximum number of process rows shown in the table
+max_rows = 20
+
+# Show charts on startup
+show_charts = true
+
+# Startup theme: "dark" | "stellar" | "matrix"
+theme = "stellar"
+
+# Default sort: "cpu" | "mem" | "pid" | "user" | "command"
+sort = "cpu"
+```
 
 ## Performance Benefits
 
@@ -175,6 +224,63 @@ Lyvoxa uses an advanced build system optimized for developer machines:
 - **Memory Safety**: Rust's zero-cost abstractions prevent common vulnerabilities
 - **Supply Chain Security**: Automated verification in CI/CD
 
+### 🔒 Binary Hardening & High‑Effort RE
+
+Lyvoxa enables strong hardening by default for release builds:
+
+- LTO: `lto = "fat"` and `codegen-units = 1` for aggressive cross‑crate inlining
+- Optimizations: `opt-level = 3` for maximal flattening and performance
+- Strip: `strip = true` to remove symbols and debug info at link time
+- Panic behavior: `panic = "abort"` to remove unwind metadata
+- Linker hardening flags (via `.cargo/config.toml`):
+  - `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--gc-sections`
+- Runtime hardening (Linux): disable core dumps with `prctl(PR_SET_DUMPABLE,0)`
+- Selective string obfuscation (via `obfstr`) for sensitive literals
+
+#### Quick presets (already applied)
+
+```
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+```
+
+#### Arch PKGBUILD
+
+The `PKGBUILD` builds with release profile and strips the installed binary. It also exports hardening flags during the build. See `PKGBUILD` for details.
+
+#### Verify hardening (Linux)
+
+```bash
+# Build
+cargo build --release -j 3
+
+# Inspect binary
+BIN=target/x86_64-unknown-linux-gnu/release/lyvoxa
+file "$BIN"
+
+# Check RELRO, BIND_NOW and NX stack
+readelf -lW "$BIN" | sed -n '/Program Headers:/,/Section to Segment/p'
+readelf -d "$BIN" | grep -E 'BIND_NOW|RELRO' || true
+
+# GNU_STACK should be RW, not RWE (noexecstack)
+readelf -lW "$BIN" | grep GNU_STACK
+
+# Optional (install checksec):
+# pacman -S checksec
+# checksec --file="$BIN"
+```
+
+Expected indicators:
+
+- `GNU_RELRO` segment present
+- `BIND_NOW` in dynamic section
+- `GNU_STACK` flags without `E` (non‑executable stack)
+- No debug symbols reported by `file`
+
 ## 🏗️ Architecture
 
 The project features a clean, modular architecture:
@@ -210,7 +316,7 @@ The project features a clean, modular architecture:
 
 - [ ] Disk I/O statistics and charts
 - [ ] Advanced process tree visualization
-- [ ] Configuration file support with persistence
+- [x] Configuration file with persistence (project-local + XDG + env overrides)
 - [ ] Custom color theme creation
 - [ ] Export monitoring data (CSV, JSON)
 - [ ] Plugin system for extensibility
@@ -229,6 +335,25 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+## License & Brand
+
+Lyvoxa is released under the GNU GPL v3.0 — you are free to use, modify, and redistribute the source under the same license.
+Binary releases are signed and reproducible; verify signatures and checksums before use.
+
+Trademark: The name "Lyvoxa" and its logo are the property of Rezky Nightky. Use of the Lyvoxa name and logo in derivative or competing products requires explicit permission. For commercial licensing or partnership inquiries, contact: with.rezky@gmail.com
+
+### Trademark Notice
+
+“Lyvoxa” and the Lyvoxa logo are trademarks of Rezky Nightky (first use: 2025).
+This repository and its public commit history serve as documented evidence of first use and ongoing development.
+
+Use of the “Lyvoxa” name, logo, or confusingly similar branding in derivative or competing products without written permission is prohibited.
+Nominative fair use—for example, referencing or linking to this project—is permitted as long as it does not imply endorsement, sponsorship, or official affiliation.
+
+If the trademark is registered in any jurisdiction, registered trademark (®) protections will apply there. This document will be updated to reflect registration status (TM/®) when completed.
+
+For permission requests, brand usage guidelines, or commercial licensing, contact: with.rezky@gmail.com
 
 ## Security
 

@@ -12,7 +12,7 @@ arch=('x86_64')
 url="https://github.com/oxyzenQ/lyvoxa"
 license=('GPL3')
 depends=('glibc')
-makedepends=('rust' 'cargo')
+makedepends=('rust' 'cargo' 'mold')
 provides=('lyvoxa')
 conflicts=('lyvoxa-bin' 'lyvoxa-git')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/oxyzenQ/lyvoxa/archive/refs/tags/Stellar-2.0.tar.gz")
@@ -22,12 +22,14 @@ sha256sums=('SKIP')  # Will be updated automatically
 build() {
     cd "$pkgname-Stellar-2.0"
     
-    # Optimize for the target system
-    export RUSTFLAGS="-C target-cpu=native -C opt-level=3"
+    # Optimize and harden
+    export RUSTFLAGS="$RUSTFLAGS -C target-cpu=native -C opt-level=3 \
+        -C link-arg=-Wl,-z,relro -C link-arg=-Wl,-z,now \
+        -C link-arg=-Wl,-z,noexecstack -C link-arg=-Wl,--gc-sections"
     export CARGO_TARGET_DIR="target"
-    
-    # Build with maximum cores available
-    cargo build --release --target x86_64-unknown-linux-gnu
+
+    # Build release (Cargo.toml sets lto=fat, panic=abort, strip=true)
+    cargo build --release --target x86_64-unknown-linux-gnu --jobs 3
 }
 
 check() {
@@ -43,6 +45,9 @@ package() {
     # Install main binary
     install -Dm755 "target/x86_64-unknown-linux-gnu/release/$pkgname" \
         "$pkgdir/usr/bin/$pkgname"
+
+    # Ensure stripped binary (defense-in-depth; Cargo already strips)
+    strip --strip-unneeded "$pkgdir/usr/bin/$pkgname" || true
     
     # Note: lyvoxa-simple binary no longer exists (removed in Stellar 2.0)
     

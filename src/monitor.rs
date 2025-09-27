@@ -1,3 +1,7 @@
+// Lyvoxa — Stellar system monitor
+// Copyright (c) 2025 Rezky Nightky
+// Licensed under GPL-3.0-or-later. See LICENSE in project root.
+
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid as NixPid;
 use procfs::{process::Stat, process::StatM};

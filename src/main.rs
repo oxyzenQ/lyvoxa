@@ -1,8 +1,13 @@
+// Lyvoxa — Stellar system monitor
+// Copyright (c) 2025 Rezky Nightky
+// Licensed under GPL-3.0-or-later. See LICENSE in project root.
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
+use obfstr::obfstr;
 use ratatui::{
     Frame, Terminal,
     backend::{Backend, CrosstermBackend},
@@ -13,13 +18,16 @@ use ratatui::{
         Axis, Block, Borders, Chart, Clear, Dataset, Gauge, Paragraph, Row, Table, TableState,
     },
 };
+use serde::{Deserialize, Serialize};
 use std::{
-    collections::VecDeque,
+    collections::{HashSet, VecDeque},
     env,
     error::Error,
     fs, io,
+    path::{Path, PathBuf},
     time::{Duration, Instant},
 };
+use tokio::time::MissedTickBehavior;
 
 mod monitor;
 use monitor::SystemMonitor;
@@ -37,6 +45,17 @@ enum SortKey {
     Pid,
     User,
     Command,
+}
+
+fn load_config_file_with_flag() -> (AppConfig, bool, PathBuf, ConfigSource) {
+    let (path, source) = resolve_config_path();
+    let existed = path.exists();
+    if let Ok(content) = fs::read_to_string(&path)
+        && let Ok(cfg) = toml::from_str::<AppConfig>(&content)
+    {
+        return (cfg, existed, path, source);
+    }
+    (AppConfig::default(), existed, path, source)
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -79,7 +98,19 @@ fn print_help() {
     println!("    F2  Setup        F7  Nice decrease  F12 AI Insights");
     println!("    F3  Search       F8  Nice increase  ESC Close overlays");
     println!("    F4  Filter       F9  Kill process   ");
-    println!("    F5  Tree view    F10 Quit          Tab Cycle themes");
+    println!("    F5  Charts toggle F10 Quit         Tab Cycle themes");
+    println!();
+    println!("CONFIGURATION:");
+    println!("    Precedence (highest to lowest):");
+    println!("      1) LYVOXA_CONFIG=/path/to/config.toml");
+    println!("      2) ./lyvoxa.toml | ./lyvoxa/config.toml | ./config/lyvoxa.toml");
+    println!("      3) ./config.toml (only if valid Lyvoxa AppConfig)");
+    println!("      4) /etc/lyvoxa/config.toml");
+    println!("      5) ~/.config/lyvoxa/config.toml (XDG)");
+    println!(
+        "    Session-only env overrides: LYVOXA_UI_MS, LYVOXA_DATA_MS, LYVOXA_ROWS, LYVOXA_SHOW_CHARTS"
+    );
+    println!("    Keys persist: Theme (Tab), Sort (F6), Charts (F5), Rows (from file)");
     println!();
     println!("REPOSITORY:");
     println!("    https://github.com/oxyzenQ/lyvoxa");
@@ -88,6 +119,19 @@ fn print_help() {
 fn print_version() {
     println!("{} {}", NAME, VERSION);
 }
+
+// Disable core dumps to make memory dumping harder (Linux only)
+#[cfg(target_os = "linux")]
+fn harden_process() {
+    unsafe {
+        // Best-effort; ignore errors
+        libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0);
+    }
+}
+
+// No-op on non-Linux targets
+#[cfg(not(target_os = "linux"))]
+fn harden_process() {}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -110,6 +154,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    // Apply runtime hardening early
+    harden_process();
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -137,6 +183,188 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// Configuration for runtime behavior, tunable via environment variables
+//  - LYVOXA_UI_MS: UI redraw interval (ms), default 500
+//  - LYVOXA_DATA_MS: System data refresh interval (ms), default 5000
+//  - LYVOXA_ROWS: Max process rows displayed, default 15
+//  - LYVOXA_SHOW_CHARTS: "1"/"true" to show charts (default), "0"/"false" to hide
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct AppConfig {
+    ui_rate_ms: u64,
+    data_rate_ms: u64,
+    max_rows: usize,
+    show_charts: bool,
+    theme: Option<String>,
+    sort: Option<String>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            ui_rate_ms: 500,
+            data_rate_ms: 5000,
+            max_rows: 15,
+            show_charts: true,
+            theme: None,
+            sort: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum ConfigSource {
+    Env,
+    RepoLyvoxaToml,
+    RepoLyvoxaDir,
+    RepoConfigLyvoxaToml,
+    RepoGenericToml,
+    System,
+    Xdg,
+}
+
+fn config_source_label(src: ConfigSource) -> &'static str {
+    match src {
+        ConfigSource::Env => "Env",
+        ConfigSource::RepoLyvoxaToml => "Local (lyvoxa.toml)",
+        ConfigSource::RepoLyvoxaDir => "Local (lyvoxa/config.toml)",
+        ConfigSource::RepoConfigLyvoxaToml => "Local (config/lyvoxa.toml)",
+        ConfigSource::RepoGenericToml => "Local (config.toml)",
+        ConfigSource::System => "System (/etc)",
+        ConfigSource::Xdg => "XDG (~/.config)",
+    }
+}
+
+fn discover_config_candidates() -> Vec<(PathBuf, ConfigSource)> {
+    let mut out: Vec<(PathBuf, ConfigSource)> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+
+    let mut push_unique = |p: PathBuf, src: ConfigSource| {
+        let key = p.display().to_string();
+        if seen.insert(key) {
+            out.push((p, src));
+        }
+    };
+
+    // Env explicit
+    if let Ok(p) = env::var("LYVOXA_CONFIG") {
+        push_unique(PathBuf::from(p), ConfigSource::Env);
+    }
+
+    // Repo-local candidates (prefer lyvoxa-specific)
+    if let Ok(cwd) = env::current_dir() {
+        push_unique(cwd.join("lyvoxa.toml"), ConfigSource::RepoLyvoxaToml);
+        push_unique(
+            cwd.join("lyvoxa").join("config.toml"),
+            ConfigSource::RepoLyvoxaDir,
+        );
+        push_unique(
+            cwd.join("config").join("lyvoxa.toml"),
+            ConfigSource::RepoConfigLyvoxaToml,
+        );
+        let generic = cwd.join("config.toml");
+        if generic.exists()
+            && let Ok(s) = fs::read_to_string(&generic)
+            && toml::from_str::<AppConfig>(&s).is_ok()
+        {
+            push_unique(generic, ConfigSource::RepoGenericToml);
+        }
+    }
+
+    // System-wide
+    let sys = PathBuf::from("/etc/lyvoxa/config.toml");
+    if sys.exists() {
+        push_unique(sys, ConfigSource::System);
+    }
+
+    // XDG default
+    let base = env::var("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let mut home = env::var("HOME")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("."));
+            home.push(".config");
+            home
+        });
+    let mut xdg = base;
+    xdg.push("lyvoxa");
+    xdg.push("config.toml");
+    push_unique(xdg, ConfigSource::Xdg);
+
+    out
+}
+
+fn resolve_config_path() -> (PathBuf, ConfigSource) {
+    // Highest priority: explicit path via env
+    if let Ok(p) = env::var("LYVOXA_CONFIG") {
+        return (PathBuf::from(p), ConfigSource::Env);
+    }
+    // Next: project-local config (useful when running from repo)
+    if let Ok(cwd) = env::current_dir() {
+        // Prefer lyvoxa-specific names to avoid collisions
+        let candidates: [(PathBuf, ConfigSource); 4] = [
+            (cwd.join("lyvoxa.toml"), ConfigSource::RepoLyvoxaToml),
+            (
+                cwd.join("lyvoxa").join("config.toml"),
+                ConfigSource::RepoLyvoxaDir,
+            ),
+            (
+                cwd.join("config").join("lyvoxa.toml"),
+                ConfigSource::RepoConfigLyvoxaToml,
+            ),
+            (cwd.join("config.toml"), ConfigSource::RepoGenericToml),
+        ];
+
+        for (cand, src) in candidates {
+            if cand.exists() {
+                if src == ConfigSource::RepoGenericToml {
+                    // Validate generic config.toml by parsing as AppConfig
+                    if let Ok(s) = fs::read_to_string(&cand) {
+                        if toml::from_str::<AppConfig>(&s).is_ok() {
+                            return (cand, src);
+                        } else {
+                            // Not a Lyvoxa config; skip
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                } else {
+                    // lyvoxa.toml or lyvoxa/config.toml or config/lyvoxa.toml
+                    return (cand, src);
+                }
+            }
+        }
+    }
+    // System-wide fallback (enterprise use)
+    let sys = PathBuf::from("/etc/lyvoxa/config.toml");
+    if sys.exists() {
+        return (sys, ConfigSource::System);
+    }
+    // Fallback: XDG Base Directory spec
+    let base = env::var("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let mut home = env::var("HOME")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("."));
+            home.push(".config");
+            home
+        });
+    let mut p = base;
+    p.push("lyvoxa");
+    p.push("config.toml");
+    (p, ConfigSource::Xdg)
+}
+
+fn save_config_file_at(path: &Path, cfg: &AppConfig) -> io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let data = toml::to_string_pretty(cfg).unwrap_or_else(|_| String::new());
+    fs::write(path, data)
+}
+
 struct App {
     monitor: SystemMonitor,
     should_quit: bool,
@@ -152,13 +380,61 @@ struct App {
     filter: String,
     search: String,
     sort_key: SortKey,
-    tree_view: bool,
     selected: usize,
     status_message: Option<String>,
+    config: AppConfig,
+    config_path: PathBuf,
+    config_source: ConfigSource,
+    setup_sources: Vec<(PathBuf, ConfigSource)>,
+    setup_selected: usize,
 }
 
 impl App {
     fn new() -> App {
+        // Start with defaults, overlay file config, then env overrides into an effective config.
+        let (file_cfg, existed, cfg_path, cfg_src) = load_config_file_with_flag();
+        let mut config = file_cfg.clone();
+        if let Ok(v) = env::var("LYVOXA_UI_MS")
+            && let Ok(ms) = v.parse::<u64>()
+        {
+            config.ui_rate_ms = ms;
+        }
+        if let Ok(v) = env::var("LYVOXA_DATA_MS")
+            && let Ok(ms) = v.parse::<u64>()
+        {
+            config.data_rate_ms = ms;
+        }
+        if let Ok(v) = env::var("LYVOXA_ROWS")
+            && let Ok(n) = v.parse::<usize>()
+        {
+            config.max_rows = n;
+        }
+        if let Ok(v) = env::var("LYVOXA_SHOW_CHARTS") {
+            let v = v.to_lowercase();
+            config.show_charts = !(v == "0" || v == "false");
+        }
+
+        // Map config theme/sort to runtime enums with robust defaults
+        let theme_kind = match config.theme.as_deref() {
+            Some("dark") => ThemeKind::Dark,
+            Some("matrix") => ThemeKind::Matrix,
+            Some("stellar") => ThemeKind::Stellar,
+            _ => ThemeKind::Stellar,
+        };
+        let sort_key = match config.sort.as_deref() {
+            Some("mem") => SortKey::Mem,
+            Some("pid") => SortKey::Pid,
+            Some("user") => SortKey::User,
+            Some("command") => SortKey::Command,
+            Some("cpu") => SortKey::Cpu,
+            _ => SortKey::Cpu,
+        };
+
+        // Ensure config file exists on first run (write only file defaults, not env overrides)
+        if !existed {
+            let _ = save_config_file_at(&cfg_path, &file_cfg);
+        }
+
         App {
             monitor: SystemMonitor::new(),
             should_quit: false,
@@ -167,16 +443,87 @@ impl App {
             net_rx_history: VecDeque::with_capacity(30),
             net_tx_history: VecDeque::with_capacity(30),
             last_update: Instant::now(),
-            theme_kind: ThemeKind::Stellar,
-            theme: Theme::palette(ThemeKind::Stellar),
+            theme_kind,
+            theme: Theme::palette(theme_kind),
             overlay: Overlay::None,
             input_buffer: String::new(),
             filter: String::new(),
             search: String::new(),
-            sort_key: SortKey::Cpu,
-            tree_view: false,
+            sort_key,
             selected: 0,
             status_message: None,
+            config,
+            config_path: cfg_path,
+            config_source: cfg_src,
+            setup_sources: Vec::new(),
+            setup_selected: 0,
+        }
+    }
+
+    fn refresh_config_candidates(&mut self) {
+        self.setup_sources = discover_config_candidates();
+        // Ensure current config is at top if not present
+        if !self
+            .setup_sources
+            .iter()
+            .any(|(p, _)| p.as_path() == self.config_path.as_path())
+        {
+            self.setup_sources
+                .insert(0, (self.config_path.clone(), self.config_source));
+        }
+        self.setup_selected = 0;
+    }
+
+    fn apply_selected_config(&mut self) {
+        if self.setup_sources.is_empty() {
+            return;
+        }
+        let (path, source) = self.setup_sources[self.setup_selected].clone();
+        // If file exists, try load; if not, create from current config
+        if path.exists() {
+            match fs::read_to_string(&path)
+                .ok()
+                .and_then(|s| toml::from_str::<AppConfig>(&s).ok())
+            {
+                Some(cfg) => {
+                    self.config = cfg;
+                    self.config_path = path;
+                    self.config_source = source;
+                    self.status_message =
+                        Some(format!("Config switched: {}", self.config_path.display()));
+                }
+                None => {
+                    self.status_message =
+                        Some(format!("Invalid config, not switched: {}", path.display()));
+                }
+            }
+        } else {
+            // Create new file from current in-memory config
+            if let Err(e) = save_config_file_at(&path, &self.config) {
+                self.status_message = Some(format!(
+                    "Failed to create config: {} ({})",
+                    path.display(),
+                    e
+                ));
+                return;
+            }
+            self.config_path = path;
+            self.config_source = source;
+            // Apply theme and sort from config to runtime
+            self.theme_kind = match self.config.theme.as_deref() {
+                Some("dark") => ThemeKind::Dark,
+                Some("matrix") => ThemeKind::Matrix,
+                _ => ThemeKind::Stellar,
+            };
+            self.theme = Theme::palette(self.theme_kind);
+            self.sort_key = match self.config.sort.as_deref() {
+                Some("mem") => SortKey::Mem,
+                Some("pid") => SortKey::Pid,
+                Some("user") => SortKey::User,
+                Some("command") => SortKey::Command,
+                _ => SortKey::Cpu,
+            };
+            self.status_message = Some(format!("Config switched: {}", self.config_path.display()));
         }
     }
 
@@ -195,6 +542,14 @@ impl App {
 
         // Add smooth transition effect (status message)
         self.status_message = Some(format!("🎨 Theme switched to: {:?}", self.theme_kind));
+
+        // Persist theme to config file
+        self.config.theme = Some(match self.theme_kind {
+            ThemeKind::Dark => "dark".to_string(),
+            ThemeKind::Stellar => "stellar".to_string(),
+            ThemeKind::Matrix => "matrix".to_string(),
+        });
+        let _ = save_config_file_at(&self.config_path, &self.config);
     }
 
     fn export_snapshot(&mut self) {
@@ -414,19 +769,43 @@ impl App {
                 }
                 _ => {}
             },
-            Overlay::Help | Overlay::Setup | Overlay::Insights | Overlay::Export => {
-                match key.code {
-                    KeyCode::Esc | KeyCode::Enter => {
-                        self.overlay = Overlay::None;
-                    }
-                    _ => {}
+            Overlay::Setup => match key.code {
+                KeyCode::Esc => {
+                    self.overlay = Overlay::None;
                 }
-            }
+                KeyCode::Up => {
+                    if self.setup_selected > 0 {
+                        self.setup_selected -= 1;
+                    }
+                }
+                KeyCode::Down => {
+                    if self.setup_selected + 1 < self.setup_sources.len() {
+                        self.setup_selected += 1;
+                    }
+                }
+                KeyCode::Enter => {
+                    self.apply_selected_config();
+                    self.overlay = Overlay::None;
+                }
+                KeyCode::Char('r') | KeyCode::Char('R') => {
+                    self.refresh_config_candidates();
+                }
+                _ => {}
+            },
+            Overlay::Help | Overlay::Insights | Overlay::Export => match key.code {
+                KeyCode::Esc | KeyCode::Enter => {
+                    self.overlay = Overlay::None;
+                }
+                _ => {}
+            },
             _ => {}
         }
 
         match key.code {
-            KeyCode::Char('q') | KeyCode::F(10) => self.should_quit = true,
+            KeyCode::Char('q') | KeyCode::F(10) => {
+                let _ = save_config_file_at(&self.config_path, &self.config);
+                self.should_quit = true
+            }
             KeyCode::Up => {
                 if self.selected > 0 {
                     self.selected -= 1;
@@ -439,6 +818,7 @@ impl App {
                 self.overlay = Overlay::Help;
             }
             KeyCode::F(2) => {
+                self.refresh_config_candidates();
                 self.overlay = Overlay::Setup;
             }
             KeyCode::F(3) => {
@@ -450,7 +830,13 @@ impl App {
                 self.input_buffer = self.filter.clone();
             }
             KeyCode::F(5) => {
-                self.tree_view = !self.tree_view;
+                self.config.show_charts = !self.config.show_charts;
+                self.status_message = Some(if self.config.show_charts {
+                    "Charts: ON".to_string()
+                } else {
+                    "Charts: OFF".to_string()
+                });
+                let _ = save_config_file_at(&self.config_path, &self.config);
             }
             KeyCode::F(6) => {
                 self.sort_key = match self.sort_key {
@@ -460,6 +846,15 @@ impl App {
                     SortKey::User => SortKey::Command,
                     SortKey::Command => SortKey::Cpu,
                 };
+                self.status_message = Some(format!("Sort: {:?}", self.sort_key));
+                self.config.sort = Some(match self.sort_key {
+                    SortKey::Cpu => "cpu".to_string(),
+                    SortKey::Mem => "mem".to_string(),
+                    SortKey::Pid => "pid".to_string(),
+                    SortKey::User => "user".to_string(),
+                    SortKey::Command => "command".to_string(),
+                });
+                let _ = save_config_file_at(&self.config_path, &self.config);
             }
             KeyCode::F(7) => {
                 self.adjust_nice(false);
@@ -521,7 +916,7 @@ impl App {
     }
 
     fn selected_pid(&self) -> Option<u32> {
-        let list = self.collect_processes(30); // Only get what we need for selection
+        let list = self.collect_processes(self.config.max_rows); // respect config rows
         if list.is_empty() {
             return None;
         }
@@ -555,74 +950,69 @@ impl App {
 }
 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    let mut last_tick = Instant::now();
-    let mut last_data_update = Instant::now();
-    let mut last_ui_update = Instant::now();
-    let tick_rate = Duration::from_millis(250); // Faster for responsiveness
-    let data_rate = Duration::from_millis(5000); // Keep data updates slow (5 seconds)  
-    let ui_rate = Duration::from_millis(500); // Faster UI redraws for better UX
+    // Use tokio intervals to decouple UI/data/input and keep CPU low
+    let mut ui_tick = tokio::time::interval(Duration::from_millis(app.config.ui_rate_ms));
+    ui_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+    let mut data_tick = tokio::time::interval(Duration::from_millis(app.config.data_rate_ms));
+    data_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+    let mut input_tick = tokio::time::interval(Duration::from_millis(25));
+    input_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
     loop {
-        // Only redraw UI when needed
-        if last_ui_update.elapsed() >= ui_rate {
-            terminal
-                .draw(|f| ui(f, &app))
-                .map_err(|e| io::Error::other(e.to_string()))?;
-            last_ui_update = Instant::now();
-        }
-
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
-
-        // Handle input events
-        if crossterm::event::poll(timeout)?
-            && let Event::Key(key) = event::read()?
-        {
-            app.handle_key(key);
-            // Force UI update on key press for responsiveness
-            terminal
-                .draw(|f| ui(f, &app))
-                .map_err(|e| io::Error::other(e.to_string()))?;
-            last_ui_update = Instant::now();
-        }
-
-        if last_tick.elapsed() >= tick_rate {
-            last_tick = Instant::now();
-        }
-
-        // Update data much less frequently to reduce CPU usage
-        if last_data_update.elapsed() >= data_rate {
-            app.update();
-            last_data_update = Instant::now();
+        tokio::select! {
+            _ = ui_tick.tick() => {
+                terminal
+                    .draw(|f| ui(f, &app))
+                    .map_err(|e| io::Error::other(e.to_string()))?;
+            },
+            _ = data_tick.tick() => {
+                app.update();
+            },
+            _ = input_tick.tick() => {
+                while crossterm::event::poll(Duration::from_millis(0))? {
+                    if let Event::Key(key) = event::read()? {
+                        app.handle_key(key);
+                    }
+                }
+            },
         }
 
         if app.should_quit {
             return Ok(());
         }
-
-        // Give CPU back to system - reduced for better responsiveness
-        tokio::time::sleep(Duration::from_millis(75)).await;
     }
 }
 
 fn ui(f: &mut Frame, app: &App) {
+    // Adaptive layout depending on charts toggle
+    let mut vertical = vec![
+        Constraint::Length(3), // Header
+        Constraint::Length(7), // CPU and Memory gauges
+        Constraint::Length(5), // Per-core gauges
+    ];
+    if app.config.show_charts {
+        vertical.push(Constraint::Length(12)); // Charts
+    }
+    vertical.push(Constraint::Min(0)); // Process list
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints([
-            Constraint::Length(3),  // Header
-            Constraint::Length(7),  // CPU and Memory gauges
-            Constraint::Length(5),  // Per-core gauges
-            Constraint::Length(12), // Charts (CPU/Mem/Net)
-            Constraint::Min(0),     // Process list
-        ])
+        .constraints(vertical)
         .split(f.area());
 
     // Header
+    let cfg_label = config_source_label(app.config_source);
+    let cfg_file = app
+        .config_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("?");
     let header_text = format!(
-        "Lyvoxa v{} | Theme: {:?} | Sort: {:?} | Filter: {} | {}",
+        "Lyvoxa v{} | Config: {} ({}) | Theme: {:?} | Sort: {:?} | Filter: {} | {}",
         VERSION,
+        cfg_label,
+        cfg_file,
         app.theme_kind,
         app.sort_key,
         if app.filter.is_empty() {
@@ -637,7 +1027,7 @@ fn ui(f: &mut Frame, app: &App) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Lyvoxa - F1 Help | F11 Export | F12 AI Insights | Tab Themes | F10 Quit")
+                .title("Lyvoxa - F1 Help | F5 Charts | F11 Export | F12 Insights | Tab Themes | F10 Quit")
                 .style(Style::default().fg(app.theme.accent)),
         );
     f.render_widget(header, chunks[0]);
@@ -716,116 +1106,116 @@ fn ui(f: &mut Frame, app: &App) {
     }
 
     // Charts layout (CPU, Memory, Network)
-    let chart_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(34),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ])
-        .split(chunks[3]);
+    if app.config.show_charts {
+        let chart_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(34),
+                Constraint::Percentage(33),
+                Constraint::Percentage(33),
+            ])
+            .split(chunks[3]);
 
-    // CPU chart - only render if we have significant data
-    if app.cpu_history.len() > 5 {
-        // Sample every other point to reduce rendering load
-        let cpu_data: Vec<(f64, f64)> = app
-            .cpu_history
-            .iter()
-            .enumerate()
-            .step_by(2) // Sample every 2nd point
-            .map(|(i, &cpu)| (i as f64, cpu))
-            .collect();
+        // CPU chart - only render if we have significant data
+        if app.cpu_history.len() > 5 {
+            let cpu_data: Vec<(f64, f64)> = app
+                .cpu_history
+                .iter()
+                .enumerate()
+                .step_by(2)
+                .map(|(i, &cpu)| (i as f64, cpu))
+                .collect();
 
-        let datasets = vec![
-            Dataset::default()
-                .name("CPU %")
-                .marker(symbols::Marker::Dot)
-                .style(Style::default().fg(Color::Yellow))
-                .data(&cpu_data),
-        ];
+            let datasets = vec![
+                Dataset::default()
+                    .name("CPU %")
+                    .marker(symbols::Marker::Dot)
+                    .style(Style::default().fg(Color::Yellow))
+                    .data(&cpu_data),
+            ];
 
-        let cpu_chart = Chart::new(datasets)
-            .block(Block::default().title("CPU History").borders(Borders::ALL))
-            .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
-            .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
-        f.render_widget(cpu_chart, chart_chunks[0]);
+            let cpu_chart = Chart::new(datasets)
+                .block(Block::default().title("CPU History").borders(Borders::ALL))
+                .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
+                .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
+            f.render_widget(cpu_chart, chart_chunks[0]);
+        }
+
+        // Memory chart - only render if we have significant data
+        if app.memory_history.len() > 5 {
+            let mem_data: Vec<(f64, f64)> = app
+                .memory_history
+                .iter()
+                .enumerate()
+                .step_by(2)
+                .map(|(i, &mem)| (i as f64, mem))
+                .collect();
+
+            let datasets = vec![
+                Dataset::default()
+                    .name("Memory %")
+                    .marker(symbols::Marker::Dot)
+                    .style(Style::default().fg(Color::Green))
+                    .data(&mem_data),
+            ];
+
+            let memory_chart = Chart::new(datasets)
+                .block(
+                    Block::default()
+                        .title("Memory History")
+                        .borders(Borders::ALL),
+                )
+                .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
+                .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
+            f.render_widget(memory_chart, chart_chunks[1]);
+        }
+
+        // Network chart (RX/TX bytes/sec)
+        if !app.net_rx_history.is_empty() && !app.net_tx_history.is_empty() {
+            let rx_data: Vec<(f64, f64)> = app
+                .net_rx_history
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (i as f64, v))
+                .collect();
+            let tx_data: Vec<(f64, f64)> = app
+                .net_tx_history
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (i as f64, v))
+                .collect();
+            let datasets = vec![
+                Dataset::default()
+                    .name("RX B/s")
+                    .marker(symbols::Marker::Dot)
+                    .style(Style::default().fg(app.theme.net_rx))
+                    .data(&rx_data),
+                Dataset::default()
+                    .name("TX B/s")
+                    .marker(symbols::Marker::Dot)
+                    .style(Style::default().fg(app.theme.net_tx))
+                    .data(&tx_data),
+            ];
+            let max_val = app
+                .net_rx_history
+                .iter()
+                .chain(app.net_tx_history.iter())
+                .cloned()
+                .fold(1.0_f64, |m, v| m.max(v));
+            let net_chart = Chart::new(datasets)
+                .block(Block::default().title("Network B/s").borders(Borders::ALL))
+                .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
+                .y_axis(
+                    Axis::default()
+                        .title("Bytes/s")
+                        .bounds([0.0, max_val * 1.2]),
+                );
+            f.render_widget(net_chart, chart_chunks[2]);
+        }
     }
 
-    // Memory chart - only render if we have significant data
-    if app.memory_history.len() > 5 {
-        let mem_data: Vec<(f64, f64)> = app
-            .memory_history
-            .iter()
-            .enumerate()
-            .step_by(2) // Sample every 2nd point
-            .map(|(i, &mem)| (i as f64, mem))
-            .collect();
-
-        let datasets = vec![
-            Dataset::default()
-                .name("Memory %")
-                .marker(symbols::Marker::Dot)
-                .style(Style::default().fg(Color::Green))
-                .data(&mem_data),
-        ];
-
-        let memory_chart = Chart::new(datasets)
-            .block(
-                Block::default()
-                    .title("Memory History")
-                    .borders(Borders::ALL),
-            )
-            .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
-            .y_axis(Axis::default().title("Usage %").bounds([0.0, 100.0]));
-        f.render_widget(memory_chart, chart_chunks[1]);
-    }
-
-    // Network chart (RX/TX bytes/sec)
-    if !app.net_rx_history.is_empty() && !app.net_tx_history.is_empty() {
-        let rx_data: Vec<(f64, f64)> = app
-            .net_rx_history
-            .iter()
-            .enumerate()
-            .map(|(i, &v)| (i as f64, v))
-            .collect();
-        let tx_data: Vec<(f64, f64)> = app
-            .net_tx_history
-            .iter()
-            .enumerate()
-            .map(|(i, &v)| (i as f64, v))
-            .collect();
-        let datasets = vec![
-            Dataset::default()
-                .name("RX B/s")
-                .marker(symbols::Marker::Dot)
-                .style(Style::default().fg(app.theme.net_rx))
-                .data(&rx_data),
-            Dataset::default()
-                .name("TX B/s")
-                .marker(symbols::Marker::Dot)
-                .style(Style::default().fg(app.theme.net_tx))
-                .data(&tx_data),
-        ];
-        // Determine max for bounds
-        let max_val = app
-            .net_rx_history
-            .iter()
-            .chain(app.net_tx_history.iter())
-            .cloned()
-            .fold(1.0_f64, |m, v| m.max(v));
-        let net_chart = Chart::new(datasets)
-            .block(Block::default().title("Network B/s").borders(Borders::ALL))
-            .x_axis(Axis::default().title("Time").bounds([0.0, 120.0]))
-            .y_axis(
-                Axis::default()
-                    .title("Bytes/s")
-                    .bounds([0.0, max_val * 1.2]),
-            );
-        f.render_widget(net_chart, chart_chunks[2]);
-    }
-
-    // Process list - only collect what fits on screen (~15 processes max)
-    let processes = app.collect_processes(15);
+    // Process list - only collect what fits on screen (configurable)
+    let processes = app.collect_processes(app.config.max_rows);
     let selected = app.selected.min(processes.len().saturating_sub(1));
     let process_items: Vec<Row> = processes
         .iter()
@@ -898,13 +1288,16 @@ fn ui(f: &mut Frame, app: &App) {
 
     let mut table_state = TableState::default();
     table_state.select(Some(selected));
-    f.render_stateful_widget(process_table, chunks[4], &mut table_state);
+    let proc_idx = if app.config.show_charts { 4 } else { 3 };
+    f.render_stateful_widget(process_table, chunks[proc_idx], &mut table_state);
 
     // Overlays
     match app.overlay {
         Overlay::Help => {
             let area = centered_rect(70, 60, f.area());
-            let help_text = "🚀 LYVOXA STELLAR CONTROLS 🚀\n\nPROCESS MANAGEMENT:\nF1 Help      F6 Sort modes    F9 Kill process\nF2 Setup     F7 Nice decrease ↑↓ Navigate\nF3 Search    F8 Nice increase Enter/Esc dialogs\nF4 Filter    F10 Quit\n\nADVANCED FEATURES:\nF11 Export snapshot (JSON)\nF12 AI System Insights\nTab Cycle themes (3 elite themes)\n\nELITE THEMES:\nDark → Stellar → Matrix (cycle with Tab)\n\nPress ESC to close this help window";
+            let help_text = obfstr!(
+                "🚀 LYVOXA STELLAR CONTROLS 🚀\n\nPROCESS MANAGEMENT:\nF1 Help      F6 Sort modes    F9 Kill process\nF2 Setup     F7 Nice decrease ↑↓ Navigate\nF3 Search    F8 Nice increase Enter/Esc dialogs\nF4 Filter    F10 Quit\nF5 Charts toggle\n\nADVANCED FEATURES:\nF11 Export snapshot (JSON)\nF12 AI System Insights\nTab Cycle themes (3 elite themes)\n\nELITE THEMES:\nDark → Stellar → Matrix (cycle with Tab)\n\nConfig: ~/.config/lyvoxa/config.toml\nPress ESC to close this help window"
+            ).to_string();
             f.render_widget(Clear, area);
             let p = Paragraph::new(help_text)
                 .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
@@ -917,15 +1310,32 @@ fn ui(f: &mut Frame, app: &App) {
             f.render_widget(p, area);
         }
         Overlay::Setup => {
-            let area = centered_rect(60, 40, f.area());
-            let setup_text = "Setup (placeholder)\n- Theme: use F11/F12\n- Sorting: F6\n- Filters: F4\n- Search: F3\n";
+            let area = centered_rect(80, 70, f.area());
             f.render_widget(Clear, area);
-            let p = Paragraph::new(setup_text)
+            let mut lines = Vec::new();
+            lines.push(format!(
+                "Select config (↑/↓ navigate, Enter apply, r refresh, Esc close)\nCurrent: {} [{}]\n",
+                app.config_path.display(), config_source_label(app.config_source)
+            ));
+            if app.setup_sources.is_empty() {
+                lines.push("(no candidates found)".to_string());
+            } else {
+                for (i, (p, src)) in app.setup_sources.iter().enumerate() {
+                    let marker = if i == app.setup_selected { ">" } else { " " };
+                    lines.push(format!(
+                        "{} [{}] {}",
+                        marker,
+                        config_source_label(*src),
+                        p.display()
+                    ));
+                }
+            }
+            let p = Paragraph::new(lines.join("\n"))
                 .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Setup")
+                        .title("Setup - Config Sources")
                         .style(Style::default().fg(app.theme.accent)),
                 );
             f.render_widget(p, area);

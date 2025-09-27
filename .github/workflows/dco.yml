@@ -1,0 +1,50 @@
+name: DCO Check
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine commit range
+        id: range
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.base_ref }}"
+            git fetch --no-tags --prune --depth=0 origin "+refs/heads/${base}:refs/remotes/origin/${base}"
+            RANGE="origin/${base}..HEAD"
+          else
+            RANGE="HEAD~10..HEAD"
+          fi
+          echo "range=$RANGE" >> "$GITHUB_OUTPUT"
+          echo "Commit range: $RANGE"
+
+      - name: Check DCO sign-offs
+        run: |
+          set -euo pipefail
+          RANGE="${{ steps.range.outputs.range }}"
+          COMMITS=$(git rev-list --no-merges $RANGE)
+          echo "Checking commits:"
+          echo "$COMMITS" | sed 's/^/ - /'
+          fail=0
+          while read -r c; do
+            msg=$(git show -s --format=%B "$c")
+            if ! grep -qiE '^Signed-off-by: .+ <.+@.+>$' <<< "$msg"; then
+              echo "Missing DCO sign-off in commit $c" >&2
+              fail=1
+            fi
+          done <<< "$COMMITS"
+          if [[ "$fail" -ne 0 ]]; then
+            echo "DCO check failed. Please add Signed-off-by lines (git commit -s)." >&2
+            exit 1
+          fi
+          echo "All commits include DCO sign-off."

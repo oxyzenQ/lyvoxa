@@ -1,0 +1,6 @@
+ui_rate_ms = 500
+data_rate_ms = 5000
+max_rows = 20
+show_charts = true
+theme = "stellar"
+sort = "cpu"
