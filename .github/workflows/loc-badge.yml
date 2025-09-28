@@ -1,0 +1,51 @@
+name: LOC Badge
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1' # Weekly on Mondays
+
+permissions:
+  contents: write
+
+jobs:
+  loc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust (for tokei)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install tokei
+        run: cargo install --locked tokei
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate LOC badge JSON
+        run: |
+          set -euo pipefail
+          mkdir -p docs/badges
+          LOC=$(tokei -o json --exclude target,.git | jq -r '.Total.code // ([.[] | select(type=="object" and has("total")) | .total.code] | add) // 0')
+          printf '{"schemaVersion":1,"label":"lines of code","message":"%s","color":"informational"}\n' "$LOC" > docs/badges/loc.json
+
+      - name: Commit badge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/badges/loc.json; then
+            echo "No changes in LOC badge"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/badges/loc.json
+          git commit -m "docs(badge): update LOC badge [skip ci]"
+          git push

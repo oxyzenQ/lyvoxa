@@ -50,7 +50,9 @@
 <p align="center">
   <!-- Code & Activity -->
   <img alt="Lines of Code"
-       src="https://img.shields.io/tokei/lines/github/oxyzenQ/lyvoxa?style=for-the-badge">
+       src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/oxyzenQ/lyvoxa/main/docs/badges/loc.json&style=for-the-badge">
+  <img alt="Code Size"
+       src="https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge">
   <img alt="Commit Activity"
        src="https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge">
   <img alt="Last Commit"
@@ -394,8 +396,9 @@ The project features a clean, modular architecture:
 - [ ] Advanced process tree visualization
 - [x] Configuration file with persistence (project-local + XDG + env overrides)
 - [ ] Custom color theme creation
-- [ ] Export monitoring data (CSV, JSON)
-- [ ] Plugin system for extensibility
+- [x] Export monitoring data (JSON)
+- [ ] Export monitoring data (CSV)
+- [x] Plugin system foundation for extensibility
 - [ ] Remote monitoring capabilities
 
 ## Contributing
