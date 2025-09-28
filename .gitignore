@@ -1,483 +1,55 @@
 # =============================================================================
-# RUST PROJECT GITIGNORE - COMPREHENSIVE DEPTH
+# LYVOXA PROJECT GITIGNORE - STELLAR 2.0
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# Rust/Cargo Generated Files
-# -----------------------------------------------------------------------------
-# Build artifacts - STRICT RULES
+# Rust Build Artifacts
 /target/
-**/target/
-Cargo.lock  # Keep for executables, remove for libraries
-
-# Rust compiled artifacts (should never be committed)
-**/*.d
-**/*.rlib
-**/*.rmeta
-**/.fingerprint/
-**/deps/
-**/.cargo-lock
-*.rustc_info.json
-**/CACHEDIR.TAG
-
-# Rustfmt backup files
+Cargo.lock  # Keep for executables
 **/*.rs.bk
 **/*.rs.orig
 
-# Rust analyzer files
-rust-project.json
-
-# Clippy cache
-.clippy.toml
-
-# Rust documentation
-/doc/
-**/doc/
-
-# MSVC debugging information (Windows)
-*.pdb
-
-# -----------------------------------------------------------------------------
-# Development Tools & IDEs
-# -----------------------------------------------------------------------------
-# Visual Studio Code
+# IDE & Editor Files
 .vscode/
-*.code-workspace
-
-# IntelliJ IDEA / CLion / RustRover
 .idea/
-*.iml
-*.ipr
-*.iws
-out/
-
-# Vim/Neovim
 *.swp
 *.swo
-*.swn
 *~
-.netrwhist
 tags
-.tags
 
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Atom
-.atom/
-
-# Eclipse
-.metadata
-.project
-.classpath
-.settings/
-
-# NetBeans
-nbproject/
-build/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
-
-# -----------------------------------------------------------------------------
-# Operating System Files
-# -----------------------------------------------------------------------------
-# macOS
+# OS Files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-.AppleDouble
-.LSOverride
-Icon
-
-# Windows
 Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
 *.tmp
-*.temp
-desktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# Linux
-*~
-.fuse_hidden*
 .directory
 .Trash-*
-.nfs*
 
-# -----------------------------------------------------------------------------
-# Version Control
-# -----------------------------------------------------------------------------
-# Git
-.git/
-*.orig
-*.rej
-
-# SVN
-.svn/
-
-# Mercurial
-.hg/
-.hgignore
-
-# Bazaar
-.bzr/
-.bzrignore
-
-# -----------------------------------------------------------------------------
-# Build Systems & Package Managers
-# -----------------------------------------------------------------------------
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
-!CMakeLists.txt
-
-# Make
-*.make
-*.mk
-
-# Autotools
-/aclocal.m4
-/autom4te.cache/
-/config.guess
-/config.h.in
-/config.sub
-/configure
-/depcomp
-/install-sh
-/ltmain.sh
-/missing
-/compile
-/config.log
-/config.status
-/libtool
-Makefile.in
-
-# Ninja
-.ninja_deps
-.ninja_log
-build.ninja
-
-# Bazel
-bazel-*
-
-# Buck
-buck-out/
-
-# -----------------------------------------------------------------------------
-# Language Specific
-# -----------------------------------------------------------------------------
-# Python (if using Python tools)
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
-.pytest_cache/
-
-# Node.js (if using Node tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.yarn-integrity
-*.tgz
-package-lock.json
-yarn.lock
-
-# Ruby (if using Ruby tools)
-*.gem
-*.rbc
-/.config
-/coverage/
-/InstalledFiles
-/pkg/
-/spec/reports/
-/spec/examples.txt
-/test/tmp/
-/test/version_tmp/
-/tmp/
-.bundle/
-vendor/bundle
-lib/bundler/man/
-.rvmrc
-
-# Go (if using Go tools)
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-go.work
-
-# Java (if using Java tools)
-*.class
-*.jar
-*.war
-*.ear
-*.zip
-*.tar.gz
-*.rar
-hs_err_pid*
-
-# C/C++ (if using C/C++ tools)
-*.o
-*.a
-*.lib
-*.obj
-*.pch
-*.pdb
-*.ilk
-*.meta
-*.idb
-*.res
-*.rc
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# -----------------------------------------------------------------------------
-# Logging & Debugging
-# -----------------------------------------------------------------------------
-# Log files
+# Development & Testing
 *.log
-*.log.*
-logs/
-log/
-
-# Debug files
-*.dmp
-*.stackdump
-core
-core.*
-vgcore.*
-
-# Profiling
 *.prof
-*.pprof
 perf.data*
-callgrind.out.*
-cachegrind.out.*
-massif.out.*
-
-# -----------------------------------------------------------------------------
-# Testing & Coverage
-# -----------------------------------------------------------------------------
-# Test results
-test-results/
-test-output/
-coverage/
-.coverage
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-junit.xml
-
-# Benchmark results
 criterion/
-target/criterion/
-bench/
-benchmarks/
-
-# Mutation testing
 mutants.out/
 
-# -----------------------------------------------------------------------------
-# Documentation
-# -----------------------------------------------------------------------------
-# Generated documentation
-/book/
-mdbook-*
-*.html
-*.pdf
-
-# Sphinx documentation
-docs/_build/
-docs/build/
-_build/
-
-# -----------------------------------------------------------------------------
 # Security & Secrets
-# -----------------------------------------------------------------------------
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.envrc
-
-# API keys and secrets
+.env*
 secrets/
 *.key
 *.pem
-*.p12
-*.pfx
-*.crt
-*.cert
-*.cer
-*.der
 
-# SSH keys
-id_rsa
-id_dsa
-id_ecdsa
-id_ed25519
-*.ppk
-
-# GPG keys
-*.gpg
-*.asc
-
-# -----------------------------------------------------------------------------
-# Databases
-# -----------------------------------------------------------------------------
-# SQLite
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
-
-# PostgreSQL
-*.dump
-
-# MySQL
-*.sql
-
-# -----------------------------------------------------------------------------
-# Caching & Temporary Files
-# -----------------------------------------------------------------------------
-# General cache
+# Cache & Temporary
 .cache/
-cache/
 tmp/
-temp/
-.tmp/
-.temp/
-
-# Rust-specific cache
 .cargo/
 .rustup/
-
-# Build cache
 ccache/
 sccache/
 
-# -----------------------------------------------------------------------------
-# Containers & Deployment
-# -----------------------------------------------------------------------------
-# Docker
-.dockerignore
-Dockerfile.*
-docker-compose.override.yml
-.docker/
-
-# Kubernetes
-*.kubeconfig
-
-# Vagrant
-.vagrant/
-Vagrantfile.local
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-
-# -----------------------------------------------------------------------------
-# Monitoring & Metrics
-# -----------------------------------------------------------------------------
-# Flamegraph
-flamegraph.svg
-perf.data
-perf.data.old
-
-# Valgrind
-*.valgrind
-vgcore.*
-
-# -----------------------------------------------------------------------------
-# Backup & Archive Files
-# -----------------------------------------------------------------------------
+# Backup Files
 *.bak
 *.backup
 *.old
-*.orig
-*.save
-*.swp
-*.tmp
-*~
 
-# Archive files
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
+# IDE Project Metadata
+.windsurf/
 
-# -----------------------------------------------------------------------------
-# Custom Project Files (Add your specific ignores here)
-# -----------------------------------------------------------------------------
-# Add any project-specific files or directories to ignore
-
-# Configuration files that shouldn't be committed
-config.local.*
-settings.local.*
-
-# Local development files
-.local/
-local/
-
-# Performance monitoring files
-*.perf
-*.trace
-
-# Custom build scripts output
-build-output/
-dist/
-.windsurf
-
-# =============================================================================
-# END OF GITIGNORE
 # =============================================================================
