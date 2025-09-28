@@ -101,6 +101,8 @@ jobs:
       # Export SARIF locally using CLI as an artifact for offline inspection (best-effort)
       - name: Export SARIF (CLI)
         if: steps.find-db.outputs.db_dir != ''
+        env:
+          CODEQL_DIST: ${{ steps.init.outputs.codeql-path }}
         run: |
           set -euo pipefail
           DB_DIR="${{ steps.find-db.outputs.db_dir }}"
@@ -109,8 +111,15 @@ jobs:
             echo "No DB found under $DB_DIR, skipping CLI export"
             exit 0
           fi
-          # CodeQL CLI is placed on PATH by the init action
-          codeql database analyze "$DB" \
+          CODEQL_BIN=${CODEQL_DIST:-codeql}
+          if [ -d "$CODEQL_BIN" ]; then
+            CODEQL_BIN="$CODEQL_BIN/codeql"
+          fi
+          if ! command -v "$CODEQL_BIN" >/dev/null 2>&1; then
+            echo "CodeQL CLI not found at '$CODEQL_BIN' or on PATH" >&2
+            exit 1
+          fi
+          "$CODEQL_BIN" database analyze "$DB" \
             codeql/rust-queries:codeql-suites/rust-security-and-quality.qls \
             --format=sarifv2 --output codeql-results-${{ matrix.rust }}.sarif \
             --verbosity=progress --threads=0 --download --no-redistribute
