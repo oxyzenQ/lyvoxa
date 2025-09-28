@@ -3,31 +3,31 @@
 <!-- Badges: Build · Security · Release · Platform · Activity · Branding -->
 
 <!-- Build & CI -->
-[![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=for-the-badge&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
-[![DCO](https://img.shields.io/badge/DCO-required-4c1?style=for-the-badge&logo=git&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/blob/main/CONTRIBUTING.md#developer-certificate-of-origin-dco)
-[![Security](https://img.shields.io/badge/Security-Enhanced-00d084?style=for-the-badge&logo=shield&logoColor=white)](SECURITY.md)
+[![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=flat&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=flat&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+[![DCO](https://img.shields.io/badge/DCO-required-4c1?style=flat&logo=git&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/blob/main/CONTRIBUTING.md#developer-certificate-of-origin-dco)
+[![Security](https://img.shields.io/badge/Security-Enhanced-00d084?style=flat&logo=shield&logoColor=white)](SECURITY.md)
 
 <!-- Release & License -->
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-663399?style=for-the-badge&logo=gnu&logoColor=white)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=for-the-badge&logo=tag&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/releases)
-[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge&logo=github&logoColor=white&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-663399?style=flat&logo=gnu&logoColor=white)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=flat&logo=tag&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=flat&logo=github&logoColor=white&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
 
 <!-- Platform & Security -->
-![Arch Linux](https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=for-the-badge)
-![Linux x86_64](https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=for-the-badge)
-![Checksum SHA256](https://img.shields.io/badge/checksum-SHA256-4169E1?style=for-the-badge&logo=lock&logoColor=white)
+![Arch Linux](https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=flat)
+![Linux x86_64](https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=flat)
+![Checksum SHA256](https://img.shields.io/badge/checksum-SHA256-4169E1?style=flat&logo=lock&logoColor=white)
 
 <!-- Code & Activity -->
-![Lines of Code](https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json&cacheSeconds=30&logo=counter&logoColor=white)
-![Code Size](https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge&logo=files&logoColor=white&color=orange)
-![Commit Activity](https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge&logo=github&logoColor=white&color=blue)
-![Last Commit](https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=for-the-badge&logo=git&logoColor=white&color=green)
+![Lines of Code](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json&cacheSeconds=30&logo=counter&logoColor=white)
+![Code Size](https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=flat&logo=files&logoColor=white&color=orange)
+![Commit Activity](https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=flat&logo=github&logoColor=white&color=blue)
+![Last Commit](https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=flat&logo=git&logoColor=white&color=green)
 
 <!-- Branding (futuristic) -->
-![Stellar Edition](https://img.shields.io/badge/edition-stellar-7D2AE8?style=for-the-badge&logo=starship&logoColor=white)
-![Themes](https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=for-the-badge&logo=palette&logoColor=white)
-![Plugin Ready](https://img.shields.io/badge/plugin-ready-00bcd4?style=for-the-badge&logo=puzzle&logoColor=white)
+![Stellar Edition](https://img.shields.io/badge/edition-stellar-7D2AE8?style=flat&logo=starship&logoColor=white)
+![Themes](https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=flat&logo=palette&logoColor=white)
+![Plugin Ready](https://img.shields.io/badge/plugin-ready-00bcd4?style=flat&logo=puzzle&logoColor=white)
 
 <!-- Optional badges (uncomment when ready)
 [![crates.io](https://img.shields.io/crates/v/lyvoxa?style=for-the-badge)](https://crates.io/crates/lyvoxa)
