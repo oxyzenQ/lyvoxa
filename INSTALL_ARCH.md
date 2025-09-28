@@ -6,7 +6,7 @@ This guide explains how to properly install Lyvoxa on Arch Linux systems.
 
 The release `.tar.gz` file from GitHub is a **regular compressed tarball**, not an Arch Linux package. That's why `pacman -U` failed with:
 
-```
+```text
 error: missing package metadata in lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
 error: 'lyvoxa-Stellar-2.0-linux-x86_64.tar.gz': invalid or corrupted package
 ```
@@ -76,14 +76,16 @@ makepkg -si    # Build and install binary package
 
 ## 🎯 Recommendations
 
-### For System Integration:
+### For System Integration
+
 ```bash
 # Build and install source package with native optimizations
 make arch-pkg
 sudo pacman -U lyvoxa-*.pkg.tar.zst
 ```
 
-### For Testing/Development:
+### For Testing/Development
+
 ```bash
 # Extract and run directly
 tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
@@ -131,6 +133,7 @@ make arch-pkg-clean     # Clean build artifacts
 ## 🔍 Package Contents
 
 The source package installs:
+
 - `/usr/bin/lyvoxa` - Main TUI application
 - `/usr/share/doc/lyvoxa/` - Documentation
 - `/usr/share/licenses/lyvoxa/` - License files
@@ -140,4 +143,4 @@ The source package installs:
 
 ---
 
-**Need Help?** Open an issue at: https://github.com/oxyzenQ/lyvoxa/issues
+**Need Help?** Open an issue at: [GitHub Issues](https://github.com/oxyzenQ/lyvoxa/issues)

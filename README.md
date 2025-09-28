@@ -1,83 +1,39 @@
 # 🌟 Lyvoxa Stellar - Futuristic System Monitor
 
 <!-- Badges: Build · Security · Release · Platform · Activity · Branding -->
-<p align="center">
-  <!-- Build & CI -->
-  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml">
-    <img alt="Build CI"
-         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml">
-    <img alt="CodeQL"
-         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/dco.yml">
-    <img alt="DCO"
-         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/dco.yml?branch=main&label=dco&style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/release.yml">
-    <img alt="Release Pipeline"
-         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/release.yml?branch=main&label=release&style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/actions/workflows/clone-detect.yml">
-    <img alt="Clone Detect"
-         src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/clone-detect.yml?branch=main&label=clone%20detect&style=for-the-badge">
-  </a>
-  <a href="LICENSE">
-    <img alt="License"
-         src="https://img.shields.io/github/license/oxyzenQ/lyvoxa?style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
-    <img alt="Latest Release"
-         src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=for-the-badge">
-  </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
-    <img alt="Downloads"
-         src="https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge">
-  </a>
-</p>
 
-<p align="center">
-  <!-- Platform & Security -->
-  <img alt="Arch Linux"
-       src="https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=for-the-badge">
-  <img alt="Linux x86_64"
-       src="https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=for-the-badge">
-  <img alt="Checksum SHA256"
-       src="https://img.shields.io/badge/checksum-SHA256-blue?style=for-the-badge">
-</p>
+<!-- Build & CI -->
+[![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+[![DCO](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/dco.yml?branch=main&label=dco&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/dco.yml)
+[![Release Pipeline](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/release.yml?branch=main&label=release&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/release.yml)
+[![Clone Detect](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/clone-detect.yml?branch=main&label=clone%20detect&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/clone-detect.yml)
 
-<p align="center">
-  <!-- Code & Activity -->
-  <img alt="Lines of Code"
-       src="https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json">
-  <img alt="Code Size"
-       src="https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge">
-  <img alt="Commit Activity"
-       src="https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge">
-  <img alt="Last Commit"
-       src="https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=for-the-badge">
-</p>
+<!-- Release & License -->
+[![License](https://img.shields.io/github/license/oxyzenQ/lyvoxa?style=for-the-badge)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/releases)
 
-<p align="center">
-  <!-- Branding (futuristic) -->
-  <img alt="Stellar Edition"
-       src="https://img.shields.io/badge/edition-stellar-7D2AE8?style=for-the-badge&logo=starship&logoColor=white">
-  <img alt="Themes"
-       src="https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=for-the-badge">
-  <img alt="Plugin Ready"
-       src="https://img.shields.io/badge/plugin-ready-00bcd4?style=for-the-badge&logo=puzzle&logoColor=white">
-</p>
+<!-- Platform & Security -->
+![Arch Linux](https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=for-the-badge)
+![Linux x86_64](https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=for-the-badge)
+![Checksum SHA256](https://img.shields.io/badge/checksum-SHA256-blue?style=for-the-badge)
+
+<!-- Code & Activity -->
+![Lines of Code](https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json)
+![Code Size](https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge)
+![Commit Activity](https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=for-the-badge)
+
+<!-- Branding (futuristic) -->
+![Stellar Edition](https://img.shields.io/badge/edition-stellar-7D2AE8?style=for-the-badge&logo=starship&logoColor=white)
+![Themes](https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=for-the-badge)
+![Plugin Ready](https://img.shields.io/badge/plugin-ready-00bcd4?style=for-the-badge&logo=puzzle&logoColor=white)
 
 <!-- Optional badges (uncomment when ready)
-<p align="center">
-  <a href="https://crates.io/crates/lyvoxa"><img alt="crates.io"
-     src="https://img.shields.io/crates/v/lyvoxa?style=for-the-badge"></a>
-  <a href="https://aur.archlinux.org/packages/lyvoxa"><img alt="AUR"
-     src="https://img.shields.io/aur/version/lyvoxa?style=for-the-badge"></a>
-  <a href="https://formulae.brew.sh/"><img alt="Homebrew"
-     src="https://img.shields.io/badge/homebrew-coming_soon-orange?logo=homebrew&style=for-the-badge"></a>
-</p>
+[![crates.io](https://img.shields.io/crates/v/lyvoxa?style=for-the-badge)](https://crates.io/crates/lyvoxa)
+[![AUR](https://img.shields.io/aur/version/lyvoxa?style=for-the-badge)](https://aur.archlinux.org/packages/lyvoxa)
+[![Homebrew](https://img.shields.io/badge/homebrew-coming_soon-orange?logo=homebrew&style=for-the-badge)](https://formulae.brew.sh/)
 -->
 
 An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to traditional system monitors. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
@@ -183,7 +139,7 @@ make release
 make all     # Full build cycle
 ```
 
-#### Manual Build
+#### Alternative: Manual Build
 
 ```bash
 # Build from source
@@ -317,7 +273,7 @@ Lyvoxa enables strong hardening by default for release builds:
 
 #### Quick presets (already applied)
 
-```
+```toml
 [profile.release]
 opt-level = 3
 lto = "fat"
@@ -420,7 +376,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 Lyvoxa is released under the GNU GPL v3.0 — you are free to use, modify, and redistribute the source under the same license.
 Binary releases are signed and reproducible; verify signatures and checksums before use.
 
-Trademark: The name "Lyvoxa" and its logo are the property of Rezky Nightky. Use of the Lyvoxa name and logo in derivative or competing products requires explicit permission. For commercial licensing or partnership inquiries, contact: with.rezky@gmail.com
+Trademark: The name "Lyvoxa" and its logo are the property of Rezky Nightky. Use of the Lyvoxa name and logo in derivative or competing products requires explicit permission. For commercial licensing or partnership inquiries, contact: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
 
 ### Trademark Notice
 
@@ -432,7 +388,7 @@ Nominative fair use—for example, referencing or linking to this project—is p
 
 If the trademark is registered in any jurisdiction, registered trademark (®) protections will apply there. This document will be updated to reflect registration status (TM/®) when completed.
 
-For permission requests, brand usage guidelines, or commercial licensing, contact: with.rezky@gmail.com
+For permission requests, brand usage guidelines, or commercial licensing, contact: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
 
 ## Security
 
