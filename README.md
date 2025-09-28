@@ -20,7 +20,7 @@
 ![Checksum SHA256](https://img.shields.io/badge/checksum-SHA256-blue?style=for-the-badge)
 
 <!-- Code & Activity -->
-![Lines of Code](https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json)
+![Lines of Code](https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json&cacheSeconds=60)
 ![Code Size](https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge)
 ![Commit Activity](https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=for-the-badge)
 ![Last Commit](https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=for-the-badge)
