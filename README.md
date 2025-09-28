@@ -5,12 +5,11 @@
 <!-- Build & CI -->
 [![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
-[![DCO](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/dco.yml?branch=main&label=dco&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/dco.yml)
-[![Release Pipeline](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/release.yml?branch=main&label=release&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/release.yml)
-[![Clone Detect](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/clone-detect.yml?branch=main&label=clone%20detect&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/clone-detect.yml)
+[![DCO](https://img.shields.io/badge/DCO-required-blue?style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/blob/main/CONTRIBUTING.md#developer-certificate-of-origin-dco)
+[![Security](https://img.shields.io/badge/Security-Enhanced-green?style=for-the-badge)](SECURITY.md)
 
 <!-- Release & License -->
-[![License](https://img.shields.io/github/license/oxyzenQ/lyvoxa?style=for-the-badge)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/releases)
 [![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge)](https://github.com/oxyzenQ/lyvoxa/releases)
 
