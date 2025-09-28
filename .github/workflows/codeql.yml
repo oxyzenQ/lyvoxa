@@ -100,6 +100,7 @@ jobs:
 
       # Export SARIF locally using CLI as an artifact for offline inspection (best-effort)
       - name: Export SARIF (CLI)
+        continue-on-error: ${{ vars.STRICT_SARIF != 'true' }}
         if: steps.find-db.outputs.db_dir != ''
         env:
           CODEQL_DIST: ${{ steps.init.outputs.codeql-path }}
@@ -121,7 +122,7 @@ jobs:
           fi
           "$CODEQL_BIN" database analyze "$DB" \
             codeql/rust-queries:codeql-suites/rust-security-and-quality.qls \
-            --format=sarifv2 --output codeql-results-${{ matrix.rust }}.sarif \
+            --format=sarifv2.1.0 --output codeql-results-${{ matrix.rust }}.sarif \
             --verbosity=progress --threads=0 --download
 
       - name: Upload SARIF artifact
