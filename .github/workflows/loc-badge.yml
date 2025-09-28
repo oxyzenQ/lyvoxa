@@ -24,6 +24,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 1' # Weekly on Mondays
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -31,10 +34,14 @@ permissions:
 jobs:
   loc:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]'
+    if: |
+      (github.event_name != 'workflow_run' && github.actor != 'github-actions[bot]') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Rust (for tokei)
         uses: dtolnay/rust-toolchain@stable
@@ -52,7 +59,16 @@ jobs:
           LOC=$(tokei -o json --exclude target,.git | jq -r '.Total.code // ([.[] | select(type=="object" and has("total")) | .total.code] | add) // 0')
           printf '{"schemaVersion":1,"label":"lines of code","message":"%s","color":"informational","cacheSeconds":60}\n' "$LOC" > docs/badges/loc.json
 
+      - name: Debug summary
+        run: |
+          echo "## LOC Badge Debug" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Event: $GITHUB_EVENT_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- LOC file: docs/badges/loc.json" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Commit badge
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
