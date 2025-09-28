@@ -50,7 +50,7 @@
 <p align="center">
   <!-- Code & Activity -->
   <img alt="Lines of Code"
-       src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/oxyzenQ/lyvoxa/main/docs/badges/loc.json&style=for-the-badge">
+       src="https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fraw.githubusercontent.com%2FoxyzenQ%2Flyvoxa%2Fmain%2Fdocs%2Fbadges%2Floc.json">
   <img alt="Code Size"
        src="https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=for-the-badge">
   <img alt="Commit Activity"

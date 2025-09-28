@@ -3,8 +3,18 @@ name: LOC Badge
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - '.github/workflows/loc-badge.yml'
+    paths-ignore:
+      - 'docs/badges/loc.json'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - '.github/workflows/loc-badge.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 1' # Weekly on Mondays
@@ -15,6 +25,7 @@ permissions:
 jobs:
   loc:
     runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +44,7 @@ jobs:
           set -euo pipefail
           mkdir -p docs/badges
           LOC=$(tokei -o json --exclude target,.git | jq -r '.Total.code // ([.[] | select(type=="object" and has("total")) | .total.code] | add) // 0')
-          printf '{"schemaVersion":1,"label":"lines of code","message":"%s","color":"informational"}\n' "$LOC" > docs/badges/loc.json
+          printf '{"schemaVersion":1,"label":"lines of code","message":"%s","color":"informational","cacheSeconds":60}\n' "$LOC" > docs/badges/loc.json
 
       - name: Commit badge
         env:
@@ -49,3 +60,7 @@ jobs:
           git add docs/badges/loc.json
           git commit -m "docs(badge): update LOC badge [skip ci]"
           git push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

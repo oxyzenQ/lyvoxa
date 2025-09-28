@@ -10,9 +10,24 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop, titanium]
-    tags: ["Stellar-*"]
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "build.rs"
+      - ".cargo/**"
+      - "build.sh"
+      - "Makefile"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: [main, develop]
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "build.rs"
+      - ".cargo/**"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
 
 env:
