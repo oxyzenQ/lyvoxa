@@ -91,16 +91,10 @@ jobs:
           echo "=========================="
 
           MAIN_BIN="target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME"
-          SIMPLE_BIN="target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME-simple"
 
           if [ -f "$MAIN_BIN" ]; then
             echo "Main binary size: $(du -h $MAIN_BIN | cut -f1)"
             echo "Main binary info: $(file $MAIN_BIN)"
-          fi
-
-          if [ -f "$SIMPLE_BIN" ]; then
-            echo "Simple binary size: $(du -h $SIMPLE_BIN | cut -f1)"
-            echo "Simple binary info: $(file $SIMPLE_BIN)"
           fi
 
       - name: 📦 Create Professional Release Package
@@ -113,6 +107,11 @@ jobs:
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
+
+          # Normalize version for artifact naming:
+          # - Strip leading 'Stellar-' or 'stellar-'
+          # - Strip leading 'v' if tag is like 'v2.1.0'
+          VERSION_CLEAN=$(echo "$VERSION" | sed -E 's/^[Ss]tellar-//; s/^v//')
 
           echo "Version: $VERSION"
           echo "GitHub Ref: $GITHUB_REF"
@@ -128,8 +127,8 @@ jobs:
 
           echo "Final Version: $VERSION"
 
-          # Enhanced artifact naming scheme: lyvoxa-stellar-{version}-linux-64bit
-          ARTIFACT_NAME="lyvoxa-stellar-$VERSION-linux-64bit"
+          # Enhanced artifact naming scheme: lyvoxa-stellar-{clean_version}-linux-64bit
+          ARTIFACT_NAME="lyvoxa-stellar-$VERSION_CLEAN-linux-64bit"
           echo "🏷️ Artifact name: $ARTIFACT_NAME"
           
           # Create distribution directory with enhanced naming
@@ -377,11 +376,12 @@ jobs:
           ### 🚀 Quick Install (Recommended)
           ```bash
           # Download and extract
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
-          tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          sudo cp lyvoxa lyvoxa-simple /usr/local/bin/
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz.sha256
+          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
+          tar -xzf ${ARTIFACT_NAME}.tar.gz
+          cd ${ARTIFACT_NAME}
+          sudo ./install.sh
           ```
 
           ### 📦 Alternative Formats
@@ -389,22 +389,22 @@ jobs:
           #### Linux Universal (Maximum Compatibility)
           \`\`\`bash
           # Download Linux universal package (.gz - maximum compatibility)
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz.sha256
 
           # Verify integrity
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
 
           # Extract and install
-          tar -xzf lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz
-          cd lyvoxa-$RELEASE_VERSION-linux-x86_64
+          tar -xzf ${ARTIFACT_NAME}.tar.gz
+          cd ${ARTIFACT_NAME}
           sudo ./install.sh
           \`\`\`
 
           ### Manual Install
           \`\`\`bash
           # Copy binaries to your PATH
-          sudo cp lyvoxa /usr/local/bin/
+          sudo cp bin/lyvoxa /usr/local/bin/
           chmod +x /usr/local/bin/lyvoxa
           \`\`\`
 
@@ -413,7 +413,7 @@ jobs:
           ### Package Verification
           \`\`\`bash
           # Verify Linux universal package (.gz)
-          sha256sum -c lyvoxa-$RELEASE_VERSION-linux-x86_64.tar.gz.sha256
+          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
           \`\`\`
 
           ### Build Verification
