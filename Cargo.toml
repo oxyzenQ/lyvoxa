@@ -4,7 +4,7 @@ version = "2.0.0"
 edition = "2024"
 description = "An optimized monitoring system linux"
 authors = ["rezky_nightky"]
-license = "GPL-3.0"
+license = "GPL-3.0-only"
 repository = "https://github.com/oxyzenQ/lyvoxa"
 homepage = "https://github.com/oxyzenQ/lyvoxa"
 documentation = "https://github.com/oxyzenQ/lyvoxa"
@@ -18,7 +18,7 @@ path = "src/main.rs"
 
 [dependencies]
 sysinfo = "0.29"
-crossterm = "0.27"
+crossterm = "0.29"
 ratatui = "0.30.0-alpha.5"
 tokio = { version = "1.0", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }

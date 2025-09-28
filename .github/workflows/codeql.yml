@@ -122,7 +122,7 @@ jobs:
           "$CODEQL_BIN" database analyze "$DB" \
             codeql/rust-queries:codeql-suites/rust-security-and-quality.qls \
             --format=sarifv2 --output codeql-results-${{ matrix.rust }}.sarif \
-            --verbosity=progress --threads=0 --download --no-redistribute
+            --verbosity=progress --threads=0 --download
 
       - name: Upload SARIF artifact
         if: steps.find-db.outputs.db_dir != '' && hashFiles('codeql-results-*.sarif') != ''
@@ -200,7 +200,25 @@ jobs:
           name: cargo-audit-${{ github.run_id }}
           path: audit-${{ github.run_id }}.json
 
-      - name: Cargo Deny
-        uses: EmbarkStudios/cargo-deny-action@v1
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny@0.18.5
+
+      - name: Cargo Deny Check (all)
+        run: cargo deny check all
+
+      - name: Cargo Deny JSON summary
+        if: always()
+        run: |
+          set -euo pipefail
+          cargo deny --version || true
+          cargo deny check --format json > deny-${{ github.run_id }}.json || true
+          echo "## Cargo Deny Summary" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          echo "- JSON report uploaded as artifact: cargo-deny-${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Upload cargo-deny JSON
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          command: check
+          name: cargo-deny-${{ github.run_id }}
+          path: deny-${{ github.run_id }}.json
+          if-no-files-found: warn

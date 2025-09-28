@@ -14,24 +14,47 @@ ignore = []
 # Only allow GPLv3-compatible and permissive licenses
 allow = [
   "GPL-3.0-only",
-  "GPL-3.0-or-later",
   "MIT",
   "Apache-2.0",
   "BSD-2-Clause",
-  "BSD-3-Clause",
-  "ISC",
-  "Unicode-DFS-2016"
+  "Zlib",
+  "Unicode-3.0",
+  
 ]
 # Confidence threshold for license detection
 confidence-threshold = 0.8
 
 [bans]
-# Warn on multiple versions but don't fail the build
-multiple-versions = "warn"
-# Wildcard dependencies are often a mistake
-wildcards = "allow"
+# Fail the build on duplicate versions (strict)
+multiple-versions = "deny"
+# Deny wildcard versions to enforce pinning
+wildcards = "deny"
+
+# Temporary skips for transitive duplicates while stabilizing TUI deps
+# Each entry is a PackageSpec; keep tight versions and reasons for easy cleanup
+skip = [
+  { crate = "hashbrown:0.15.5", reason = "ratatui-core transitive; pending upstream convergence" },
+  { crate = "hashbrown:0.16.0", reason = "kasuari transitive via ratatui-core; pending convergence" },
+  { crate = "foldhash:0.1.5", reason = "hashbrown 0.15 path via ratatui-core; temporary" },
+  { crate = "foldhash:0.2.0", reason = "hashbrown 0.16 path via kasuari/ratatui-core; temporary" },
+  { crate = "itertools:0.13.0", reason = "unicode-truncate -> ratatui-core chain; temporary" },
+  { crate = "itertools:0.14.0", reason = "ratatui-widgets/core alpha chain; temporary" },
+  { crate = "linux-raw-sys:0.4.15", reason = "procfs/rustix 0.38 chain; temporary" },
+  { crate = "linux-raw-sys:0.11.0", reason = "crossterm/rustix 1.1 chain; temporary" },
+  { crate = "rustix:0.38.44", reason = "procfs path; temporary until deps converge" },
+  { crate = "rustix:1.1.2", reason = "crossterm path; temporary until deps converge" }
+]
 
 # Deny specific crates
+[[bans.deny]]
+name = "memmap"
+reason = "Deprecated, use memmap2"
+
+[[bans.deny]]
+name = "time"
+version = "<0.2.23"
+reason = "Vulnerable, update required"
+
 [[bans.deny]]
 name = "users"
 reason = "RUSTSEC-2025-0040; unmaintained and vulnerable"
