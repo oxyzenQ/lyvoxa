@@ -10,8 +10,6 @@ on:
       - 'README.md'
       - 'docs/**'
       - '.github/workflows/loc-badge.yml'
-    paths-ignore:
-      - 'docs/badges/loc.json'
   pull_request:
     branches: [ main ]
     paths:
