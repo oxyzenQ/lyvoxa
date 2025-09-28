@@ -56,13 +56,12 @@ jobs:
           set -euo pipefail
           mkdir -p docs/badges
           LOC=$(tokei -o json --exclude target,.git | jq -r '.Total.code // ([.[] | select(type=="object" and has("total")) | .total.code] | add) // 0')
-          printf '{"schemaVersion":1,"label":"lines of code","message":"%s","color":"informational","cacheSeconds":60}\n' "$LOC" > docs/badges/loc.json
+          echo "{\"schemaVersion\":1,\"label\":\"lines of code\",\"message\":\"$LOC\",\"color\":\"informational\",\"cacheSeconds\":30}" > docs/badges/loc.json
 
       - name: Debug summary
         run: |
           echo "## LOC Badge Debug" >> "$GITHUB_STEP_SUMMARY"
           echo "- Event: $GITHUB_EVENT_NAME" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Ref: $GITHUB_REF" >> "$GITHUB_STEP_SUMMARY"
           echo "- SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- LOC file: docs/badges/loc.json" >> "$GITHUB_STEP_SUMMARY"
 
