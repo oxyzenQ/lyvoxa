@@ -30,6 +30,12 @@ on:
       - ".github/workflows/ci.yml"
   workflow_dispatch:
 
+# Security: Explicit permissions (principle of least privilege)
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
