@@ -62,7 +62,7 @@ updates:
           - "minor"
     
     # Version update strategy
-    versioning-strategy: "increase"
+    versioning-strategy: "auto"
     
     # Allow both direct and indirect dependencies
     allow:
