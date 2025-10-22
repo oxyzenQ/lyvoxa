@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -60,7 +60,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Setup sccache (optional)
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
         continue-on-error: true
         with:
           version: "v0.5.4"
@@ -111,7 +111,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -119,7 +119,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Setup sccache (optional)
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
         continue-on-error: true
         with:
           version: "v0.5.4"
@@ -181,7 +181,7 @@ jobs:
   #
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v5
   #
   #     - name: Setup Rust toolchain
   #       uses: dtolnay/rust-toolchain@stable
@@ -213,13 +213,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Download debug artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: lyvoxa-linux-x86_64
           path: ./artifacts/
@@ -275,7 +275,7 @@ jobs:
 
       - name: Comment PR with performance
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

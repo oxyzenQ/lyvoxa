@@ -39,7 +39,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -64,7 +64,7 @@ jobs:
     if: needs.changes.outputs.shell == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install shellcheck
         run: |
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Rust (${{ matrix.rust }})
         uses: dtolnay/rust-toolchain@stable
@@ -111,7 +111,7 @@ jobs:
 
       - name: Initialize CodeQL
         id: init
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: rust
           # Full-depth queries
@@ -123,7 +123,7 @@ jobs:
 
       # Analyze with the CodeQL Action (uploads to Security tab)
       - name: Analyze (upload to Security tab)
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:rust-${{ matrix.rust }}"
           upload: true
@@ -218,7 +218,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Rust (stable)
         uses: dtolnay/rust-toolchain@stable

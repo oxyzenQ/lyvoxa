@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Full history for changelog generation
 
@@ -523,7 +523,7 @@ jobs:
 
       - name: 🚀 Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: "🌟 Lyvoxa Stellar Release"
           tag_name: ${{ env.RELEASE_VERSION }}
