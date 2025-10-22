@@ -39,7 +39,7 @@ jobs:
   auto-approve:
     name: Auto-approve Dependabot PRs
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request_target'
     
     steps:
       - name: Dependabot metadata
@@ -53,10 +53,12 @@ jobs:
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
         run: |
-          gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+            -d '{"event":"APPROVE"}'
+          echo "✅ PR approved"
 
   # ===========================================================================
   # Auto-merge Dependabot PRs
@@ -79,61 +81,84 @@ jobs:
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
         run: |
-          gh pr merge --auto --squash "$PR_URL"
+          # Enable auto-merge using GraphQL API
+          PR_NODE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" \
+            | jq -r '.node_id')
+          
+          curl -X POST \
+            -H "Authorization: bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/graphql \
+            -d '{"query":"mutation {enablePullRequestAutoMerge(input:{pullRequestId:\"'$PR_NODE_ID'\",mergeMethod:SQUASH}){pullRequest{autoMergeRequest{enabledAt}}}}"}'
+          
           echo "✅ Auto-merge enabled. PR will merge automatically when all required checks pass."
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Label for manual review (major updates)
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
-          gh pr edit "$PR_URL" --add-label "manual-review-required"
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" \
+            -d '{"labels":["manual-review-required"]}'
           echo "⚠️ Major update detected. Manual review required."
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ===========================================================================
   # Re-enable auto-merge after CI completes
   # ===========================================================================
-  re-enable-auto-merge:
-    name: Re-enable auto-merge after checks
+  merge-after-checks:
+    name: Merge after all checks pass
     runs-on: ubuntu-latest
     if: |
       github.actor == 'dependabot[bot]' &&
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success'
+      github.event_name == 'check_run' &&
+      github.event.check_run.conclusion == 'success'
     
     steps:
-      - name: Get Dependabot PR
-        id: pr
+      - name: Find associated PR
+        id: find-pr
         run: |
-          # Find the PR associated with this workflow run
-          PR_DATA=$(gh pr list \
-            --repo ${{ github.repository }} \
-            --state open \
-            --author "dependabot[bot]" \
-            --json number,headRefName,url \
-            --jq '.[] | select(.headRefName == "${{ github.event.workflow_run.head_branch }}") | {number: .number, url: .url}')
+          PR_NUMBER=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.event.check_run.head_sha }}/pulls" \
+            | jq -r '.[0].number')
           
-          if [ -n "$PR_DATA" ]; then
-            echo "pr_number=$(echo "$PR_DATA" | jq -r '.number')" >> $GITHUB_OUTPUT
-            echo "pr_url=$(echo "$PR_DATA" | jq -r '.url')" >> $GITHUB_OUTPUT
-            echo "Found PR: $(echo "$PR_DATA" | jq -r '.url')" 
+          if [ "$PR_NUMBER" != "null" ] && [ -n "$PR_NUMBER" ]; then
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "Found PR #$PR_NUMBER"
           else
-            echo "No matching PR found"
+            echo "No PR found for this commit"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Re-enable auto-merge
-        if: steps.pr.outputs.pr_number != ''
+      - name: Check if all checks passed
+        if: steps.find-pr.outputs.pr_number != ''
+        id: check-status
         run: |
-          gh pr merge --auto --squash "${{ steps.pr.outputs.pr_url }}"
-          echo "✅ Auto-merge re-enabled after CI completion"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER="${{ steps.find-pr.outputs.pr_number }}"
+          
+          # Get PR mergeable state
+          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER")
+          
+          MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
+          echo "mergeable=$MERGEABLE" >> $GITHUB_OUTPUT
+          echo "PR mergeable status: $MERGEABLE"
+      
+      - name: Merge PR
+        if: steps.check-status.outputs.mergeable == 'true'
+        run: |
+          PR_NUMBER="${{ steps.find-pr.outputs.pr_number }}"
+          
+          curl -X PUT \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge" \
+            -d '{"merge_method":"squash"}'
+          
+          echo "✅ PR #$PR_NUMBER merged successfully"
 
   # ===========================================================================
   # Notification for failed merges
@@ -147,10 +172,12 @@ jobs:
     steps:
       - name: Comment on PR
         run: |
-          gh pr comment "$PR_URL" --body "⚠️ Auto-merge failed. Manual review required."
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            -d '{"body":"⚠️ Auto-merge failed. Manual review required."}'
+          echo "Comment posted"
 
 # =============================================================================
 # CONFIGURATION NOTES
