@@ -8,6 +8,8 @@ on:
 jobs:
   dco:
     runs-on: ubuntu-latest
+    # Skip DCO check for Dependabot PRs (they auto-generate commits)
+    if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v4
@@ -20,7 +22,6 @@ jobs:
           set -euo pipefail
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             base="${{ github.base_ref }}"
-            git fetch --no-tags --prune --depth=0 origin "+refs/heads/${base}:refs/remotes/origin/${base}"
             RANGE="origin/${base}..HEAD"
           else
             RANGE="HEAD~10..HEAD"

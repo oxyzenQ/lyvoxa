@@ -65,35 +65,22 @@ jobs:
     name: Auto-merge Dependabot PRs
     runs-on: ubuntu-latest
     needs: auto-approve
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request_target'
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
       - name: Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       
-      - name: Wait for CI checks
-        uses: fountainhead/action-wait-for-check@v1.2.0
-        id: wait-for-checks
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: "Build and Test (Linux x86_64)"  # Match your CI workflow job name
-          ref: ${{ github.event.pull_request.head.sha }}
-          timeoutSeconds: 1800  # 30 minutes timeout
-          intervalSeconds: 30
-      
       - name: Enable auto-merge for patch and minor updates
         if: |
-          steps.wait-for-checks.outputs.conclusion == 'success' &&
-          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-           steps.metadata.outputs.update-type == 'version-update:semver-minor')
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
         run: |
           gh pr merge --auto --squash "$PR_URL"
+          echo "✅ Auto-merge enabled. PR will merge automatically when all required checks pass."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -102,15 +89,16 @@ jobs:
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
           gh pr edit "$PR_URL" --add-label "manual-review-required"
+          echo "⚠️ Major update detected. Manual review required."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ===========================================================================
-  # Direct merge for low-risk updates
+  # Re-enable auto-merge after CI completes
   # ===========================================================================
-  direct-merge:
-    name: Direct merge for patch updates
+  re-enable-auto-merge:
+    name: Re-enable auto-merge after checks
     runs-on: ubuntu-latest
     if: |
       github.actor == 'dependabot[bot]' &&
@@ -118,31 +106,32 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Get PR number
+      - name: Get Dependabot PR
         id: pr
         run: |
-          PR_NUMBER=$(gh pr list --state open --author dependabot[bot] --json number --jq '.[0].number')
-          echo "number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          # Find the PR associated with this workflow run
+          PR_DATA=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --author "dependabot[bot]" \
+            --json number,headRefName,url \
+            --jq '.[] | select(.headRefName == "${{ github.event.workflow_run.head_branch }}") | {number: .number, url: .url}')
+          
+          if [ -n "$PR_DATA" ]; then
+            echo "pr_number=$(echo "$PR_DATA" | jq -r '.number')" >> $GITHUB_OUTPUT
+            echo "pr_url=$(echo "$PR_DATA" | jq -r '.url')" >> $GITHUB_OUTPUT
+            echo "Found PR: $(echo "$PR_DATA" | jq -r '.url')" 
+          else
+            echo "No matching PR found"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v2
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-      
-      - name: Merge PR if patch update
-        if: |
-          steps.pr.outputs.number != '' &&
-          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+      - name: Re-enable auto-merge
+        if: steps.pr.outputs.pr_number != ''
         run: |
-          gh pr merge ${{ steps.pr.outputs.number }} --squash --auto
+          gh pr merge --auto --squash "${{ steps.pr.outputs.pr_url }}"
+          echo "✅ Auto-merge re-enabled after CI completion"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
