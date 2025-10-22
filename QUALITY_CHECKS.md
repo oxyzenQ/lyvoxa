@@ -216,4 +216,4 @@ Edit `pre-commit.sh` and add new validation functions following the existing pat
 
 ---
 
-**Maintained by**: rezky_nightky | **Version**: Stellar 2.0 | **Updated**: $(date -u +%Y-%m-%d)
+**Maintained by**: rezky_nightky | **Version**: Stellar 3.0 | **Updated**: $(date -u +%Y-%m-%d)

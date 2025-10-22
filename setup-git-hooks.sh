@@ -4,7 +4,7 @@
 # =============================================================================
 # Sets up Git hooks to run quality checks automatically
 # Author: rezky_nightky
-# Version: Stellar 2.0
+# Version: Stellar 3.0
 
 set -euo pipefail
 

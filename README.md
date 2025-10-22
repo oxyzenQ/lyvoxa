@@ -37,7 +37,7 @@
 
 An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to traditional system monitors. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
 
-**Current Version**: Stellar 2.0 (v2.0.0)
+**Current Version**: Stellar 3.0 (v3.0.0)
 **Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
 
 ## ✨ Features

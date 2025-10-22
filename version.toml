@@ -6,16 +6,16 @@
 
 [version]
 # Semantic version (major.minor.patch)
-semantic = "2.0.0"
+semantic = "3.0.0"
 
 # Release name (for branding)
 release_name = "Stellar"
 
 # Release number (for this series)
-release_number = "2.0"
+release_number = "3.0"
 
 # Full release identifier
-release_tag = "stellar-2.0"
+release_tag = "stellar-3.0"
 
 [metadata]
 # Project metadata

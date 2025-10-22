@@ -4,7 +4,7 @@
 # =============================================================================
 # Builds proper Arch Linux packages for Lyvoxa
 # Author: rezky_nightky
-# Version: Stellar 2.0
+# Version: Stellar 3.0
 
 set -euo pipefail
 

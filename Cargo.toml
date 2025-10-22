@@ -1,6 +1,6 @@
 [package]
 name = "lyvoxa"
-version = "2.0.0"
+version = "3.0.0"
 edition = "2024"
 description = "An optimized monitoring system linux"
 authors = ["rezky_nightky"]

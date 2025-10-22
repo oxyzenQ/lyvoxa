@@ -3,7 +3,7 @@
 # =============================================================================
 # Automated build, test, and release pipeline optimized for ArchLinux
 # Author: rezky_nightky
-# Version: Stellar 2.0
+# Version: Stellar 3.0
 
 name: CI/CD Pipeline
 

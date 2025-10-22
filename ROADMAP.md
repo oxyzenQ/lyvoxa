@@ -3,7 +3,7 @@
 
 ---
 
-## 🚀 **Current Release: Stellar 2.0** *(Active Development)*
+## 🚀 **Current Release: Stellar 3.0** *(Active Development)*
 
 **Status**: 🔥 Enhanced Core Features  
 **Release Target**: Q1 2025  
@@ -126,7 +126,7 @@ Our stellar-themed naming reflects Lyvoxa's journey through cosmic evolution:
 
 ### Version Format: `{Theme} {Major}.{Minor}.{Patch}-{Build}`
 Examples:
-- `Stellar 2.0.0` - Core release
+- `Stellar 3.0.0` - Core release
 - `Stellar 2.1.0-beta` - Feature preview  
 - `Nebula 3.0.0-rc1` - Release candidate
 
@@ -161,7 +161,7 @@ Examples:
 
 ## 📊 **Success Metrics**
 
-### **Stellar 2.0 Goals**
+### **Stellar 3.0 Goals**
 - [ ] 10,000+ GitHub stars
 - [ ] Sub-100ms UI response time
 - [ ] 5+ community plugins

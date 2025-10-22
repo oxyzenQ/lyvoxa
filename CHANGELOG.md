@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - Stellar 3.0 Edition - 2025-10-22
+
+### 🤖 Automation & Maintenance
+
+- **Dependabot Integration**: Automated dependency updates with auto-merge
+  - Weekly updates for Cargo (Rust) dependencies
+  - Weekly updates for GitHub Actions
+  - Intelligent grouping of patch/minor updates
+  - Automatic merging after CI passes
+  - Manual review for major version updates
+  
+- **Enhanced CI/CD Security**: 
+  - Added explicit permissions to all workflows (CodeQL compliance)
+  - Follow principle of least privilege
+  - Fixed DCO workflow for Dependabot PRs
+  - Improved workflow reliability with direct GitHub API calls
+
+- **Project Organization**:
+  - Moved Dependabot documentation to `docs/` directory
+  - Removed temporary setup files
+  - Cleaner repository structure
+  - Consolidated automation documentation
+
+### 🔧 Developer Experience
+
+- **Automation Scripts**:
+  - `enable-automerge-for-prs.sh`: Bulk enable auto-merge for PRs
+  - `check-dependabot-config.sh`: Verify Dependabot setup
+  
+- **Documentation**:
+  - Comprehensive Dependabot setup guide
+  - Quick start guide for 5-minute setup
+  - Security best practices documentation
+
+### 🛡️ Security
+
+- Workflow permissions hardening (fixes 4 CodeQL medium vulnerabilities)
+- Dependabot security updates enabled
+- Automated vulnerability patching
+- Supply chain security improvements
+
+### 📚 Documentation
+
+- New: `docs/DEPENDABOT.md` - Complete automation guide
+- New: `.github/DEPENDABOT_SETUP.md` - Detailed configuration
+- New: `.github/DEPENDABOT_QUICKSTART.md` - Fast setup guide
+- Updated: All version references to Stellar 3.0
+
 ## [2.0.0] - Stellar Edition - 2025-09-24
 
 ### 🌟 Major Features

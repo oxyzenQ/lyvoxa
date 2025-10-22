@@ -4,7 +4,7 @@
 # =============================================================================
 # Optimized build script with CPU core limits and caching for Arch Linux
 # Author: rezky_nightky
-# Version: Stellar 2.0
+# Version: Stellar 3.0
 
 set -euo pipefail
 
@@ -188,7 +188,7 @@ show_sccache_stats() {
 }
 
 show_help() {
-    echo "Lyvoxa Build Script - Stellar 2.0"
+    echo "Lyvoxa Build Script - Stellar 3.0"
     echo ""
     echo "Usage: $0 [COMMAND]"
     echo ""

@@ -4,7 +4,7 @@
 # =============================================================================
 # Comprehensive dependency update with major version checks
 # Author: rezky_nightky
-# Version: Stellar 2.0
+# Version: Stellar 3.0
 
 set -euo pipefail
 

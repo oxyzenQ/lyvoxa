@@ -3,7 +3,7 @@
 # =============================================================================
 # Professional release workflow with enhanced artifact naming, SSH signing, and multi-checksum support
 # Author: rezky_nightky
-# Version: Stellar 2.0+ Enhanced
+# Version: Stellar 3.0+ Enhanced
 
 name: 🌟 Stellar Release
 
