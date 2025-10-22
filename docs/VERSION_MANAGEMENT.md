@@ -1,6 +1,9 @@
 # 🔄 Version Management System
 
-Lyvoxa uses a centralized version management system that automatically updates version numbers across all project files from a single source of truth.
+This document describes Lyvoxa's version management system.
+
+**Note**: Version management is now handled by the unified maintenance tool.  
+See: `./lyvoxa-maintain.sh update-version` or `docs/MAINTENANCE.md` that automatically updates version numbers across all project files from a single source of truth.
 
 ## 📋 Overview
 
@@ -16,25 +19,25 @@ The version management system consists of:
 ### Method 1: Interactive Update (Bash)
 ```bash
 # Interactive mode - prompts for input
-./update-version.sh
+./lyvoxa-maintain.sh update-version
 
 # Direct mode - provide all parameters
-./update-version.sh "1.6.0" "Matrix" "1.6"
+./lyvoxa-maintain.sh update-version "1.6.0" "Matrix" "1.6"
 ```
 
 ### Method 2: Advanced Management (Python)
 ```bash
 # Show current version
-python3 version-manager.py current
+./lyvoxa-maintain.sh version current
 
 # Update version with validation
-python3 version-manager.py update 1.6.0 Matrix 1.6
+./lyvoxa-maintain.sh version update 1.6.0 Matrix 1.6
 
 # Validate project state
-python3 version-manager.py validate
+./lyvoxa-maintain.sh version validate
 
 # Rollback to previous version
-python3 version-manager.py rollback
+./lyvoxa-maintain.sh version rollback
 ```
 
 ## 📁 Files Updated Automatically
@@ -102,10 +105,10 @@ Lyvoxa uses themed release names:
 ### Rollback System
 ```bash
 # Automatic rollback on failure
-python3 version-manager.py update 1.6.0 Matrix 1.6
+./lyvoxa-maintain.sh version update 1.6.0 Matrix 1.6
 
 # Manual rollback to latest backup
-python3 version-manager.py rollback
+./lyvoxa-maintain.sh version rollback
 ```
 
 ## 🔄 Workflow Integration
@@ -113,7 +116,7 @@ python3 version-manager.py rollback
 ### Standard Release Process
 ```bash
 # 1. Update version
-python3 version-manager.py update 1.6.0 Matrix 1.6
+./lyvoxa-maintain.sh version update 1.6.0 Matrix 1.6
 
 # 2. Review changes
 git diff
@@ -143,19 +146,19 @@ The version update automatically triggers:
 ### Major Version Update
 ```bash
 # Update to new major version
-./update-version.sh "2.0.0" "Matrix" "2.0"
+./lyvoxa-maintain.sh update-version "2.0.0" "Matrix" "2.0"
 ```
 
 ### Minor Version Update
 ```bash
 # Update minor version in same series
-./update-version.sh "1.6.0" "Stellar" "1.6"
+./lyvoxa-maintain.sh update-version "1.6.0" "Stellar" "1.6"
 ```
 
 ### Patch Version Update
 ```bash
 # Bug fix release
-./update-version.sh "1.5.1" "Stellar" "1.5.1"
+./lyvoxa-maintain.sh update-version "1.5.1" "Stellar" "1.5.1"
 ```
 
 ## 🔍 Troubleshooting
@@ -165,19 +168,19 @@ The version update automatically triggers:
 #### Version Format Error
 ```bash
 # ❌ Invalid format
-./update-version.sh "1.6" "Matrix" "1.6"
+./lyvoxa-maintain.sh update-version "1.6" "Matrix" "1.6"
 
 # ✅ Correct format
-./update-version.sh "1.6.0" "Matrix" "1.6"
+./lyvoxa-maintain.sh update-version "1.6.0" "Matrix" "1.6"
 ```
 
 #### Build Validation Failure
 ```bash
 # Check what failed
-python3 version-manager.py validate
+./lyvoxa-maintain.sh version validate
 
 # Manual rollback if needed
-python3 version-manager.py rollback
+./lyvoxa-maintain.sh version rollback
 ```
 
 #### Missing Files
@@ -196,7 +199,7 @@ ls -la Cargo.toml README.md CHANGELOG.md
 ls -la .version-backups/
 
 # Restore specific backup
-python3 version-manager.py rollback .version-backups/backup_20250124_143022
+./lyvoxa-maintain.sh version rollback .version-backups/backup_20250124_143022
 ```
 
 #### Manual Fix
@@ -205,7 +208,7 @@ python3 version-manager.py rollback .version-backups/backup_20250124_143022
 nano version.toml
 
 # Re-run update
-python3 version-manager.py update 1.6.0 Matrix 1.6
+./lyvoxa-maintain.sh version update 1.6.0 Matrix 1.6
 ```
 
 ## 🏗️ Architecture

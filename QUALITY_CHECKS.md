@@ -6,7 +6,7 @@ This document outlines the comprehensive quality check system for the Lyvoxa pro
 
 ### Setup Git Hooks (One-time)
 ```bash
-./setup-git-hooks.sh
+./lyvoxa-maintain.sh setup
 ```
 
 ### Manual Quality Checks
@@ -202,7 +202,7 @@ vim pre-commit.sh
 vim setup-git-hooks.sh
 
 # Re-install hooks after updates
-./setup-git-hooks.sh
+./lyvoxa-maintain.sh setup
 
 # Test the updates
 ./pre-commit.sh --quick

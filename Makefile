@@ -259,7 +259,20 @@ pre-commit-quick: ## Run quick pre-commit checks (no tests/audit)
 .PHONY: setup-hooks
 setup-hooks: ## Setup Git pre-commit and pre-push hooks
 	@echo "$(BLUE)[SETUP]$(NC) Installing Git hooks..."
-	./setup-git-hooks.sh
+	./lyvoxa-maintain.sh setup
+
+.PHONY: update-deps
+update-deps: ## Update all dependencies
+	@echo "$(BLUE)[UPDATE]$(NC) Updating dependencies..."
+	./lyvoxa-maintain.sh update-deps
+
+.PHONY: show-version
+show-version: ## Show current version
+	./lyvoxa-maintain.sh version
+
+.PHONY: maintain
+maintain: ## Run maintenance tool (interactive)
+	./lyvoxa-maintain.sh help
 
 .PHONY: quality-full
 quality-full: fmt-check clippy test audit ## Run all quality checks
