@@ -1,0 +1,192 @@
+# Dependabot Auto-Merge Workflow
+# Automatically merges Dependabot PRs that pass CI checks
+# This enables near-direct commits to main branch for dependency updates
+
+name: Dependabot Auto-Merge
+
+on:
+  # Trigger on pull request events from Dependabot
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+
+  # Trigger when check runs complete
+  check_run:
+    types:
+      - completed
+
+  # Trigger when workflow runs complete
+  workflow_run:
+    workflows:
+      - "CI/CD Pipeline"  # Match your main CI workflow name
+      - "CodeQL"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+
+jobs:
+  # ===========================================================================
+  # Auto-approve Dependabot PRs
+  # ===========================================================================
+  auto-approve:
+    name: Auto-approve Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Auto-approve PR
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: |
+          gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Auto-merge Dependabot PRs
+  # ===========================================================================
+  auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    needs: auto-approve
+    if: github.actor == 'dependabot[bot]'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Wait for CI checks
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: wait-for-checks
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "Build and Test (Linux x86_64)"  # Match your CI workflow job name
+          ref: ${{ github.event.pull_request.head.sha }}
+          timeoutSeconds: 1800  # 30 minutes timeout
+          intervalSeconds: 30
+      
+      - name: Enable auto-merge for patch and minor updates
+        if: |
+          steps.wait-for-checks.outputs.conclusion == 'success' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.metadata.outputs.update-type == 'version-update:semver-minor')
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Label for manual review (major updates)
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr edit "$PR_URL" --add-label "manual-review-required"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Direct merge for low-risk updates
+  # ===========================================================================
+  direct-merge:
+    name: Direct merge for patch updates
+    runs-on: ubuntu-latest
+    if: |
+      github.actor == 'dependabot[bot]' &&
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=$(gh pr list --state open --author dependabot[bot] --json number --jq '.[0].number')
+          echo "number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Merge PR if patch update
+        if: |
+          steps.pr.outputs.number != '' &&
+          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          gh pr merge ${{ steps.pr.outputs.number }} --squash --auto
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Notification for failed merges
+  # ===========================================================================
+  notify-on-failure:
+    name: Notify on merge failure
+    runs-on: ubuntu-latest
+    needs: [auto-merge]
+    if: failure() && github.actor == 'dependabot[bot]'
+    
+    steps:
+      - name: Comment on PR
+        run: |
+          gh pr comment "$PR_URL" --body "⚠️ Auto-merge failed. Manual review required."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# =============================================================================
+# CONFIGURATION NOTES
+# =============================================================================
+#
+# This workflow provides three levels of automation:
+#
+# 1. **Auto-approve**: Automatically approves patch and minor updates
+# 2. **Auto-merge**: Merges PRs after CI passes
+# 3. **Direct-merge**: Fast-tracks patch updates
+#
+# Merge Strategy:
+# - Patch updates: Auto-merge immediately after CI passes
+# - Minor updates: Auto-merge after CI passes
+# - Major updates: Require manual review (labeled for attention)
+#
+# Safety Features:
+# - Waits for CI checks to complete
+# - Uses squash merge to keep history clean
+# - Labels major updates for manual review
+# - Notifies on failures
+#
+# Requirements:
+# - Repository setting "Allow auto-merge" must be enabled
+# - GITHUB_TOKEN has sufficient permissions
+# - CI workflow must be named correctly (currently "CI/CD Pipeline")
+#
+# =============================================================================
