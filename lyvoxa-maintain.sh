@@ -200,7 +200,7 @@ update_version() {
     echo ""
     
     # Get new version
-    read -p "Enter new version (e.g., 3.1.0): " NEW_VERSION
+    read -r -p "Enter new version (e.g., 3.1.0): " NEW_VERSION
     if [ -z "$NEW_VERSION" ]; then
         log_error "Version cannot be empty"
         return 1
@@ -212,10 +212,10 @@ update_version() {
         return 1
     fi
     
-    read -p "Enter release name (e.g., Stellar): " NEW_RELEASE_NAME
+    read -r -p "Enter release name (e.g., Stellar): " NEW_RELEASE_NAME
     NEW_RELEASE_NAME=${NEW_RELEASE_NAME:-$RELEASE_NAME}
     
-    read -p "Enter release number (e.g., 3.1): " NEW_RELEASE_NUMBER
+    read -r -p "Enter release number (e.g., 3.1): " NEW_RELEASE_NUMBER
     NEW_RELEASE_NUMBER=${NEW_RELEASE_NUMBER:-$(echo "$NEW_VERSION" | cut -d. -f1-2)}
     
     # Confirm
