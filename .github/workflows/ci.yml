@@ -41,8 +41,7 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  # Use GitHub Actions default cores (no custom limits)
-  # Cache configuration (optional, fallback if sccache fails)
+  RUSTFLAGS: "-C opt-level=z -C lto=thin -C codegen-units=1"
   SCCACHE_GHA_ENABLED: false
 
 jobs:

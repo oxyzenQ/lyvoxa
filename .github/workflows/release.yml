@@ -1,11 +1,11 @@
 # =============================================================================
 # LYVOXA RELEASE PIPELINE
 # =============================================================================
-# Minimal, professional release workflow
+# Optimized release workflow with ordered CI checks
 # Author: rezky_nightky
 # Version: Stellar 3.0
 
-name: 🌟 Stellar Release
+name: 🌟 Release
 
 on:
   push:
@@ -19,61 +19,77 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  security-events: write
+  actions: read
 
 env:
   CARGO_TERM_COLOR: always
   PROJECT_NAME: lyvoxa
+  RUSTFLAGS: "-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
 
 jobs:
-  # Trigger all CI checks before release
-  quality-checks:
-    name: 🔍 Quality Checks
+  # Step 1: CodeQL Security Analysis
+  codeql:
+    name: 🔒 CodeQL Analysis
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
     steps:
-      - name: Trigger CI Workflows
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v3
         with:
-          script: |
-            const workflows = ['ci.yml', 'codeql.yml', 'dco.yml', 'loc-badge.yml'];
-            for (const workflow of workflows) {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: workflow,
-                ref: context.ref
-              });
-              console.log(`✅ Triggered ${workflow}`);
-            }
+          languages: javascript
+      - uses: github/codeql-action/analyze@v3
 
-  release:
-    name: 🚀 Build & Release
+  # Step 2: Build & Test
+  build-test:
+    name: 🔧 Build & Test
     runs-on: ubuntu-latest
-    needs: quality-checks
+    needs: codeql
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      
+      - name: Run Tests
+        run: cargo test --target x86_64-unknown-linux-gnu
+      
+      - name: Build Release (Optimized)
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu
+          ls -lh target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
+
+  # Step 3: Create Release
+  release:
+    name: 🚀 Release
+    runs-on: ubuntu-latest
+    needs: build-test
     
     steps:
-      - name: 📥 Checkout
+      - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: 🦀 Setup Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-gnu
 
-      - name: 📦 Install Dependencies
+      - name: Build Optimized Binary
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-
-      - name: 🏗️ Build Release
-        run: |
-          cargo update
           cargo build --release --target x86_64-unknown-linux-gnu
-          strip target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
+          strip --strip-all target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
+          
+          echo "📊 Binary size:"
+          ls -lh target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
+          file target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
 
-      - name: 📦 Create Package
+      - name: Create Package
         run: |
           # Get version
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -82,32 +98,28 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           
-          # Clean version: remove 'v' prefix if present
           VERSION=$(echo "$VERSION" | sed 's/^v//')
           ARTIFACT="$PROJECT_NAME-$VERSION-linux-amd64"
           
-          # Create package
+          # Create clean package structure
           mkdir -p $ARTIFACT/bin
           cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME $ARTIFACT/bin/
-          cp README.md docs/CHANGELOG.md LICENSE $ARTIFACT/ 2>/dev/null || true
-          [ -f $ARTIFACT/CHANGELOG.md ] && mv $ARTIFACT/docs/CHANGELOG.md $ARTIFACT/ || true
+          cp README.md LICENSE $ARTIFACT/
+          cp docs/CHANGELOG.md $ARTIFACT/ 2>/dev/null || true
           
           # Create tarball
           tar -czf $ARTIFACT.tar.gz $ARTIFACT/
           
-          # Generate checksums
+          # Generate SHA256 checksum only
           sha256sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha256
-          sha512sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha512
           
-          # Store for next steps
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "ARTIFACT=$ARTIFACT" >> $GITHUB_ENV
           
-          echo "✅ Package created: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
+          echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
-      - name: 📋 Generate Changelog
+      - name: Generate Changelog
         run: |
-          # Get previous release tag
           PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
           
           if [ -z "$PREV_TAG" ]; then
@@ -117,10 +129,8 @@ jobs:
             echo "## Changes since $PREV_TAG" > CHANGELOG.txt
             git log $PREV_TAG..HEAD --oneline --pretty="- %s (%h)" >> CHANGELOG.txt
           fi
-          
-          cat CHANGELOG.txt
 
-      - name: �� Create Release Notes
+      - name: Create Release Notes
         run: |
           cat > RELEASE_NOTES.md << EOF
           # Lyvoxa $VERSION
@@ -131,6 +141,7 @@ jobs:
 
           \`\`\`bash
           wget https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION/$ARTIFACT.tar.gz
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION/$ARTIFACT.tar.gz.sha256
           sha256sum -c $ARTIFACT.tar.gz.sha256
           tar -xzf $ARTIFACT.tar.gz
           sudo cp $ARTIFACT/bin/* /usr/local/bin/
@@ -149,26 +160,23 @@ jobs:
           sha256sum -c $ARTIFACT.tar.gz.sha256
           \`\`\`
 
-          **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/compare/$VERSION
+          **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/commits/$VERSION
           EOF
 
-      - name: 🚀 Create Release
+      - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
           name: "Lyvoxa ${{ env.VERSION }}"
           tag_name: ${{ env.VERSION }}
           body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
           files: |
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
-            ${{ env.ARTIFACT }}.tar.gz.sha512
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ✅ Summary
+      - name: Summary
         run: |
-          echo "🎉 Release $VERSION published successfully!"
+          echo "✅ Release $VERSION published"
           echo "📦 Package: $ARTIFACT.tar.gz"
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/$VERSION"
