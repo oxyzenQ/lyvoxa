@@ -52,13 +52,12 @@ jobs:
       - name: 📦 Setup Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential openssl libssl-dev b2sum
+          sudo apt-get install -y build-essential openssl libssl-dev
 
           # Enhanced security tools for multiple checksums
           echo "🔐 Security tools installed:"
           echo "- SHA256 checksum (built-in)" 
           echo "- SHA512 checksum (built-in)"
-          echo "- BLAKE3 checksum (b2sum)"
           
           # SSH client for signing (if enabled)
           ssh -V
@@ -213,8 +212,7 @@ jobs:
           \`\`\`bash
           # Multiple checksum verification options
           sha256sum -c $ARTIFACT_NAME.tar.gz.sha256    # SHA256 (universal)
-          sha512sum -c $ARTIFACT_NAME.tar.gz.sha512    # SHA512 (enhanced)  
-          b2sum -c $ARTIFACT_NAME.tar.gz.blake3        # BLAKE3 (modern)
+          sha512sum -c $ARTIFACT_NAME.tar.gz.sha512    # SHA512 (enhanced)
           \`\`\`
 
           ## 🛠️ Build Info
@@ -307,7 +305,6 @@ jobs:
           echo "🔐 Generating multiple checksums..."
           sha256sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha256"
           sha512sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha512"
-          b2sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.blake3"
           
           # Optional SSH signing (if SSH key is available)
           if [ -n "${{ secrets.SSH_SIGN_KEY }}" ]; then
@@ -499,8 +496,7 @@ jobs:
           # Enhanced artifacts to upload with multiple checksums  
           FILES="$ARTIFACT_NAME.tar.gz"
           FILES="$FILES $ARTIFACT_NAME.tar.gz.sha256"
-          FILES="$FILES $ARTIFACT_NAME.tar.gz.sha512" 
-          FILES="$FILES $ARTIFACT_NAME.tar.gz.blake3"
+          FILES="$FILES $ARTIFACT_NAME.tar.gz.sha512"
           
           # Include SSH signature if available
           if [ -f "$ARTIFACT_NAME.tar.gz.sig" ]; then
@@ -535,7 +531,6 @@ jobs:
             dist/${{ env.ARTIFACT_NAME }}.tar.gz
             dist/${{ env.ARTIFACT_NAME }}.tar.gz.sha256
             dist/${{ env.ARTIFACT_NAME }}.tar.gz.sha512
-            dist/${{ env.ARTIFACT_NAME }}.tar.gz.blake3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -556,7 +551,6 @@ jobs:
             dist/${{ env.ARTIFACT_NAME }}.tar.gz
             dist/*.sha256
             dist/*.sha512
-            dist/*.blake3
           retention-days: 1
           compression-level: 6
         if: always()
@@ -572,7 +566,7 @@ jobs:
           echo "Package: Professional tar.gz with installer"
           echo ""
           echo "🔐 Enhanced Security Features:"
-          echo "- Multi-algorithm checksums (SHA256, SHA512, BLAKE3)"
+          echo "- Multi-algorithm checksums (SHA256, SHA512)"
           echo "- SSH signing capability (when configured)" 
           echo "- Reproducible builds (source verification)"
           echo "- Memory-safe Rust implementation"
