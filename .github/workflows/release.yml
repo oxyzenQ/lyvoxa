@@ -10,11 +10,11 @@ name: 🌟 Stellar Release
 on:
   push:
     tags:
-      - "Stellar-*"
+      - "[0-9]+.[0-9]+*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g., Stellar-3.0)"
+        description: "Release version (e.g., 3.0)"
         required: true
 
 permissions:
@@ -60,8 +60,9 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           
-          VERSION_CLEAN=$(echo "$VERSION" | sed -E 's/^[Ss]tellar-//; s/^v//')
-          ARTIFACT="$PROJECT_NAME-$VERSION_CLEAN-linux-x86_64"
+          # Clean version: remove 'v' prefix if present
+          VERSION=$(echo "$VERSION" | sed 's/^v//')
+          ARTIFACT="$PROJECT_NAME-$VERSION-linux-amd64"
           
           # Create package
           mkdir -p $ARTIFACT/bin
@@ -128,12 +129,14 @@ jobs:
           **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/compare/$VERSION
           EOF
 
-      - name: �� Create Release
+      - name: 🚀 Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "${{ env.VERSION }}"
+          name: "Lyvoxa ${{ env.VERSION }}"
           tag_name: ${{ env.VERSION }}
           body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
           files: |
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
