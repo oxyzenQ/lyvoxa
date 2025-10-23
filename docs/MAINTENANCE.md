@@ -125,7 +125,7 @@ Continue? (y/N): y
 ```
 
 **After updating:**
-1. Update `CHANGELOG.md` with release notes
+1. Update `docs/CHANGELOG.md` with release notes
 2. Run `cargo build --release` to test
 3. Test the build
 4. Commit: `git add -A && git commit -m "chore(release): bump to 3.1.0"`
@@ -167,7 +167,7 @@ cargo outdated
    ./lyvoxa-maintain.sh update-version
    ```
 
-2. **Update CHANGELOG.md**
+2. **Update docs/CHANGELOG.md**
    - Document new features
    - Document bug fixes
    - Document breaking changes

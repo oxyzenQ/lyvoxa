@@ -271,7 +271,7 @@ update_version() {
     
     echo ""
     log_warning "Don't forget to:"
-    echo "  1. Update CHANGELOG.md with release notes"
+    echo "  1. Update docs/CHANGELOG.md with release notes"
     echo "  2. Run: cargo build --release"
     echo "  3. Test the build"
     echo "  4. Commit changes: git add -A && git commit -m 'chore(release): bump to $NEW_VERSION'"

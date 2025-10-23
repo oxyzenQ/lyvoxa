@@ -48,8 +48,8 @@ The system updates version information in:
 |------|---------|
 | `Cargo.toml` | Semantic version |
 | `README.md` | Version display, download URLs |
-| `CHANGELOG.md` | New version entry |
-| `SECURITY.md` | Download URLs and references |
+| `docs/CHANGELOG.md` | New version entry |
+| `docs/SECURITY.md` | Download URLs and references |
 | ~~`Dockerfile`~~ | ~~Version labels and comments~~ (removed) |
 | ~~`docker-compose.yml`~~ | ~~Image tags~~ (removed) |
 | `Makefile` | Version comments |
@@ -186,7 +186,7 @@ The version update automatically triggers:
 #### Missing Files
 ```bash
 # Check which files exist
-ls -la Cargo.toml README.md CHANGELOG.md
+ls -la Cargo.toml README.md docs/CHANGELOG.md
 
 # Update only existing files (automatic)
 ```

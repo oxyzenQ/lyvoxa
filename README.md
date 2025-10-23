@@ -5,8 +5,8 @@
 <!-- Build & CI -->
 [![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=flat&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=flat&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
-[![DCO](https://img.shields.io/badge/DCO-required-4c1?style=flat&logo=git&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/blob/main/CONTRIBUTING.md#developer-certificate-of-origin-dco)
-[![Security](https://img.shields.io/badge/Security-Enhanced-00d084?style=flat&logo=shield&logoColor=white)](SECURITY.md)
+[![DCO](https://img.shields.io/badge/DCO-required-4c1?style=flat&logo=git&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/blob/main/docs/CONTRIBUTING.md#developer-certificate-of-origin-dco)
+[![Security](https://img.shields.io/badge/Security-Enhanced-00d084?style=flat&logo=shield&logoColor=white)](docs/SECURITY.md)
 
 <!-- Release & License -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-663399?style=flat&logo=gnu&logoColor=white)](LICENSE)
@@ -391,7 +391,7 @@ For permission requests, brand usage guidelines, or commercial licensing, contac
 
 ## Security
 
-For security verification instructions and best practices, see [SECURITY.md](SECURITY.md).
+For security verification instructions and best practices, see [docs/SECURITY.md](docs/SECURITY.md).
 
 **Release Verification:**
 
@@ -404,4 +404,4 @@ For security verification instructions and best practices, see [SECURITY.md](SEC
 - **GitHub**: [https://github.com/oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
 - **Issues**: [https://github.com/oxyzenQ/lyvoxa/issues](https://github.com/oxyzenQ/lyvoxa/issues)
 - **Releases**: [https://github.com/oxyzenQ/lyvoxa/releases](https://github.com/oxyzenQ/lyvoxa/releases)
-- **Security**: [SECURITY.md](SECURITY.md)
+- **Security**: [docs/SECURITY.md](docs/SECURITY.md)

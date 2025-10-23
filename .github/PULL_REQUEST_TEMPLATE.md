@@ -11,7 +11,7 @@ Describe what this PR does and why.
 
 - [ ] Code builds: `cargo build --release -j 3`
 - [ ] Tests (if any) pass
-- [ ] I have read CONTRIBUTING.md
+- [ ] I have read docs/CONTRIBUTING.md
 - [ ] This PR follows project style and adds comments where non-trivial
 - [ ] Security-sensitive changes include rationale in comments
 - [ ] DCO sign-off added to each commit (`git commit -s`)

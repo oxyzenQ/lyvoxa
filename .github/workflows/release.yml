@@ -19,15 +19,37 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 env:
   CARGO_TERM_COLOR: always
   PROJECT_NAME: lyvoxa
 
 jobs:
+  # Trigger all CI checks before release
+  quality-checks:
+    name: 🔍 Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger CI Workflows
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflows = ['ci.yml', 'codeql.yml', 'dco.yml', 'loc-badge.yml'];
+            for (const workflow of workflows) {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflow,
+                ref: context.ref
+              });
+              console.log(`✅ Triggered ${workflow}`);
+            }
+
   release:
     name: 🚀 Build & Release
     runs-on: ubuntu-latest
+    needs: quality-checks
     
     steps:
       - name: 📥 Checkout
@@ -67,7 +89,8 @@ jobs:
           # Create package
           mkdir -p $ARTIFACT/bin
           cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME $ARTIFACT/bin/
-          cp README.md CHANGELOG.md LICENSE $ARTIFACT/ 2>/dev/null || true
+          cp README.md docs/CHANGELOG.md LICENSE $ARTIFACT/ 2>/dev/null || true
+          [ -f $ARTIFACT/CHANGELOG.md ] && mv $ARTIFACT/docs/CHANGELOG.md $ARTIFACT/ || true
           
           # Create tarball
           tar -czf $ARTIFACT.tar.gz $ARTIFACT/

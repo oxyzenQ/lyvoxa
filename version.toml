@@ -32,8 +32,8 @@ rust_edition = "2021"
 # Files that need version updates (relative to project root)
 cargo_toml = "Cargo.toml"
 readme = "README.md"
-changelog = "CHANGELOG.md"
-security = "SECURITY.md"
+changelog = "docs/CHANGELOG.md"
+security = "docs/SECURITY.md"
 # Docker files removed from version management
 makefile = "Makefile"
 build_script = "build.sh"

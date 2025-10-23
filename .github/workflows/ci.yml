@@ -29,6 +29,8 @@ on:
       - ".cargo/**"
       - ".github/workflows/ci.yml"
   workflow_dispatch:
+  repository_dispatch:
+    types: [release-trigger]
 
 # Security: Explicit permissions (principle of least privilege)
 permissions:
