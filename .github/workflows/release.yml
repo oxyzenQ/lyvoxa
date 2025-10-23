@@ -169,6 +169,8 @@ jobs:
           name: "Lyvoxa ${{ env.VERSION }}"
           tag_name: ${{ env.VERSION }}
           body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
           files: |
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
