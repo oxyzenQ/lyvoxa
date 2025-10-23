@@ -246,6 +246,11 @@ cd: ci ## Run CD pipeline
 # QUALITY ASSURANCE & PRE-COMMIT CHECKS
 # =============================================================================
 
+.PHONY: test-local
+test-local: ## Run full local build test before commit/push
+	@echo "$(BLUE)[TEST]$(NC) Running local build test..."
+	./test-local.sh
+
 .PHONY: pre-commit
 pre-commit: ## Run full pre-commit quality checks
 	@echo "$(BLUE)[QA]$(NC) Running comprehensive pre-commit checks..."

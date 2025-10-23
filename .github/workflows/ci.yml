@@ -41,7 +41,6 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  RUSTFLAGS: "-C opt-level=z -C lto=thin -C codegen-units=1"
   SCCACHE_GHA_ENABLED: false
 
 jobs:
