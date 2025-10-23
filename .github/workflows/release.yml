@@ -25,7 +25,6 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   PROJECT_NAME: lyvoxa
-  RUSTFLAGS: "-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
 
 jobs:
   # Step 1: CodeQL Security Analysis
@@ -82,6 +81,7 @@ jobs:
 
       - name: Build Optimized Binary
         run: |
+          export RUSTFLAGS="-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
           cargo build --release --target x86_64-unknown-linux-gnu
           strip --strip-all target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
           
