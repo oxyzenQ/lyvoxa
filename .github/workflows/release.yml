@@ -1,9 +1,9 @@
 # =============================================================================
-# LYVOXA STELLAR RELEASE PIPELINE - NEXT-GEN EDITION
+# LYVOXA RELEASE PIPELINE
 # =============================================================================
-# Professional release workflow with enhanced artifact naming, SSH signing, and multi-checksum support
+# Minimal, professional release workflow
 # Author: rezky_nightky
-# Version: Stellar 3.0+ Enhanced
+# Version: Stellar 3.0
 
 name: 🌟 Stellar Release
 
@@ -14,611 +14,135 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g., Stellar-1.5)"
+        description: "Release version (e.g., Stellar-3.0)"
         required: true
-        default: "stellar-1.5"
 
 permissions:
   contents: write
-  packages: write
-  actions: read
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
   PROJECT_NAME: lyvoxa
-  # Disable sccache to avoid GitHub Actions cache issues
-  SCCACHE_GHA_ENABLED: false
 
 jobs:
-  # =============================================================================
-  # PORTFOLIO-GRADE RELEASE BUILD
-  # =============================================================================
-  stellar-release:
-    name: 🚀 Stellar Release Build
+  release:
+    name: 🚀 Build & Release
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0 # Full history for changelog generation
+          fetch-depth: 0
 
-      - name: 🦀 Setup Rust Toolchain
+      - name: 🦀 Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-gnu
 
-      - name: 📦 Setup Build Dependencies
+      - name: 📦 Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential openssl libssl-dev
+          sudo apt-get install -y build-essential
 
-          # Enhanced security tools for multiple checksums
-          echo "🔐 Security tools installed:"
-          echo "- SHA256 checksum (built-in)" 
-          echo "- SHA512 checksum (built-in)"
-          
-          # SSH client for signing (if enabled)
-          ssh -V
-          echo "- SSH signing ready"
-
-          echo "🔧 Enhanced build environment ready"
-
-      - name: 🏗️ Build Optimized Release Binary
+      - name: 🏗️ Build Release
         run: |
-          echo "🚀 Building Lyvoxa Stellar Edition..."
-          echo "Target: x86_64-unknown-linux-gnu"
-          echo "Optimization: Maximum performance"
-          
-          # Update dependencies to latest compatible versions
-          echo "📦 Updating dependencies to latest compatible versions..."
           cargo update
-          echo "✅ Dependencies updated"
-
-          # Build with GitHub Actions default cores for maximum performance
           cargo build --release --target x86_64-unknown-linux-gnu
+          strip target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
 
-          # Verify binaries exist
-          ls -la target/x86_64-unknown-linux-gnu/release/
-
-          echo "✅ Build completed successfully!"
-
-      - name: 📊 Binary Analysis
+      - name: 📦 Create Package
         run: |
-          echo "📊 Binary Analysis Report:"
-          echo "=========================="
-
-          MAIN_BIN="target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME"
-
-          if [ -f "$MAIN_BIN" ]; then
-            echo "Main binary size: $(du -h $MAIN_BIN | cut -f1)"
-            echo "Main binary info: $(file $MAIN_BIN)"
-          fi
-
-      - name: 📦 Create Professional Release Package
-        run: |
-          echo "📦 Creating professional release package..."
-
-          # Determine version from tag or input
+          # Get version
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
-
-          # Normalize version for artifact naming:
-          # - Strip leading 'Stellar-' or 'stellar-'
-          # - Strip leading 'v' if tag is like 'v2.1.0'
+          
           VERSION_CLEAN=$(echo "$VERSION" | sed -E 's/^[Ss]tellar-//; s/^v//')
-
-          echo "Version: $VERSION"
-          echo "GitHub Ref: $GITHUB_REF"
-          echo "Event Name: ${{ github.event_name }}"
-
-          # Validate version is not empty
-          if [ -z "$VERSION" ]; then
-            echo "❌ Error: VERSION is empty!"
-            echo "GITHUB_REF: $GITHUB_REF"
-            echo "Falling back to timestamp version"
-            VERSION="dev-$(date +%Y%m%d-%H%M%S)"
-          fi
-
-          echo "Final Version: $VERSION"
-
-          # Enhanced artifact naming scheme: lyvoxa-stellar-{clean_version}-linux-64bit
-          ARTIFACT_NAME="lyvoxa-stellar-$VERSION_CLEAN-linux-64bit"
-          echo "🏷️ Artifact name: $ARTIFACT_NAME"
+          ARTIFACT="$PROJECT_NAME-$VERSION_CLEAN-linux-x86_64"
           
-          # Create distribution directory with enhanced naming
-          mkdir -p dist/$ARTIFACT_NAME
-
-          # Create professional directory structure
-          mkdir -p dist/$ARTIFACT_NAME/{bin,docs,config}
-
-          # Copy main binary only (single TUI binary focus)
-          cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME dist/$ARTIFACT_NAME/bin/
+          # Create package
+          mkdir -p $ARTIFACT/bin
+          cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME $ARTIFACT/bin/
+          cp README.md CHANGELOG.md LICENSE $ARTIFACT/ 2>/dev/null || true
           
-          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
-
-          # Copy documentation to docs/
-          cp README.md dist/$ARTIFACT_NAME/
-          cp LICENSE dist/$ARTIFACT_NAME/
-          cp ROADMAP.md dist/$ARTIFACT_NAME/docs/
-
-          # Create enhanced README for package
-          cat > dist/$ARTIFACT_NAME/README.md << 'README_EOF'
-          # 🌟 Lyvoxa Stellar - System Monitor
-
-          **High-performance system monitoring tool for Linux x86_64**
-
-          ## 🚀 Quick Start
-
-          ### Run Application:
-          \`\`\`bash
-          # Full TUI interface
-          ./bin/lyvoxa
-
-          # Show help
-          ./bin/lyvoxa --help
-
-          # Show version
-          ./bin/lyvoxa --version
-          \`\`\`
-
-          ### Installation:
-          \`\`\`bash
-          # Run the installer
-          sudo ./install.sh
-
-          # Or manually copy to system PATH
-          sudo cp bin/* /usr/local/bin/
-          sudo chmod +x /usr/local/bin/lyvoxa*
-          \`\`\`
-
-          ## 📋 Package Contents
-
-          \`\`\`
-          $ARTIFACT_NAME/
-          ├── bin/
-          │   └── lyvoxa           # Advanced TUI system monitor
-          ├── docs/               # Documentation + Roadmap
-          │   └── ROADMAP.md      # Future development plans
-          ├── config/             # Configuration templates
-          ├── README.md          # This file
-          ├── CHANGELOG.md       # Version history
-          ├── LICENSE            # GPL-3.0 License
-          └── install.sh         # Installation script
-          \`\`\`
-
-          ## ⚙️ System Requirements
-
-          - **OS**: ArchLinux or Linux x86_64 (universal)
-          - **Memory**: < 2MB runtime
-          - **CPU**: Any modern x86_64 processor
-          - **Dependencies**: None (statically linked)
-
-          ## 📊 Performance
-
-          - **Binary Size**: ~2-3 MB
-          - **Memory Usage**: < 2 MB
-          - **CPU Overhead**: < 1%
-          - **Startup Time**: < 100ms
-
-          ## 🔐 Security & Verification
-
-          This package is cryptographically checksummed with SHA256:
-
-          \`\`\`bash
-          # Multiple checksum verification options
-          sha256sum -c $ARTIFACT_NAME.tar.gz.sha256    # SHA256 (universal)
-          sha512sum -c $ARTIFACT_NAME.tar.gz.sha512    # SHA512 (enhanced)
-          \`\`\`
-
-          ## 🛠️ Build Info
-
-          - **Language**: Rust (stable)
-          - **Target**: x86_64-unknown-linux-gnu
-          - **Optimization**: Release profile with LTO
-          - **Security**: Memory-safe, no undefined behavior
-
-          ## 📄 License
-
-          GPL-3.0 - see LICENSE file for details
-
-          ## 👥 Support
-
-          - **Repository**: [oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
-          - **Issues**: https://github.com/oxyzenQ/lyvoxa/issues
-          - **Author**: rezky_nightky
-          README_EOF
-
-          # Create CHANGELOG.md for package
-          cat > dist/$ARTIFACT_NAME/CHANGELOG.md << 'CHANGELOG_EOF'
-          # Changelog
-
-          All notable changes to Lyvoxa will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [$VERSION] - $(date +%Y-%m-%d)
-
-          $CHANGELOG
-
-          ### Security
-          - SHA256 checksum verification (universal standard)
-          - Memory-safe Rust implementation
-          - Reproducible builds
-
-          ### Performance
-          - Optimized release build with LTO
-          - Minimal memory footprint (<2MB)
-          - Fast startup time (<100ms)
-
-          CHANGELOG_EOF
-
-          # Create installation script
-          cat > dist/$ARTIFACT_NAME/install.sh << 'EOF'
-          #!/bin/bash
-          # Lyvoxa Installation Script
-          echo "🔍 Installing Lyvoxa System Monitor..."
-
-          # Check if running as root
-          if [ "$EUID" -eq 0 ]; then
-            INSTALL_DIR="/usr/local/bin"
-          else
-            INSTALL_DIR="$HOME/.local/bin"
-            mkdir -p "$INSTALL_DIR"
-          fi
-
-          # Install binary from bin/ directory
-          cp bin/lyvoxa "$INSTALL_DIR/"
-          chmod +x "$INSTALL_DIR/lyvoxa"
-
-          # Test installation
-          if command -v lyvoxa >/dev/null 2>&1; then
-            echo "✅ Lyvoxa installed to $INSTALL_DIR"
-            echo "🚀 Run 'lyvoxa --version' to verify installation"
-            echo "🚀 Run 'lyvoxa --help' for usage information"
-            echo "🚀 Run 'lyvoxa' to start monitoring!"
-          else
-            echo "⚠️  Installation completed, but 'lyvoxa' not in PATH"
-            echo "   Add $INSTALL_DIR to your PATH or run directly:"
-            echo "   $INSTALL_DIR/lyvoxa"
-          fi
-          EOF
-
-          chmod +x dist/$ARTIFACT_NAME/install.sh
-
-          # Create enhanced release packages
-          cd dist
-
-          # Create enhanced release package with new naming
-          echo "📦 Creating enhanced release package..."
-
-          # Create comprehensive .tar.gz package (includes docs, installer, etc)
-          tar -czf "$ARTIFACT_NAME.tar.gz" $ARTIFACT_NAME/
-          echo "✅ Created: $ARTIFACT_NAME.tar.gz"
-
-          # Generate multiple checksums for enhanced security
-          echo "🔐 Generating multiple checksums..."
-          sha256sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha256"
-          sha512sum "$ARTIFACT_NAME.tar.gz" > "$ARTIFACT_NAME.tar.gz.sha512"
+          # Create tarball
+          tar -czf $ARTIFACT.tar.gz $ARTIFACT/
           
-          # Optional SSH signing (if SSH key is available)
-          if [ -n "${{ secrets.SSH_SIGN_KEY }}" ]; then
-            echo "🔑 SSH signing enabled..."
-            echo "${{ secrets.SSH_SIGN_KEY }}" > /tmp/ssh_sign_key
-            chmod 600 /tmp/ssh_sign_key
-            # Create signature file (placeholder for future SSH signing implementation)
-            echo "SSH signature placeholder" > "$ARTIFACT_NAME.tar.gz.sig"
-            echo "✅ SSH signature created"
-            rm /tmp/ssh_sign_key
-          else
-            echo "⚠️  SSH signing not configured (optional)"
-          fi
+          # Generate checksums
+          sha256sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha256
+          sha512sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha512
           
-          echo "📊 Package size:"
-          ls -lh $ARTIFACT_NAME.tar.gz
-
-          echo "✅ Enhanced release package created successfully!"
-
-          # Store version for later steps
-          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+          # Store for next steps
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "ARTIFACT=$ARTIFACT" >> $GITHUB_ENV
+          
+          echo "✅ Package created: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
       - name: 📋 Generate Changelog
-        id: changelog
         run: |
-          echo "📋 Generating automatic changelog..."
-
-          # Get previous tag for changelog
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # Get previous release tag
+          PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+          
           if [ -z "$PREV_TAG" ]; then
-            echo "🎉 First release - showing recent commits"
-            CHANGELOG=$(git log --oneline -10 --pretty="- %s" | head -10)
+            echo "## Changes" > CHANGELOG.txt
+            git log --oneline --pretty="- %s (%h)" -20 >> CHANGELOG.txt
           else
-            echo "📈 Generating changelog since $PREV_TAG"
-            CHANGELOG=$(git log $PREV_TAG..HEAD --oneline --pretty="- %s")
+            echo "## Changes since $PREV_TAG" > CHANGELOG.txt
+            git log $PREV_TAG..HEAD --oneline --pretty="- %s (%h)" >> CHANGELOG.txt
           fi
+          
+          cat CHANGELOG.txt
 
-          # Save changelog to environment
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$CHANGELOG" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-          echo "✅ Changelog generated successfully"
-
-      - name: 📋 Generate Release Notes
+      - name: �� Create Release Notes
         run: |
-          echo "📋 Generating professional release notes with changelog..."
-
           cat > RELEASE_NOTES.md << EOF
-          # 🌟 Lyvoxa Stellar $RELEASE_VERSION
+          # Lyvoxa $VERSION
 
-          > **High-performance system monitoring tool for Linux x86_64**
+          **Linux x86_64 system monitoring tool**
 
-          ## 🚀 What's New in Stellar $RELEASE_VERSION
-
-          ### ✨ Key Features:
-          - **Universal Packaging**: Single .tar.gz for all Linux x86_64 systems
-          - **SHA256 Verification**: Industry-standard checksum for integrity
-          - **Professional Packaging**: Clean tarball + install script in docs
-
-          ### 📝 Changelog:
-          $CHANGELOG
-
-          ## 📦 Installation
-
-          ### 🚀 Quick Install (Recommended)
-          ```bash
-          # Download and extract
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz.sha256
-          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
-          tar -xzf ${ARTIFACT_NAME}.tar.gz
-          cd ${ARTIFACT_NAME}
-          sudo ./install.sh
-          ```
-
-          ### 📦 Alternative Formats
-
-          #### Linux Universal (Maximum Compatibility)
-          \`\`\`bash
-          # Download Linux universal package (.gz - maximum compatibility)
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$RELEASE_VERSION/${ARTIFACT_NAME}.tar.gz.sha256
-
-          # Verify integrity
-          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
-
-          # Extract and install
-          tar -xzf ${ARTIFACT_NAME}.tar.gz
-          cd ${ARTIFACT_NAME}
-          sudo ./install.sh
-          \`\`\`
-
-          ### Manual Install
-          \`\`\`bash
-          # Copy binaries to your PATH
-          sudo cp bin/lyvoxa /usr/local/bin/
-          chmod +x /usr/local/bin/lyvoxa
-          \`\`\`
-
-          ## 🔐 Security Verification
-
-          ### Package Verification
-          \`\`\`bash
-          # Verify Linux universal package (.gz)
-          sha256sum -c ${ARTIFACT_NAME}.tar.gz.sha256
-          \`\`\`
-
-          ### Build Verification
-          \`\`\`bash
-          # Check build information
-          ./bin/lyvoxa --version
-
-          # Verify binary architecture
-          file ./bin/lyvoxa
-          \`\`\`
-
-          ## 🎯 System Requirements
-
-          - **OS**: ArchLinux or Linux x86_64 (universal)
-          - **Memory**: Minimal (< 2MB runtime)
-          - **CPU**: Any modern x86_64 processor
-          - **Dependencies**: None (statically linked)
-
-          ## 🔍 Usage
+          ## Installation
 
           \`\`\`bash
-          # Full TUI interface
-          lyvoxa
-
-          # Display help
-          lyvoxa --help
+          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION/$ARTIFACT.tar.gz
+          sha256sum -c $ARTIFACT.tar.gz.sha256
+          tar -xzf $ARTIFACT.tar.gz
+          sudo cp $ARTIFACT/bin/* /usr/local/bin/
           \`\`\`
 
-          ## 📊 Performance Metrics
+          ## What's Changed
 
-          | Metric | Value |
-          |--------|-------|
-          | Binary Size | ~2-3 MB |
-          | Memory Usage | < 2 MB |
-          | CPU Overhead | < 1% |
-          | Startup Time | < 100ms |
+          EOF
+          cat CHANGELOG.txt >> RELEASE_NOTES.md
+          
+          cat >> RELEASE_NOTES.md << EOF
 
-          ## 🛠️ Built With
+          ## Verification
 
-          - **Language**: Rust (stable)
-          - **Target**: x86_64-unknown-linux-gnu
-          - **Optimization**: Release profile with LTO
-          - **Security**: Memory-safe, no undefined behavior
+          \`\`\`bash
+          sha256sum -c $ARTIFACT.tar.gz.sha256
+          \`\`\`
 
-          ---
-
-          **Portfolio Project**: This release demonstrates professional software engineering practices including SHA256 integrity verification, ArchLinux optimization, and enterprise-grade packaging.
-
-          **Author**: rezky_nightky | **License**: GPL-3.0 | **Repository**: [oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
+          **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/compare/$VERSION
           EOF
 
-      - name: 🔍 Verify Release Files
-        run: |
-          echo "📋 Listing all files in dist directory:"
-          ls -la dist/
-          echo ""
-          echo "🎯 Files to be uploaded:"
-          find dist/ -name "$ARTIFACT_NAME*" -type f | while read file; do
-            echo "  - $file ($(du -h "$file" | cut -f1))"
-          done
-          echo ""
-          echo "✅ File verification completed"
-
-      - name: 🗑️ Delete Existing Release (if exists)
-        continue-on-error: true
-        run: |
-          echo "🔍 Checking for existing release..."
-          if gh release view $RELEASE_VERSION >/dev/null 2>&1; then
-            echo "🗑️ Deleting existing release: $RELEASE_VERSION"
-            gh release delete $RELEASE_VERSION --yes --cleanup-tag
-            echo "✅ Existing release deleted"
-          else
-            echo "✅ No existing release found"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📋 Prepare Release Files List
-        run: |
-          echo "📋 Preparing enhanced file list to upload..."
-          cd dist
-
-          # Enhanced artifacts to upload with multiple checksums  
-          FILES="$ARTIFACT_NAME.tar.gz"
-          FILES="$FILES $ARTIFACT_NAME.tar.gz.sha256"
-          FILES="$FILES $ARTIFACT_NAME.tar.gz.sha512"
-          
-          # Include SSH signature if available
-          if [ -f "$ARTIFACT_NAME.tar.gz.sig" ]; then
-            FILES="$FILES $ARTIFACT_NAME.tar.gz.sig"
-          fi
-
-          echo "Enhanced files to upload:"
-          for f in $FILES; do
-            if [ -f "$f" ]; then
-              echo "  ✅ $f ($(du -h "$f" | cut -f1))"
-            else
-              echo "  ❌ $f (missing)"
-            fi
-          done
-
-          # Create upload list file
-          echo "$FILES" | tr ' ' '\n' | sed 's|^|dist/|' > ../upload_files.txt
-          echo "📄 Enhanced upload files list:"
-          cat ../upload_files.txt
-
-      - name: 🚀 Create GitHub Release
-        id: create_release
+      - name: �� Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "🌟 Lyvoxa Stellar Release"
-          tag_name: ${{ env.RELEASE_VERSION }}
+          name: "${{ env.VERSION }}"
+          tag_name: ${{ env.VERSION }}
           body_path: RELEASE_NOTES.md
-          draft: true
-          prerelease: false
-          fail_on_unmatched_files: false
           files: |
-            dist/${{ env.ARTIFACT_NAME }}.tar.gz
-            dist/${{ env.ARTIFACT_NAME }}.tar.gz.sha256
-            dist/${{ env.ARTIFACT_NAME }}.tar.gz.sha512
+            ${{ env.ARTIFACT }}.tar.gz
+            ${{ env.ARTIFACT }}.tar.gz.sha256
+            ${{ env.ARTIFACT }}.tar.gz.sha512
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📢 Publish Release
+      - name: ✅ Summary
         run: |
-          echo "📢 Publishing draft release as final..."
-          sleep 2  # Brief pause for API consistency
-          gh release edit $RELEASE_VERSION --draft=false
-          echo "✅ Release published successfully!"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📤 Upload Build Artifacts (Optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}-build-artifacts
-          path: |
-            dist/${{ env.ARTIFACT_NAME }}.tar.gz
-            dist/*.sha256
-            dist/*.sha512
-          retention-days: 1
-          compression-level: 6
-        if: always()
-
-      - name: 📈 Portfolio Summary
-        run: |
-          echo "🎯 Portfolio-Grade Release Summary"
-          echo "=================================="
-          echo "Project: Lyvoxa System Monitor"
-          echo "Version: $RELEASE_VERSION"
-          echo "Target: Linux x86_64"
-          echo "Security: SHA256 checksum"
-          echo "Package: Professional tar.gz with installer"
-          echo ""
-          echo "🔐 Enhanced Security Features:"
-          echo "- Multi-algorithm checksums (SHA256, SHA512)"
-          echo "- SSH signing capability (when configured)" 
-          echo "- Reproducible builds (source verification)"
-          echo "- Memory-safe Rust implementation"
-          echo ""
-          echo "📦 Enhanced Release Package: $ARTIFACT_NAME.tar.gz"
-          echo ""
-          echo "📊 Package Size:"
-          cd dist && ls -lh $ARTIFACT_NAME*.tar.gz
-          echo ""
-          echo "📤 Artifact Retention: 1 day (workflow artifacts)"
-          echo "🚀 GitHub Release: Permanent (release artifacts)"
-          echo ""
-          echo "✅ Portfolio-ready release completed!"
-          echo "🌟 This demonstrates enterprise-grade software engineering practices"
-
-# =============================================================================
-# WORKFLOW FEATURES
-# =============================================================================
-#
-# 🔐 Security Features:
-#   - SHA256 checksum (universal standard)
-#   - Reproducible builds for source verification
-#   - Memory-safe Rust implementation
-#
-# 📦 Professional Packaging:
-#   - Clean tar.gz with version naming
-#   - Automated installation script
-#   - Complete documentation included
-#
-# 🚀 Portfolio Benefits:
-#   - Demonstrates security-first approach
-#   - Shows understanding of cryptographic verification
-#   - Enterprise-grade release process
-#   - Future-proof and extensible workflow
-#
-# 🛠️ Setup Requirements:
-#   1. Add SSH private key to GitHub Secrets as 'SSH_SIGN_KEY'
-#   2. Optional: Add HMAC key to Secrets as 'HMAC_SECRET_KEY'
-#   3. Tag releases with 'stellar-*' pattern
-#
-# ⚖️ Artifact Retention & Tips:
-#   - Default retention: Repository setting (usually 1-90 days)
-#   - Maximum limit: 90 days (GitHub Actions constraint)
-#   - Custom retention: Override per workflow using retention-days
-#   - Best practice: 30-90 days for production projects
-#   - Example override:
-#     - uses: actions/upload-artifact@v4
-#       with:
-#         name: build-artifacts
-#         path: dist/
-#         retention-days: 7
-#   - Release artifacts are separate from workflow artifacts
-#   - GitHub Releases don't count toward Actions storage limits
-#
-# =============================================================================
+          echo "🎉 Release $VERSION published successfully!"
+          echo "📦 Package: $ARTIFACT.tar.gz"
+          echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/$VERSION"
