@@ -89,6 +89,15 @@ jobs:
           ls -lh target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
           file target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
 
+      - name: Setup GPG (if available)
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        run: |
+          echo "🔐 Setting up GPG for signing..."
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+          echo "✅ GPG key imported"
+        continue-on-error: true
+
       - name: Create Package
         run: |
           # Get version
@@ -110,13 +119,35 @@ jobs:
           # Create tarball
           tar -czf $ARTIFACT.tar.gz $ARTIFACT/
           
-          # Generate SHA256 checksum only
+          # Generate SHA256 checksum
           sha256sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha256
           
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "ARTIFACT=$ARTIFACT" >> $GITHUB_ENV
           
           echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
+
+      - name: Sign Package (GPG)
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        run: |
+          echo "🔏 Signing package with GPG..."
+          
+          # Sign with passphrase if provided
+          if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
+            echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
+              --pinentry-mode loopback --armor --detach-sign $ARTIFACT.tar.gz
+          else
+            gpg --batch --yes --armor --detach-sign $ARTIFACT.tar.gz
+          fi
+          
+          # Verify signature was created
+          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
+            echo "✅ Signature created: $ARTIFACT.tar.gz.asc"
+            gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
+          else
+            echo "⚠️ Signature file not created"
+          fi
+        continue-on-error: true
 
       - name: Generate Changelog
         run: |
@@ -156,12 +187,37 @@ jobs:
 
           ## Verification
 
+          **SHA256 Checksum:**
           \`\`\`bash
           sha256sum -c $ARTIFACT.tar.gz.sha256
           \`\`\`
 
+          **GPG Signature (if available):**
+          \`\`\`bash
+          # Import developer's public key (first time only)
+          gpg --keyserver keys.openpgp.org --recv-keys <KEY_ID>
+          
+          # Verify signature
+          gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
+          \`\`\`
+
           **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/commits/$VERSION
           EOF
+
+      - name: Prepare Release Files
+        run: |
+          echo "📋 Files to upload:"
+          ls -lh $ARTIFACT.tar.gz*
+          
+          # Create file list
+          echo "$ARTIFACT.tar.gz" > files.txt
+          echo "$ARTIFACT.tar.gz.sha256" >> files.txt
+          
+          # Add signature if exists
+          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
+            echo "$ARTIFACT.tar.gz.asc" >> files.txt
+            echo "🔏 GPG signature will be included"
+          fi
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
@@ -174,6 +230,8 @@ jobs:
           files: |
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
+            ${{ env.ARTIFACT }}.tar.gz.asc
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -181,4 +239,8 @@ jobs:
         run: |
           echo "✅ Release $VERSION published"
           echo "📦 Package: $ARTIFACT.tar.gz"
+          echo "🔐 Checksum: $ARTIFACT.tar.gz.sha256"
+          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
+            echo "🔏 Signature: $ARTIFACT.tar.gz.asc"
+          fi
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/$VERSION"
