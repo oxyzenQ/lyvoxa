@@ -194,12 +194,37 @@ jobs:
           cat .SRCINFO
 
       - name: Clone AUR repository
+        env:
+          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
+          SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
+          GIT_SSH_COMMAND: "ssh -v -i $HOME/.ssh/aur -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
         run: |
           echo "📥 Cloning AUR repository..."
+          
+          # Verify ssh-agent still has the key
+          echo "🔍 Verifying ssh-agent..."
+          ssh-add -l || {
+            echo "⚠️ No keys in agent, re-adding..."
+            eval $(ssh-agent -s)
+            expect << EOF
+            spawn ssh-add $HOME/.ssh/aur
+            expect "Enter passphrase"
+            send "$SSH_PASSWD\r"
+            expect eof
+          EOF
+          }
+          
+          # Test SSH connection before clone
+          echo "🧪 Testing SSH connection..."
+          ssh -T aur@aur.archlinux.org 2>&1 || true
+          
+          # Clone with verbose output
+          echo "📥 Cloning..."
           git clone ssh://aur@aur.archlinux.org/lyvoxa-bin.git aur-repo || {
-            echo "❌ Failed to clone AUR repo. Make sure:"
-            echo "  1. SSH key is added to AUR account"
-            echo "  2. Package 'lyvoxa-bin' exists (or create it first manually)"
+            echo "❌ Failed to clone AUR repo."
+            echo "Debugging info:"
+            echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
+            ssh-add -l
             exit 1
           }
           
@@ -243,6 +268,9 @@ jobs:
 
       - name: Commit and push to AUR
         if: env.changed == 'true'
+        env:
+          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
+          GIT_SSH_COMMAND: "ssh -i $HOME/.ssh/aur -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
         run: |
           cd aur-repo
           
