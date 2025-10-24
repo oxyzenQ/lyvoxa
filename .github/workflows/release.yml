@@ -324,3 +324,68 @@ jobs:
           echo "✅ Release ${{ github.ref_name }} published successfully"
           echo "📦 Artifacts uploaded to GitHub Releases"
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/${{ github.ref_name }}"
+
+  # =============================================================================
+  # STEP 7: UPDATE README WITH NEW VERSION
+  # =============================================================================
+  update-readme:
+    name: 7️⃣ Update README Version
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Update version in README
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"  # Remove 'v' prefix if exists
+          
+          echo "📝 Updating README.md with version $VERSION_NUM"
+          
+          # Update version tag line
+          sed -i "s/\*Version [0-9.]\+ Stellar\*/\*Version $VERSION_NUM Stellar\*/" README.md
+          
+          # Update download URLs
+          sed -i "s|releases/download/[0-9.]\+/|releases/download/$VERSION_NUM/|g" README.md
+          sed -i "s|lyvoxa-[0-9.]\+-linux-amd64|lyvoxa-$VERSION_NUM-linux-amd64|g" README.md
+          
+          echo "✅ Version updated to $VERSION_NUM"
+          
+      - name: Check if README changed
+        id: check_changes
+        run: |
+          if git diff --quiet README.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes needed in README"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ README has changes"
+            git diff README.md
+          fi
+      
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs(readme): update version to ${{ github.ref_name }}
+
+Auto-updated by release workflow after publishing release.
+
+Changes:
+- Version tag: ${{ github.ref_name }}
+- Download URLs updated
+- Installation commands synced
+
+[skip ci]"
+          git push origin main
+          
+          echo "✅ README.md updated and pushed to main"
