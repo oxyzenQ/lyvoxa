@@ -132,18 +132,18 @@ jobs:
         run: |
           echo "🔏 Signing package with GPG..."
           
-          # Sign with passphrase if provided
+          # Sign with passphrase if provided (binary format .sig)
           if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
             echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
-              --pinentry-mode loopback --armor --detach-sign $ARTIFACT.tar.gz
+              --pinentry-mode loopback --detach-sign $ARTIFACT.tar.gz
           else
-            gpg --batch --yes --armor --detach-sign $ARTIFACT.tar.gz
+            gpg --batch --yes --detach-sign $ARTIFACT.tar.gz
           fi
           
           # Verify signature was created
-          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
-            echo "✅ Signature created: $ARTIFACT.tar.gz.asc"
-            gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
+          if [ -f "$ARTIFACT.tar.gz.sig" ]; then
+            echo "✅ Signature created: $ARTIFACT.tar.gz.sig ($(du -h $ARTIFACT.tar.gz.sig | cut -f1))"
+            gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz
           else
             echo "⚠️ Signature file not created"
           fi
@@ -195,10 +195,10 @@ jobs:
           **GPG Signature (if available):**
           \`\`\`bash
           # Import developer's public key (first time only)
-          gpg --keyserver keys.openpgp.org --recv-keys <KEY_ID>
+          gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
           
           # Verify signature
-          gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
+          gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz
           \`\`\`
 
           **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/commits/$VERSION
@@ -214,9 +214,9 @@ jobs:
           echo "$ARTIFACT.tar.gz.sha256" >> files.txt
           
           # Add signature if exists
-          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
-            echo "$ARTIFACT.tar.gz.asc" >> files.txt
-            echo "🔏 GPG signature will be included"
+          if [ -f "$ARTIFACT.tar.gz.sig" ]; then
+            echo "$ARTIFACT.tar.gz.sig" >> files.txt
+            echo "🔏 GPG signature (.sig) will be included"
           fi
 
       - name: Publish Release
@@ -230,7 +230,7 @@ jobs:
           files: |
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
-            ${{ env.ARTIFACT }}.tar.gz.asc
+            ${{ env.ARTIFACT }}.tar.gz.sig
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -240,7 +240,7 @@ jobs:
           echo "✅ Release $VERSION published"
           echo "📦 Package: $ARTIFACT.tar.gz"
           echo "🔐 Checksum: $ARTIFACT.tar.gz.sha256"
-          if [ -f "$ARTIFACT.tar.gz.asc" ]; then
-            echo "🔏 Signature: $ARTIFACT.tar.gz.asc"
+          if [ -f "$ARTIFACT.tar.gz.sig" ]; then
+            echo "🔏 Signature: $ARTIFACT.tar.gz.sig"
           fi
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/$VERSION"

@@ -23,7 +23,7 @@ GPG signing ensures that releases are authentic and haven't been tampered with. 
 **Files generated:**
 - `lyvoxa-X.X.X-linux-amd64.tar.gz` - Binary package
 - `lyvoxa-X.X.X-linux-amd64.tar.gz.sha256` - Checksum
-- `lyvoxa-X.X.X-linux-amd64.tar.gz.asc` - GPG signature (detached)
+- `lyvoxa-X.X.X-linux-amd64.tar.gz.sig` - GPG signature (binary, detached)
 
 ## ✅ Prerequisites
 
@@ -129,7 +129,7 @@ The workflow is already configured in `.github/workflows/release.yml`:
   if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
   run: |
     echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
-      --pinentry-mode loopback --armor --detach-sign $ARTIFACT.tar.gz
+      --pinentry-mode loopback --detach-sign $ARTIFACT.tar.gz
 ```
 
 **Features:**
@@ -150,7 +150,7 @@ After pushing a tag:
 # 🔐 Setting up GPG for signing...
 # ✅ GPG key imported
 # 🔏 Signing package with GPG...
-# ✅ Signature created: lyvoxa-X.X.X-linux-amd64.tar.gz.asc
+# ✅ Signature created: lyvoxa-X.X.X-linux-amd64.tar.gz.sig
 ```
 
 ### For Users (Verifying Downloads)
@@ -158,13 +158,13 @@ After pushing a tag:
 ```bash
 # Download release + signature
 wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz.asc
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz.sig
 
 # Import developer's public key (first time only)
-gpg --keyserver keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
+gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
 
 # Verify signature
-gpg --verify lyvoxa-3.0-linux-amd64.tar.gz.asc lyvoxa-3.0-linux-amd64.tar.gz
+gpg --verify lyvoxa-3.0-linux-amd64.tar.gz.sig lyvoxa-3.0-linux-amd64.tar.gz
 
 # Expected output:
 # gpg: Signature made [date]
@@ -222,7 +222,7 @@ gpg --keyserver keys.openpgp.org --recv-keys YOUR_KEY_ID
 gpg --import public-key.asc
 ```
 
-### Issue: Release works but no .asc file
+### Issue: Release works but no .sig file
 
 **Check:**
 1. Secrets are set correctly in GitHub
@@ -249,7 +249,7 @@ Assets:
 Assets:
 ├── lyvoxa-3.0-linux-amd64.tar.gz
 ├── lyvoxa-3.0-linux-amd64.tar.gz.sha256
-└── lyvoxa-3.0-linux-amd64.tar.gz.asc          ← GPG signature
+└── lyvoxa-3.0-linux-amd64.tar.gz.sig          ← GPG signature (binary)
 ```
 
 **Verification Chain:**
