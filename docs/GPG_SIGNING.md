@@ -161,7 +161,7 @@ wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-am
 wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz.sig
 
 # Import developer's public key (first time only)
-gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
+gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 
 # Verify signature
 gpg --verify lyvoxa-3.0-linux-amd64.tar.gz.sig lyvoxa-3.0-linux-amd64.tar.gz

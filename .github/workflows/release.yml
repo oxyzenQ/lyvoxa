@@ -195,7 +195,7 @@ jobs:
           **GPG Signature (if available):**
           \`\`\`bash
           # Import developer's public key (first time only)
-          gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
+          gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
           
           # Verify signature
           gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz

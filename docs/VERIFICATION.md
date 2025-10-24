@@ -43,8 +43,8 @@ Verifikasi signature untuk memastikan file benar-benar dari developer resmi:
 ### Step 1: Import Public Key (Sekali aja)
 
 ```bash
-# Import key dari Ubuntu keyserver
-gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
+# Import key dari OpenPGP keyserver
+gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 ```
 
 **Output:**
@@ -56,11 +56,11 @@ gpg:               imported: 1
 
 **Atau dari keyserver lain:**
 ```bash
-# keys.openpgp.org
-gpg --keyserver keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
+# Ubuntu keyserver
+gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
 
-# keys.gnupg.net  
-gpg --keyserver keys.gnupg.net --recv-keys 0D8D13BB989AF9F0
+# GnuPG keyserver
+gpg --keyserver hkps://keys.gnupg.net --recv-keys 0D8D13BB989AF9F0
 ```
 
 ### Step 2: Verify Signature
@@ -129,7 +129,7 @@ else
 fi
 
 echo "🔏 Importing GPG key..."
-gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0 2>/dev/null
+gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0 2>/dev/null
 
 echo "🔏 Verifying GPG signature..."
 if gpg --verify "${ARTIFACT}.tar.gz.sig" "${ARTIFACT}.tar.gz" 2>&1 | grep -q "Good signature"; then
@@ -165,8 +165,8 @@ chmod +x install-lyvoxa.sh
 **Email:** with.rezky@gmail.com  
 **Type:** RSA  
 **Keyservers:**
+- hkps://keys.openpgp.org (primary)
 - hkps://keyserver.ubuntu.com
-- https://keys.openpgp.org
 - hkps://keys.gnupg.net
 
 **View full fingerprint:**
@@ -201,7 +201,7 @@ gpg --fingerprint 0D8D13BB989AF9F0
 
 Import public key dulu:
 ```bash
-gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 0D8D13BB989AF9F0
+gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 ```
 
 ### Q: Apa warning "This key is not certified" bahaya?
