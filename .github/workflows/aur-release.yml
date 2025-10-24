@@ -1,0 +1,224 @@
+# =============================================================================
+# AUR AUTO-RELEASE WORKFLOW
+# =============================================================================
+# Automatically sync PKGBUILD to AUR repository when updated
+# Single source of truth: GitHub repo → Auto mirror to AUR
+# Zero manual maintenance required
+
+name: 📦 AUR Release
+
+on:
+  push:
+    paths:
+      - 'lyvoxa-bin/**'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_push:
+        description: 'Force push even if no changes detected'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  aur-sync:
+    name: 🔄 Sync to AUR Repository
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH for AUR
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          echo "🔐 Setting up SSH for AUR..."
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          
+          cat >> ~/.ssh/config << EOF
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            User aur
+            StrictHostKeyChecking accept-new
+          EOF
+          
+          echo "✅ SSH configured"
+
+      - name: Install makepkg tools
+        run: |
+          echo "📦 Installing Arch packaging tools..."
+          sudo apt-get update -qq
+          sudo apt-get install -y pacman-package-manager
+          
+          echo "✅ Tools installed"
+
+      - name: Validate PKGBUILD
+        run: |
+          echo "🔍 Validating PKGBUILD syntax..."
+          cd lyvoxa-bin
+          
+          # Check basic PKGBUILD syntax
+          bash -n PKGBUILD || {
+            echo "❌ PKGBUILD has syntax errors!"
+            exit 1
+          }
+          
+          # Check required variables
+          source PKGBUILD
+          [[ -z "$pkgname" ]] && { echo "❌ pkgname not set!"; exit 1; }
+          [[ -z "$pkgver" ]] && { echo "❌ pkgver not set!"; exit 1; }
+          [[ -z "$pkgrel" ]] && { echo "❌ pkgrel not set!"; exit 1; }
+          
+          echo "✅ PKGBUILD validation passed"
+          echo "📋 Package: $pkgname-$pkgver-$pkgrel"
+
+      - name: Generate .SRCINFO
+        run: |
+          echo "📝 Generating .SRCINFO..."
+          cd lyvoxa-bin
+          
+          # Install namcap for validation (optional but good practice)
+          # makepkg --printsrcinfo > .SRCINFO
+          
+          # For now, use bash to extract info (since we don't have full makepkg)
+          source PKGBUILD
+          
+          cat > .SRCINFO << EOF
+          pkgbase = $pkgname
+          	pkgdesc = $pkgdesc
+          	pkgver = $pkgver
+          	pkgrel = $pkgrel
+          	url = $url
+          	arch = ${arch[0]}
+          	license = ${license[0]}
+          	depends = ${depends[0]}
+          	provides = ${provides[0]}
+          	conflicts = ${conflicts[0]}
+          	conflicts = ${conflicts[1]}
+          	options = ${options[0]}
+          	source = ${source[0]}
+          	source = ${source[1]}
+          	source = ${source[2]}
+          	validpgpkeys = ${validpgpkeys[0]}
+          	sha256sums = SKIP
+          	sha256sums = SKIP
+          	sha256sums = SKIP
+
+          pkgname = $pkgname
+          EOF
+          
+          echo "✅ .SRCINFO generated"
+          echo ""
+          echo "Preview:"
+          cat .SRCINFO
+
+      - name: Clone AUR repository
+        run: |
+          echo "📥 Cloning AUR repository..."
+          git clone ssh://aur@aur.archlinux.org/lyvoxa-bin.git aur-repo || {
+            echo "❌ Failed to clone AUR repo. Make sure:"
+            echo "  1. SSH key is added to AUR account"
+            echo "  2. Package 'lyvoxa-bin' exists (or create it first manually)"
+            exit 1
+          }
+          
+          echo "✅ AUR repo cloned"
+
+      - name: Update AUR repository
+        run: |
+          echo "🔄 Syncing files to AUR repo..."
+          
+          # Copy files
+          cp lyvoxa-bin/PKGBUILD aur-repo/
+          cp lyvoxa-bin/.SRCINFO aur-repo/
+          
+          # Optional: copy additional files
+          [[ -f lyvoxa-bin/.gitignore ]] && cp lyvoxa-bin/.gitignore aur-repo/
+          
+          cd aur-repo
+          
+          # Configure Git
+          git config user.name "Rezky Cahya Sahputra"
+          git config user.email "with.rezky@gmail.com"
+          
+          # Check for changes
+          if git diff --quiet && git diff --cached --quiet; then
+            if [ "${{ github.event.inputs.force_push }}" != "true" ]; then
+              echo "ℹ️ No changes detected in PKGBUILD or .SRCINFO"
+              echo "changed=false" >> $GITHUB_ENV
+              exit 0
+            else
+              echo "⚠️ Force push requested"
+            fi
+          fi
+          
+          echo "✅ Changes detected"
+          echo "changed=true" >> $GITHUB_ENV
+          
+          # Show diff
+          echo ""
+          echo "📝 Changes to be pushed:"
+          git diff HEAD
+
+      - name: Commit and push to AUR
+        if: env.changed == 'true'
+        run: |
+          cd aur-repo
+          
+          git add PKGBUILD .SRCINFO
+          
+          # Get version from PKGBUILD
+          source PKGBUILD
+          VERSION="${pkgver}-${pkgrel}"
+          
+          # Commit with descriptive message
+          git commit -m "chore(aur): update to version $VERSION" \
+                     -m "" \
+                     -m "Automated sync from GitHub repository" \
+                     -m "Source: https://github.com/oxyzenQ/lyvoxa" \
+                     -m "" \
+                     -m "Changes:" \
+                     -m "- Updated PKGBUILD" \
+                     -m "- Regenerated .SRCINFO" \
+                     -m "" \
+                     -m "Signed-off-by: Rezky Cahya Sahputra <with.rezky@gmail.com>"
+          
+          echo "🚀 Pushing to AUR..."
+          git push origin master
+          
+          echo ""
+          echo "✅ Successfully pushed to AUR"
+          echo "🔗 https://aur.archlinux.org/packages/lyvoxa-bin"
+
+      - name: Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 AUR SYNC SUMMARY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          cd lyvoxa-bin
+          source PKGBUILD
+          
+          if [ "${{ env.changed }}" == "true" ]; then
+            echo "✅ Package updated successfully"
+            echo "📋 Package: $pkgname"
+            echo "🔢 Version: $pkgver-$pkgrel"
+            echo "🔗 AUR URL: https://aur.archlinux.org/packages/lyvoxa-bin"
+            echo ""
+            echo "🎯 Users can install with:"
+            echo "   yay -S lyvoxa-bin"
+            echo "   paru -S lyvoxa-bin"
+          else
+            echo "ℹ️ No changes to push"
+            echo "📦 Package: $pkgname $pkgver-$pkgrel"
+          fi
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
