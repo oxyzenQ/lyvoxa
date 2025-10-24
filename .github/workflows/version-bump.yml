@@ -1,0 +1,206 @@
+# =============================================================================
+# AUTO VERSION BUMP GITBOT
+# =============================================================================
+# Automatically update all version references across the project when tagged
+# Trigger: New version tag (v4.1, 4.1, etc)
+# Updates: README.md, Cargo.toml, PKGBUILD, docs, and any file with version
+# Author: rezky_nightky
+
+name: 🤖 Version Bump Bot
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  version-bump:
+    name: 🔄 Auto-update all version references
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"  # Remove 'v' prefix if exists
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Detected version: $VERSION (from tag: $TAG)"
+
+      - name: Get previous version
+        id: prev_version
+        run: |
+          # Get previous tag (excluding current one)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${{ github.ref_name }}$" | head -n1)
+          if [ -n "$PREV_TAG" ]; then
+            PREV_VERSION="${PREV_TAG#v}"
+            echo "prev_version=$PREV_VERSION" >> $GITHUB_OUTPUT
+            echo "📜 Previous version: $PREV_VERSION"
+          else
+            echo "prev_version=0.0.0" >> $GITHUB_OUTPUT
+            echo "📜 No previous version found, using 0.0.0"
+          fi
+
+      - name: Update version in README.md
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PREV="${{ steps.prev_version.outputs.prev_version }}"
+          
+          echo "📝 Updating README.md..."
+          
+          # Update version badge/text
+          sed -i "s/Version [0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/Version $VERSION/g" README.md
+          sed -i "s/v[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/v$VERSION/g" README.md
+          
+          # Update download URLs
+          sed -i "s|releases/download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|releases/download/$VERSION|g" README.md
+          sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?-linux-amd64|lyvoxa-$VERSION-linux-amd64|g" README.md
+          
+          echo "✅ README.md updated"
+
+      - name: Update version in Cargo.toml
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "📝 Updating Cargo.toml..."
+          
+          if [ -f Cargo.toml ]; then
+            sed -i "0,/^version = .*/{s/^version = .*/version = \"$VERSION\"/}" Cargo.toml
+            echo "✅ Cargo.toml updated"
+          else
+            echo "⚠️  Cargo.toml not found, skipping"
+          fi
+
+      - name: Update version in PKGBUILD (lyvoxa-bin)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "📝 Updating lyvoxa-bin/PKGBUILD..."
+          
+          if [ -f lyvoxa-bin/PKGBUILD ]; then
+            sed -i "s/^pkgver=.*/pkgver=$VERSION/" lyvoxa-bin/PKGBUILD
+            sed -i "s/^pkgrel=.*/pkgrel=1/" lyvoxa-bin/PKGBUILD  # Reset pkgrel to 1 for new version
+            
+            # Update source URLs
+            sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|lyvoxa-$VERSION|g" lyvoxa-bin/PKGBUILD
+            sed -i "s|download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|download/$VERSION|g" lyvoxa-bin/PKGBUILD
+            
+            echo "✅ PKGBUILD updated"
+          else
+            echo "⚠️  lyvoxa-bin/PKGBUILD not found, skipping"
+          fi
+
+      - name: Update version in docs
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "📝 Updating documentation files..."
+          
+          # Find all markdown files in docs/ (if exists)
+          if [ -d docs ]; then
+            find docs -name "*.md" -type f | while read -r file; do
+              echo "  Updating: $file"
+              sed -i "s/Version [0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/Version $VERSION/g" "$file"
+              sed -i "s/v[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/v$VERSION/g" "$file"
+              sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|lyvoxa-$VERSION|g" "$file"
+            done
+            echo "✅ Documentation updated"
+          else
+            echo "ℹ️  No docs/ directory found"
+          fi
+
+      - name: Update version in any other config files
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "📝 Scanning for other version references..."
+          
+          # Check and update common config files
+          for file in package.json setup.py pyproject.toml VERSION version.txt; do
+            if [ -f "$file" ]; then
+              echo "  Updating: $file"
+              case "$file" in
+                package.json)
+                  sed -i "s/\"version\": \"[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?\"/\"version\": \"$VERSION\"/" "$file"
+                  ;;
+                setup.py)
+                  sed -i "s/version=['\"][0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?['\"]/version='$VERSION'/" "$file"
+                  ;;
+                pyproject.toml)
+                  sed -i "s/^version = ['\"][0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?['\"]/version = \"$VERSION\"/" "$file"
+                  ;;
+                VERSION|version.txt)
+                  echo "$VERSION" > "$file"
+                  ;;
+              esac
+            fi
+          done
+          
+          echo "✅ Config files scanned"
+
+      - name: Show changes
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 FILES CHANGED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          git status --short
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 DIFF PREVIEW"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          git diff
+
+      - name: Commit and push changes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Configure git
+          git config user.name "Version Bump Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are changes
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add -A
+            
+            # Create detailed commit message
+            git commit -m "chore(version): bump to v$VERSION" \
+                       -m "" \
+                       -m "Automated version update triggered by tag: ${{ github.ref_name }}" \
+                       -m "" \
+                       -m "Updated files:" \
+                       -m "$(git diff --cached --name-only | sed 's/^/- /')" \
+                       -m "" \
+                       -m "[skip ci]"
+            
+            # Push changes
+            git push origin main
+            
+            echo "✅ Changes committed and pushed to main"
+          else
+            echo "ℹ️  No changes detected, nothing to commit"
+          fi
+
+      - name: Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🤖 VERSION BUMP SUMMARY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📌 Tag: ${{ github.ref_name }}"
+          echo "🔢 Version: ${{ steps.version.outputs.version }}"
+          echo "📜 Previous: ${{ steps.prev_version.outputs.prev_version }}"
+          echo ""
+          echo "✅ All version references updated across the project!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
