@@ -1,11 +1,11 @@
 # =============================================================================
-# LYVOXA CI/CD PIPELINE - GITHUB ACTIONS
+# LYVOXA CI PIPELINE - PROFESSIONAL ORDERED BUILD
 # =============================================================================
-# Automated build, test, and release pipeline optimized for ArchLinux
+# Strict ordering: CodeQL → Security → Debug Build → Performance → Release Build
 # Author: rezky_nightky
 # Version: Stellar 3.0
 
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -45,11 +45,35 @@ env:
 
 jobs:
   # =============================================================================
-  # CODE QUALITY CHECKS
+  # STEP 1: CODEQL SECURITY ANALYSIS
   # =============================================================================
-  quality:
-    name: Code Quality
+  codeql:
+    name: 1️⃣ CodeQL Analysis
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # =============================================================================
+  # STEP 2: SECURITY & QUALITY CHECKS
+  # =============================================================================
+  security:
+    name: 2️⃣ Security & Quality
+    runs-on: ubuntu-latest
+    needs: codeql
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -99,15 +123,12 @@ jobs:
           cargo audit || echo "Audit completed with informational warnings"
 
   # =============================================================================
-  # BUILD AND TEST - LINUX X86_64
+  # STEP 3: BUILD DEBUG & TEST
   # =============================================================================
-  build-linux:
-    name: Build and Test (Linux x86_64)
+  build-debug:
+    name: 3️⃣ Build Debug & Test
     runs-on: ubuntu-latest
-    needs: quality
-    strategy:
-      matrix:
-        profile: [debug]
+    needs: security
 
     steps:
       - name: Checkout code
@@ -153,44 +174,18 @@ jobs:
       - name: Check debug binary size
         run: |
           ls -la target/x86_64-unknown-linux-gnu/debug/
-          echo "Debug binary sizes:"
+          echo "📦 Debug binary size:"
           du -h target/x86_64-unknown-linux-gnu/debug/lyvoxa
-
-      - name: Build Optimized Release (Validation)
-        run: |
-          echo "Building optimized release to validate flags..."
-          export RUSTFLAGS="-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
-          cargo build --release --target x86_64-unknown-linux-gnu
-          
-          echo ""
-          echo "📊 Optimized Binary Analysis:"
-          echo "  Size: $(du -h target/x86_64-unknown-linux-gnu/release/lyvoxa | cut -f1)"
-          echo "  Type: $(file target/x86_64-unknown-linux-gnu/release/lyvoxa)"
-          
-          # Calculate size reduction
-          DEBUG_SIZE=$(stat -c%s target/x86_64-unknown-linux-gnu/debug/lyvoxa)
-          RELEASE_SIZE=$(stat -c%s target/x86_64-unknown-linux-gnu/release/lyvoxa)
-          REDUCTION=$(echo "scale=1; 100 - ($RELEASE_SIZE * 100 / $DEBUG_SIZE)" | bc)
-          echo "  Size reduction: ${REDUCTION}% smaller than debug"
 
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: lyvoxa-linux-x86_64-debug
-          path: |
-            target/x86_64-unknown-linux-gnu/debug/lyvoxa
+          name: lyvoxa-debug-${{ github.sha }}
+          path: target/x86_64-unknown-linux-gnu/debug/lyvoxa
           retention-days: 7
 
-      - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: lyvoxa-linux-x86_64-release
-          path: |
-            target/x86_64-unknown-linux-gnu/release/lyvoxa
-          retention-days: 30
-
       - name: Show sccache stats
-        run: sccache --show-stats
+        run: sccache --show-stats || true
 
   # =============================================================================
   # FUTURE: MACOS BUILD (COMMENTED OUT)
@@ -224,16 +219,12 @@ jobs:
   #         path: target/${{ matrix.target }}/release/lyvoxa*
 
   # =============================================================================
-  # CI BUILD COMPLETE - RELEASES HANDLED BY release.yml ON TAG PUSH
-  # =============================================================================
-
-  # =============================================================================
-  # PERFORMANCE MONITORING (DEBUG & RELEASE BUILDS)
+  # STEP 4: PERFORMANCE MONITORING
   # =============================================================================
   performance:
-    name: Performance Monitoring
+    name: 4️⃣ Performance Monitoring
     runs-on: ubuntu-latest
-    needs: build-linux
+    needs: build-debug
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -246,138 +237,96 @@ jobs:
       - name: Download debug artifacts
         uses: actions/download-artifact@v5
         with:
-          name: lyvoxa-linux-x86_64-debug
-          path: ./artifacts/debug/
+          name: lyvoxa-debug-${{ github.sha }}
+          path: ./artifacts/
 
-      - name: Download release artifacts
-        uses: actions/download-artifact@v5
-        with:
-          name: lyvoxa-linux-x86_64-release
-          path: ./artifacts/release/
-
-      - name: Run build validation
+      - name: Run debug validation
         run: |
-          chmod +x artifacts/debug/lyvoxa
-          chmod +x artifacts/release/lyvoxa
+          chmod +x artifacts/lyvoxa
 
-          echo "📊 Build Analysis:"
+          echo "📊 Debug Build Analysis:"
           echo "========================="
-          ls -la artifacts/debug/
-          ls -la artifacts/release/
-          echo ""
-
-          echo "📈 Binary Comparison:"
-          echo "====================="
-          DEBUG_SIZE=$(stat -c%s artifacts/debug/lyvoxa)
-          RELEASE_SIZE=$(stat -c%s artifacts/release/lyvoxa)
-          REDUCTION=$(echo "scale=1; 100 - ($RELEASE_SIZE * 100 / $DEBUG_SIZE)" | bc)
-          
-          echo "Debug binary:   $(numfmt --to=iec $DEBUG_SIZE) (with symbols)"
-          echo "Release binary: $(numfmt --to=iec $RELEASE_SIZE) (optimized + stripped)"
-          echo "Size reduction: ${REDUCTION}%"
+          ls -lh artifacts/
           echo ""
 
           echo "📈 Binary Information:"
           echo "====================="
-          echo "Debug:"
-          file artifacts/debug/lyvoxa
-          echo ""
-          echo "Release:"
-          file artifacts/release/lyvoxa
+          file artifacts/lyvoxa
           echo ""
 
           echo "🔍 Binary Dependencies:"
           echo "======================"
-          echo "Debug:"
-          ldd artifacts/debug/lyvoxa || echo "Static binary"
-          echo ""
-          echo "Release:"
-          ldd artifacts/release/lyvoxa || echo "Static binary"
+          ldd artifacts/lyvoxa || echo "Static binary"
           echo ""
 
-          # Basic validation (check if binaries are valid ELF)
           echo "🧪 Binary Validation:"
           echo "===================="
-          if readelf -h artifacts/debug/lyvoxa > /dev/null 2>&1; then
-            echo "✅ Debug: Valid ELF binary"
+          if readelf -h artifacts/lyvoxa > /dev/null 2>&1; then
+            echo "✅ Debug build is valid ELF binary"
           else
-            echo "❌ Debug: Invalid binary"
+            echo "❌ Debug build is invalid"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Debug build validated successfully"
+
+  # =============================================================================
+  # STEP 5: BUILD OPTIMIZED RELEASE
+  # =============================================================================
+  build-release:
+    name: 5️⃣ Build Optimized Release
+    runs-on: ubuntu-latest
+    needs: performance
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Cache Cargo target
+        uses: actions/cache@v4
+        with:
+          path: target/
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
+            ${{ runner.os }}-cargo-
+
+      - name: Build Optimized Release
+        run: |
+          echo "🚀 Building optimized release binary..."
+          export RUSTFLAGS="-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
+          cargo build --release --target x86_64-unknown-linux-gnu
+          
+          echo ""
+          echo "📊 Optimized Binary Analysis:"
+          echo "  Size: $(du -h target/x86_64-unknown-linux-gnu/release/lyvoxa | cut -f1)"
+          echo "  Type: $(file target/x86_64-unknown-linux-gnu/release/lyvoxa)"
+          
+      - name: Verify release binary
+        run: |
+          echo "🧪 Verifying release binary..."
+          if readelf -h target/x86_64-unknown-linux-gnu/release/lyvoxa > /dev/null 2>&1; then
+            echo "✅ Release binary is valid ELF"
+          else
+            echo "❌ Release binary is invalid"
             exit 1
           fi
           
-          if readelf -h artifacts/release/lyvoxa > /dev/null 2>&1; then
-            echo "✅ Release: Valid ELF binary"
-          else
-            echo "❌ Release: Invalid binary"
-            exit 1
-          fi
+          echo "✅ Optimized release build completed successfully"
 
-          echo ""
-          echo "🎯 Performance Summary:"
-          echo "======================"
-          echo "✅ Both builds completed successfully"
-          echo "✅ Optimization flags validated in CI"
-          echo "✅ Size reduction: ${REDUCTION}% (debug → release)"
-          echo "✅ Ready for distribution"
-
-      - name: Comment PR with performance
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-
-            try {
-              const debugSize = execSync('du -h artifacts/debug/lyvoxa | cut -f1').toString().trim();
-              const releaseSize = execSync('du -h artifacts/release/lyvoxa | cut -f1').toString().trim();
-
-              // Get binary info
-              const releaseInfo = execSync('file artifacts/release/lyvoxa').toString().trim();
-              const isStripped = releaseInfo.includes('stripped') ? '✅ Stripped' : '⚠️ Not stripped';
-
-              // Calculate size reduction
-              const debugBytes = parseInt(execSync('stat -c%s artifacts/debug/lyvoxa').toString().trim());
-              const releaseBytes = parseInt(execSync('stat -c%s artifacts/release/lyvoxa').toString().trim());
-              const reduction = ((100 - (releaseBytes * 100 / debugBytes))).toFixed(1);
-
-              const comment = \`## 🧪 Build Analysis Report
-
-              ### 📦 Binary Size Comparison
-              | Build Profile | Size | Optimization Flags | Description |
-              |--------------|------|-------------------|-------------|
-              | **Debug** | **${debugSize}** | None | Unoptimized with debug symbols |
-              | **Release** | **${releaseSize}** | \`-C opt-level=z -C lto=fat\` | Optimized & stripped |
-              | **Reduction** | **${reduction}%** | ⚡ Smaller | Size optimization achieved |
-
-              ### 🔍 Release Binary Details
-              - **Architecture**: Linux x86_64
-              - **Optimization**: \`opt-level=z\` (size optimization)
-              - **LTO**: Fat LTO enabled (cross-crate inlining)
-              - **Codegen Units**: 1 (maximum optimization)
-              - **Symbols**: ${isStripped}
-              - **Dependencies**: Dynamically linked
-
-              ### ✅ CI Validation
-              - ✅ Format check passed
-              - ✅ Clippy linting passed
-              - ✅ Unit tests passed
-              - ✅ Debug build validated
-              - ✅ Optimized release build validated
-              - ✅ Optimization flags tested in CI
-
-              > 🎯 **Quality Check**: Both debug and release binaries validated as proper ELF executables
-              \`;
-
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: comment
-              });
-            } catch (error) {
-              console.log('Error creating performance comment:', error);
-            }
+          name: lyvoxa-release-${{ github.sha }}
+          path: target/x86_64-unknown-linux-gnu/release/lyvoxa
+          retention-days: 30
 
 # =============================================================================
 # WORKFLOW CONFIGURATION
