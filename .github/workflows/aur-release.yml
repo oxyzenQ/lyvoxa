@@ -40,17 +40,38 @@ jobs:
         run: |
           echo "🔐 Setting up SSH for AUR..."
           mkdir -p ~/.ssh
-          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
-          chmod 600 ~/.ssh/aur
           
-          cat >> ~/.ssh/config << EOF
+          # Write SSH key with proper newlines
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          
+          # Fix permissions (critical for SSH)
+          chmod 600 ~/.ssh/aur
+          chmod 700 ~/.ssh
+          
+          # Configure SSH
+          cat >> ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur
             User aur
             StrictHostKeyChecking accept-new
+            IdentitiesOnly yes
           EOF
           
-          echo "✅ SSH configured"
+          chmod 600 ~/.ssh/config
+          
+          # Verify key format
+          echo "🔍 Verifying SSH key format..."
+          if ! ssh-keygen -y -f ~/.ssh/aur > /dev/null 2>&1; then
+            echo "❌ SSH key format is invalid!"
+            echo "Make sure AUR_SSH_PRIVATE_KEY secret contains the ENTIRE private key"
+            echo "including the header and footer lines:"
+            echo "-----BEGIN OPENSSH PRIVATE KEY-----"
+            echo "..."
+            echo "-----END OPENSSH PRIVATE KEY-----"
+            exit 1
+          fi
+          
+          echo "✅ SSH configured successfully"
 
       - name: Install makepkg tools
         run: |
