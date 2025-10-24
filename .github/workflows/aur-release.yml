@@ -1,22 +1,25 @@
 # =============================================================================
 # AUR AUTO-SYNC WORKFLOW (ADVANCED)
 # =============================================================================
-# Auto-trigger: Changes in lyvoxa-bin/ or new version tag
+# Auto-trigger: After release.yml completes OR changes in lyvoxa-aur-bin/
 # Auto-update: pkgver, sha256sums, .SRCINFO
 # Auto-push: Only if changes detected
 # Author: rezky_nightky
+#
+# IMPORTANT: Runs AFTER release.yml to ensure GitHub release artifacts exist
 
 name: 📦 AUR Sync
 
 on:
+  workflow_run:
+    workflows: ["🌟 Release"]
+    types:
+      - completed
   push:
     paths:
-      - 'lyvoxa-bin/**'
+      - 'lyvoxa-aur-bin/**'
     branches:
       - main
-    tags:
-      - 'v*'
-      - '*.*'
   workflow_dispatch:
 
 permissions:
@@ -26,8 +29,10 @@ jobs:
   aur-sync:
     name: 🔄 Sync to AUR
     runs-on: ubuntu-latest
+    # Only run if release workflow succeeded (or manual/path trigger)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
     env:
-      PKGDIR: lyvoxa-bin
+      PKGDIR: lyvoxa-aur-bin
       AUR_REPO: lyvoxa-bin
       AUR_URL: ssh://aur@aur.archlinux.org/lyvoxa-bin.git
 
@@ -46,14 +51,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          
+
           cat > ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
             User aur
             IdentityFile ~/.ssh/id_ed25519
             StrictHostKeyChecking accept-new
           EOF
-          
+
           chmod 600 ~/.ssh/config
           echo "✅ SSH configured"
 
@@ -75,10 +80,10 @@ jobs:
         run: |
           echo "🔧 Updating PKGBUILD..."
           cd $PKGDIR
-          
+
           # Update version
           sed -i "s/^pkgver=.*/pkgver=${{ steps.version.outputs.version }}/" PKGBUILD
-          
+
           # Extract source URL and update sha256sums
           source PKGBUILD
           if [[ ${#source[@]} -gt 0 ]]; then
@@ -87,7 +92,7 @@ jobs:
             for src in "${source[@]}"; do
               # Extract URL from 'name::url' format
               url=$(echo "$src" | grep -oE 'https?://[^ ]+' || echo "$src")
-              
+
               if [[ $url =~ ^https?:// ]]; then
                 echo "  Downloading: $url"
                 wget -q -O /tmp/source_file "$url" || { echo "⚠️  Skip (download failed)"; SUMS+=("SKIP"); continue; }
@@ -99,7 +104,7 @@ jobs:
                 SUMS+=("SKIP")
               fi
             done
-            
+
             # Update sha256sums in PKGBUILD
             if [[ ${#SUMS[@]} -gt 0 ]]; then
               SHA_ARRAY="sha256sums=("
@@ -107,13 +112,13 @@ jobs:
                 SHA_ARRAY+="'$sum' "
               done
               SHA_ARRAY+=")"
-              
+
               # Replace sha256sums line
               sed -i "/^sha256sums=/c\\$SHA_ARRAY" PKGBUILD
               echo "✅ Updated sha256sums in PKGBUILD"
             fi
           fi
-          
+
           echo "✅ PKGBUILD updated (version=${{ steps.version.outputs.version }})"
 
       - name: Generate .SRCINFO using Arch container
@@ -139,17 +144,17 @@ jobs:
         run: |
           echo "🔄 Syncing files to AUR..."
           rsync -av --delete --exclude='.git' $PKGDIR/ aur-repo/
-          
+
           cd aur-repo
           git config user.name 'GitHub Action Bot'
           git config user.email 'actions@github.com'
-          
+
           # Check for changes
           if [[ -n "$(git status --porcelain)" ]]; then
             git add -A
             echo "✅ Changes detected"
             echo "changed=true" >> $GITHUB_ENV
-            
+
             echo ""
             echo "📝 Changes to commit:"
             git status --short
@@ -162,16 +167,16 @@ jobs:
         if: env.changed == 'true'
         run: |
           cd aur-repo
-          
+
           # Commit
           git commit -m "ci: sync $AUR_REPO v${{ steps.version.outputs.version }}" \
                      -m "" \
                      -m "Automated sync from GitHub" \
                      -m "Source: https://github.com/oxyzenQ/lyvoxa"
-          
+
           echo "🚀 Pushing to AUR..."
           git push
-          
+
           echo "✅ Successfully pushed to AUR"
           echo "🔗 https://aur.archlinux.org/packages/$AUR_REPO"
 
@@ -180,7 +185,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📦 AUR SYNC SUMMARY"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
+
           if [ "${{ env.changed }}" == "true" ]; then
             echo "✅ Package synced to AUR"
             echo "📋 Package: $AUR_REPO"
@@ -194,5 +199,5 @@ jobs:
             echo "ℹ️  No changes to push"
             echo "📦 Package: $AUR_REPO v${{ steps.version.outputs.version }}"
           fi
-          
+
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

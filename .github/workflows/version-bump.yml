@@ -84,23 +84,23 @@ jobs:
             echo "⚠️  Cargo.toml not found, skipping"
           fi
 
-      - name: Update version in PKGBUILD (lyvoxa-bin)
+      - name: Update version in PKGBUILD (lyvoxa-aur-bin)
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
-          echo "📝 Updating lyvoxa-bin/PKGBUILD..."
+          echo "📝 Updating lyvoxa-aur-bin/PKGBUILD..."
           
-          if [ -f lyvoxa-bin/PKGBUILD ]; then
-            sed -i "s/^pkgver=.*/pkgver=$VERSION/" lyvoxa-bin/PKGBUILD
-            sed -i "s/^pkgrel=.*/pkgrel=1/" lyvoxa-bin/PKGBUILD  # Reset pkgrel to 1 for new version
+          if [ -f lyvoxa-aur-bin/PKGBUILD ]; then
+            sed -i "s/^pkgver=.*/pkgver=$VERSION/" lyvoxa-aur-bin/PKGBUILD
+            sed -i "s/^pkgrel=.*/pkgrel=1/" lyvoxa-aur-bin/PKGBUILD  # Reset pkgrel to 1 for new version
             
             # Update source URLs
-            sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|lyvoxa-$VERSION|g" lyvoxa-bin/PKGBUILD
-            sed -i "s|download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|download/$VERSION|g" lyvoxa-bin/PKGBUILD
+            sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|lyvoxa-$VERSION|g" lyvoxa-aur-bin/PKGBUILD
+            sed -i "s|download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|download/$VERSION|g" lyvoxa-aur-bin/PKGBUILD
             
             echo "✅ PKGBUILD updated"
           else
-            echo "⚠️  lyvoxa-bin/PKGBUILD not found, skipping"
+            echo "⚠️  lyvoxa-aur-bin/PKGBUILD not found, skipping"
           fi
 
       - name: Update version in docs
