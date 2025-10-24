@@ -60,6 +60,10 @@ jobs:
           ls -lh ~/.ssh/aur
           echo "🔍 First line of decoded key:"
           head -n 1 ~/.ssh/aur
+          echo "🔍 Last line of decoded key:"
+          tail -n 1 ~/.ssh/aur
+          echo "🔍 Total lines in key:"
+          wc -l ~/.ssh/aur
           
           # Fix permissions (critical for SSH)
           chmod 600 ~/.ssh/aur
@@ -78,14 +82,23 @@ jobs:
           
           # Verify key format
           echo "🔍 Verifying SSH key format..."
-          if ! ssh-keygen -y -f ~/.ssh/aur > /dev/null 2>&1; then
+          if ! ssh-keygen -y -f ~/.ssh/aur > ~/.ssh/pubkey.test 2> ~/.ssh/ssh-keygen.error; then
             echo "❌ SSH key format is invalid!"
-            echo "Make sure AUR_SSH_PRIVATE_KEY_BASE64 secret contains the base64-encoded private key"
             echo ""
+            echo "📋 ssh-keygen error output:"
+            cat ~/.ssh/ssh-keygen.error
+            echo ""
+            echo "🔍 Key file hex dump (first 100 bytes):"
+            xxd -l 100 ~/.ssh/aur
+            echo ""
+            echo "Make sure AUR_SSH_PRIVATE_KEY_BASE64 secret contains the base64-encoded private key"
             echo "Generate it with:"
             echo "  cat ~/.ssh/id_ed25519 | base64 -w 0"
             exit 1
           fi
+          
+          echo "✅ Public key extracted successfully:"
+          cat ~/.ssh/pubkey.test
           
           echo "✅ SSH configured successfully"
 
