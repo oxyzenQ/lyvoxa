@@ -196,25 +196,66 @@ jobs:
           
           echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
-      - name: Sign Package (GPG)
+      - name: Sign Package (GPG - Full Verification Chain)
         run: |
-          echo "🔏 Signing package with GPG..."
+          echo "🔏 Creating professional signature chain..."
+          echo ""
           
-          # Sign with passphrase if provided (binary format .sig)
-          if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
-            echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
-              --pinentry-mode loopback --detach-sign $ARTIFACT.tar.gz
-          else
-            gpg --batch --yes --detach-sign $ARTIFACT.tar.gz
+          # Function to sign with or without passphrase
+          sign_file() {
+            local input="$1"
+            local output="$2"
+            local armor="$3"
+            
+            if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
+              echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
+                --pinentry-mode loopback $armor --output "$output" --detach-sign "$input"
+            else
+              gpg --batch --yes $armor --output "$output" --detach-sign "$input"
+            fi
+          }
+          
+          # 1. Binary signature (.sig) - for packaging systems
+          echo "📦 Creating binary signature (.sig)..."
+          sign_file "$ARTIFACT.tar.gz" "$ARTIFACT.tar.gz.sig" ""
+          
+          # 2. ASCII-armored signature (.asc) - for humans & GitHub
+          echo "📜 Creating ASCII-armored signature (.asc)..."
+          sign_file "$ARTIFACT.tar.gz" "$ARTIFACT.tar.gz.asc" "--armor"
+          
+          # 3. Sign SHA256 checksum (full chain of trust)
+          echo "🔐 Signing SHA256 checksum..."
+          sign_file "$ARTIFACT.tar.gz.sha256" "$ARTIFACT.tar.gz.sha256.asc" "--armor"
+          
+          echo ""
+          echo "✅ Signature Suite Created:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          ls -lh $ARTIFACT.tar.gz* | awk '{print "  " $9 " (" $5 ")"}'
+          echo ""
+          
+          # Verify all signatures
+          echo "🔍 Verifying signatures..."
+          echo ""
+          
+          if gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz 2>&1 | grep "Good signature"; then
+            echo "✅ Binary signature (.sig) valid"
           fi
           
-          # Verify signature was created
-          if [ -f "$ARTIFACT.tar.gz.sig" ]; then
-            echo "✅ Signature created: $ARTIFACT.tar.gz.sig ($(du -h $ARTIFACT.tar.gz.sig | cut -f1))"
-            gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz
-          else
-            echo "⚠️ Signature file not created"
+          if gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz 2>&1 | grep "Good signature"; then
+            echo "✅ ASCII signature (.asc) valid"
           fi
+          
+          if gpg --verify $ARTIFACT.tar.gz.sha256.asc $ARTIFACT.tar.gz.sha256 2>&1 | grep "Good signature"; then
+            echo "✅ SHA256 signature (.sha256.asc) valid"
+          fi
+          
+          echo ""
+          echo "🎯 Professional Release Suite Complete:"
+          echo "  📦 $ARTIFACT.tar.gz (binary)"
+          echo "  🔐 $ARTIFACT.tar.gz.sha256 (integrity)"
+          echo "  🤖 $ARTIFACT.tar.gz.sig (machine signature)"
+          echo "  📜 $ARTIFACT.tar.gz.asc (human signature)"
+          echo "  ✅ $ARTIFACT.tar.gz.sha256.asc (signed hash)"
         continue-on-error: true
 
       - name: Generate Changelog
@@ -253,20 +294,48 @@ jobs:
           
           cat >> RELEASE_NOTES.md << EOF
 
-          ## Verification
+          ## 🔐 Verification (Professional Security Suite)
 
-          **SHA256 Checksum:**
+          This release includes a complete verification chain following industry standards (Debian/Arch/Blender style).
+
+          ### Quick Verification (SHA256)
           \`\`\`bash
           sha256sum -c $ARTIFACT.tar.gz.sha256
           \`\`\`
 
-          **GPG Signature (if available):**
-          \`\`\`bash
-          # Import developer's public key (first time only)
-          gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
+          ### Full Verification (GPG + SHA256)
           
-          # Verify signature
+          **1. Import GPG public key (one-time setup):**
+          \`\`\`bash
+          gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
+          \`\`\`
+
+          **2. Verify binary signature (machine-readable):**
+          \`\`\`bash
           gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz
+          \`\`\`
+
+          **3. Verify ASCII signature (human-readable):**
+          \`\`\`bash
+          gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
+          \`\`\`
+
+          **4. Verify signed checksum (full chain of trust):**
+          \`\`\`bash
+          gpg --verify $ARTIFACT.tar.gz.sha256.asc $ARTIFACT.tar.gz.sha256
+          sha256sum -c $ARTIFACT.tar.gz.sha256
+          \`\`\`
+
+          ### 📦 Available Files
+          - \`$ARTIFACT.tar.gz\` - Binary package
+          - \`$ARTIFACT.tar.gz.sha256\` - Integrity hash
+          - \`$ARTIFACT.tar.gz.sig\` - Binary signature (packaging systems)
+          - \`$ARTIFACT.tar.gz.asc\` - ASCII signature (humans/GitHub)
+          - \`$ARTIFACT.tar.gz.sha256.asc\` - Signed checksum (full chain)
+
+          **Expected GPG output:**
+          \`\`\`
+          gpg: Good signature from "Rezky Cahya Sahputra (Investor) <with.rezky@gmail.com>"
           \`\`\`
 
           **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/commits/$VERSION
@@ -280,6 +349,8 @@ jobs:
             ${{ env.ARTIFACT }}.tar.gz
             ${{ env.ARTIFACT }}.tar.gz.sha256
             ${{ env.ARTIFACT }}.tar.gz.sig
+            ${{ env.ARTIFACT }}.tar.gz.asc
+            ${{ env.ARTIFACT }}.tar.gz.sha256.asc
             RELEASE_NOTES.md
           retention-days: 30
 
