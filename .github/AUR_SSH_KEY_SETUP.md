@@ -14,7 +14,25 @@ This means the SSH key in GitHub Secrets is **incorrectly formatted**.
 
 ## ✅ Correct Setup Process
 
-### Step 1: Generate SSH Key
+### Step 1: Use Existing SSH Key (Recommended)
+
+You can use your **existing SSH key** (no need to create a new one):
+
+```bash
+# Check if you already have an SSH key
+ls -la ~/.ssh/
+
+# Common key names:
+# - id_ed25519 (modern, recommended)
+# - id_rsa (older but works)
+# - id_ecdsa
+```
+
+**Use whichever key you already have!**
+
+### Step 1 (Alternative): Generate New Key (Optional)
+
+Only if you don't have an SSH key or want a dedicated AUR key:
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/aur -C "AUR access for lyvoxa"
@@ -27,7 +45,11 @@ ssh-keygen -t ed25519 -f ~/.ssh/aur -C "AUR access for lyvoxa"
 ### Step 2: Add Public Key to AUR
 
 ```bash
-# Display public key
+# Display your public key (use YOUR key name)
+cat ~/.ssh/id_ed25519.pub
+# or
+cat ~/.ssh/id_rsa.pub
+# or
 cat ~/.ssh/aur.pub
 ```
 
@@ -36,6 +58,8 @@ Copy the **entire output** and add to:
 2. Go to **"My Account"**
 3. Paste in **"SSH Public Key"** field
 4. Click **"Update"**
+
+**Note:** You can add multiple SSH keys to AUR if needed.
 
 ### Step 3: Test SSH Connection
 
@@ -58,17 +82,20 @@ This is **correct**! It means your key works.
 
 ```bash
 # Encode to base64 (preserves all formatting)
-cat ~/.ssh/aur | base64 -w 0 > aur_key_base64.txt
+# Use YOUR key name:
+cat ~/.ssh/id_ed25519 | base64 -w 0 > ssh_key_base64.txt
+# or
+cat ~/.ssh/id_rsa | base64 -w 0 > ssh_key_base64.txt
 
 # Show the encoded key
-cat aur_key_base64.txt
+cat ssh_key_base64.txt
 ```
 
 **Then in GitHub:**
 1. Go to repository → **Settings** → **Secrets and variables** → **Actions**
 2. Click **"New repository secret"**
 3. Name: `AUR_SSH_PRIVATE_KEY_BASE64`
-4. Value: Paste the **entire** base64 string from `aur_key_base64.txt`
+4. Value: Paste the **entire** base64 string from `ssh_key_base64.txt`
 5. Click **"Add secret"**
 
 **Update workflow** to decode:
@@ -86,8 +113,10 @@ cat aur_key_base64.txt
 #### Method 2: Direct Copy (Tricky)
 
 ```bash
-# Display private key
-cat ~/.ssh/aur
+# Display private key (use YOUR key name)
+cat ~/.ssh/id_ed25519
+# or
+cat ~/.ssh/id_rsa
 ```
 
 **Copy the ENTIRE output**, including:
@@ -208,24 +237,34 @@ Before running workflow:
 
 ## 📝 Quick Reference
 
-### Generate Key
+### Check Existing Keys
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/aur -N ""
+ls -la ~/.ssh/
+# Look for: id_ed25519, id_rsa, id_ecdsa
 ```
 
 ### Show Public Key (for AUR)
 ```bash
-cat ~/.ssh/aur.pub
+# Use YOUR key name
+cat ~/.ssh/id_ed25519.pub
+# or
+cat ~/.ssh/id_rsa.pub
 ```
 
-### Show Private Key (for GitHub - Method 2)
+### Encode Private Key (Recommended Method)
 ```bash
-cat ~/.ssh/aur
+# Use YOUR key name
+cat ~/.ssh/id_ed25519 | base64 -w 0
+# or
+cat ~/.ssh/id_rsa | base64 -w 0
 ```
 
-### Encode Private Key (for GitHub - Method 1, Recommended)
+### Show Private Key (Direct Method - if not using base64)
 ```bash
-cat ~/.ssh/aur | base64 -w 0
+# Use YOUR key name
+cat ~/.ssh/id_ed25519
+# or
+cat ~/.ssh/id_rsa
 ```
 
 ### Test Connection
@@ -235,7 +274,8 @@ ssh -T aur@aur.archlinux.org
 
 ### Test Key Locally
 ```bash
-ssh-keygen -y -f ~/.ssh/aur
+# Use YOUR key name
+ssh-keygen -y -f ~/.ssh/id_ed25519
 # Should output public key without errors
 ```
 
@@ -243,16 +283,19 @@ ssh-keygen -y -f ~/.ssh/aur
 
 ## 🎯 Recommended Approach
 
-For **maximum reliability**, use **base64 encoding**:
+For **maximum reliability**, use **base64 encoding** with your existing key:
 
-1. Generate key without passphrase
-2. Add public key to AUR
-3. Test SSH connection
-4. **Encode private key to base64**
-5. Add base64 string to GitHub Secret
-6. Update workflow to decode it
+1. Check existing keys: `ls ~/.ssh/`
+2. Use id_ed25519 or id_rsa (whichever you have)
+3. Add public key to AUR account
+4. Test SSH connection: `ssh -T aur@aur.archlinux.org`
+5. **Encode private key to base64**: `cat ~/.ssh/id_ed25519 | base64 -w 0`
+6. Add base64 string to GitHub Secret: `AUR_SSH_PRIVATE_KEY_BASE64`
+7. Workflow will decode and use it automatically
 
 This eliminates all newline/formatting issues!
+
+**No need to create a new key!** Use your existing SSH key.
 
 ---
 
