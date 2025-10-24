@@ -1,17 +1,17 @@
 # =============================================================================
 # LYVOXA RELEASE PIPELINE - PROFESSIONAL ORDERED BUILD
 # =============================================================================
-# Strict ordering: CodeQL → Security → Debug Build → Performance → Release → Publish
+# Runs AFTER Version Bump Bot completes
+# Order: Version Bump → CI Pipeline → Release Build → AUR Sync
 # Author: rezky_nightky
-# Version: Stellar 3.0
 
 name: 🌟 Release
 
 on:
-  push:
-    tags:
-      - '*.*'           # Match: 3.0, 10.5, etc
-      - '*.*.*'         # Match: 3.0.1, 10.5.2, etc
+  workflow_run:
+    workflows: ["🤖 Version Bump Bot"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       version:
@@ -29,111 +29,26 @@ env:
 
 jobs:
   # =============================================================================
-  # STEP 1: CODEQL SECURITY ANALYSIS
+  # STEP 1: RUN CI PIPELINE (CodeQL → DCO → Build/Test → Performance)
   # =============================================================================
-  codeql:
-    name: 1️⃣ CodeQL Analysis
-    runs-on: ubuntu-latest
+  run-ci:
+    name: 1️⃣ Run CI Pipeline
+    uses: ./.github/workflows/ci.yml
     permissions:
-      security-events: write
-      actions: read
       contents: read
-    steps:
-      - uses: actions/checkout@v5
-      - uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-      - uses: github/codeql-action/analyze@v3
+      checks: write
+      security-events: write
 
   # =============================================================================
-  # STEP 2: SECURITY & QUALITY CHECKS
-  # =============================================================================
-  security:
-    name: 2️⃣ Security & Quality
-    runs-on: ubuntu-latest
-    needs: codeql
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      
-      - name: Run formatting check
-        run: cargo fmt --check
-      
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-      
-      - name: Audit dependencies
-        run: |
-          cargo install cargo-audit
-          cargo audit || echo "Audit completed with warnings"
-
-  # =============================================================================
-  # STEP 3: BUILD DEBUG & TEST
-  # =============================================================================
-  build-debug:
-    name: 3️⃣ Build Debug & Test
-    runs-on: ubuntu-latest
-    needs: security
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu
-      
-      - name: Build Debug
-        run: cargo build --target x86_64-unknown-linux-gnu
-      
-      - name: Run Tests
-        run: cargo test --target x86_64-unknown-linux-gnu
-      
-      - name: Upload debug artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lyvoxa-debug-${{ github.sha }}
-          path: target/x86_64-unknown-linux-gnu/debug/lyvoxa
-          retention-days: 7
-
-  # =============================================================================
-  # STEP 4: PERFORMANCE MONITORING
-  # =============================================================================
-  performance:
-    name: 4️⃣ Performance Monitoring
-    runs-on: ubuntu-latest
-    needs: build-debug
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Download debug artifacts
-        uses: actions/download-artifact@v5
-        with:
-          name: lyvoxa-debug-${{ github.sha }}
-          path: ./artifacts/
-      
-      - name: Validate debug binary
-        run: |
-          chmod +x artifacts/lyvoxa
-          echo "🧪 Validating debug binary..."
-          if readelf -h artifacts/lyvoxa > /dev/null 2>&1; then
-            echo "✅ Debug binary is valid"
-          else
-            echo "❌ Invalid binary"
-            exit 1
-          fi
-
-  # =============================================================================
-  # STEP 5: BUILD OPTIMIZED RELEASE
+  # STEP 2: BUILD OPTIMIZED RELEASE
   # =============================================================================
   build-release:
-    name: 5️⃣ Build Optimized Release
+    name: 2️⃣ Build Optimized Release
     runs-on: ubuntu-latest
-    needs: performance
-    
+    needs: run-ci
+    # Only run if CI succeeded (or manual trigger)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -151,7 +66,7 @@ jobs:
           export RUSTFLAGS="-C opt-level=z -C lto=fat -C codegen-units=1 -C strip=symbols"
           cargo build --release --target x86_64-unknown-linux-gnu
           strip --strip-all target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
-          
+
           echo ""
           echo "📊 Binary Analysis:"
           ls -lh target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME
@@ -175,38 +90,38 @@ jobs:
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
-          
+
           VERSION=$(echo "$VERSION" | sed 's/^v//')
           ARTIFACT="$PROJECT_NAME-$VERSION-linux-amd64"
-          
+
           # Create clean package structure
           mkdir -p $ARTIFACT/bin
           cp target/x86_64-unknown-linux-gnu/release/$PROJECT_NAME $ARTIFACT/bin/
           cp README.md LICENSE $ARTIFACT/
           cp docs/CHANGELOG.md $ARTIFACT/ 2>/dev/null || true
-          
+
           # Create tarball
           tar -czf $ARTIFACT.tar.gz $ARTIFACT/
-          
+
           # Generate SHA256 checksum
           sha256sum $ARTIFACT.tar.gz > $ARTIFACT.tar.gz.sha256
-          
+
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "ARTIFACT=$ARTIFACT" >> $GITHUB_ENV
-          
+
           echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
       - name: Sign Package (GPG - Full Verification Chain)
         run: |
           echo "🔏 Creating professional signature chain..."
           echo ""
-          
+
           # Function to sign with or without passphrase
           sign_file() {
             local input="$1"
             local output="$2"
             local armor="$3"
-            
+
             if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
               echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 \
                 --pinentry-mode loopback $armor --output "$output" --detach-sign "$input"
@@ -214,41 +129,41 @@ jobs:
               gpg --batch --yes $armor --output "$output" --detach-sign "$input"
             fi
           }
-          
+
           # 1. Binary signature (.sig) - for packaging systems
           echo "📦 Creating binary signature (.sig)..."
           sign_file "$ARTIFACT.tar.gz" "$ARTIFACT.tar.gz.sig" ""
-          
+
           # 2. ASCII-armored signature (.asc) - for humans & GitHub
           echo "📜 Creating ASCII-armored signature (.asc)..."
           sign_file "$ARTIFACT.tar.gz" "$ARTIFACT.tar.gz.asc" "--armor"
-          
+
           # 3. Sign SHA256 checksum (full chain of trust)
           echo "🔐 Signing SHA256 checksum..."
           sign_file "$ARTIFACT.tar.gz.sha256" "$ARTIFACT.tar.gz.sha256.asc" "--armor"
-          
+
           echo ""
           echo "✅ Signature Suite Created:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ls -lh $ARTIFACT.tar.gz* | awk '{print "  " $9 " (" $5 ")"}'
           echo ""
-          
+
           # Verify all signatures
           echo "🔍 Verifying signatures..."
           echo ""
-          
+
           if gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz 2>&1 | grep "Good signature"; then
             echo "✅ Binary signature (.sig) valid"
           fi
-          
+
           if gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz 2>&1 | grep "Good signature"; then
             echo "✅ ASCII signature (.asc) valid"
           fi
-          
+
           if gpg --verify $ARTIFACT.tar.gz.sha256.asc $ARTIFACT.tar.gz.sha256 2>&1 | grep "Good signature"; then
             echo "✅ SHA256 signature (.sha256.asc) valid"
           fi
-          
+
           echo ""
           echo "🎯 Professional Release Suite Complete:"
           echo "  📦 $ARTIFACT.tar.gz (binary)"
@@ -261,7 +176,7 @@ jobs:
       - name: Generate Changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
-          
+
           if [ -z "$PREV_TAG" ]; then
             echo "## Changes" > CHANGELOG.txt
             git log --oneline --pretty="- %s (%h)" -20 >> CHANGELOG.txt
@@ -291,7 +206,7 @@ jobs:
 
           EOF
           cat CHANGELOG.txt >> RELEASE_NOTES.md
-          
+
           cat >> RELEASE_NOTES.md << EOF
 
           ## 🔐 Verification (Professional Security Suite)
@@ -304,7 +219,7 @@ jobs:
           \`\`\`
 
           ### Full Verification (GPG + SHA256)
-          
+
           **1. Import GPG public key (one-time setup):**
           \`\`\`bash
           gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
@@ -355,28 +270,28 @@ jobs:
           retention-days: 30
 
   # =============================================================================
-  # STEP 6: PUBLISH RELEASE
+  # STEP 3: PUBLISH RELEASE
   # =============================================================================
   publish:
-    name: 6️⃣ Publish Release
+    name: 3️⃣ Publish Release
     runs-on: ubuntu-latest
     needs: build-release
     permissions:
       contents: write
-    
+
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v5
         with:
           name: lyvoxa-release-artifacts-${{ github.sha }}
           path: ./release/
-      
+
       - name: Prepare release files
         run: |
           cd release
           echo "📋 Files to publish:"
           ls -lh
-          
+
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
@@ -396,69 +311,3 @@ jobs:
           echo "📦 Artifacts uploaded to GitHub Releases"
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/${{ github.ref_name }}"
 
-  # =============================================================================
-  # STEP 7: UPDATE README WITH NEW VERSION
-  # =============================================================================
-  update-readme:
-    name: 7️⃣ Update README Version
-    runs-on: ubuntu-latest
-    needs: publish
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Update version in README
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION_NUM="${VERSION#v}"  # Remove 'v' prefix if exists
-          
-          echo "📝 Updating README.md with version $VERSION_NUM"
-          
-          # Update version tag line
-          sed -i "s/\*Version [0-9.]\+ Stellar\*/\*Version $VERSION_NUM Stellar\*/" README.md
-          
-          # Update download URLs
-          sed -i "s|releases/download/[0-9.]\+/|releases/download/$VERSION_NUM/|g" README.md
-          sed -i "s|lyvoxa-[0-9.]\+-linux-amd64|lyvoxa-$VERSION_NUM-linux-amd64|g" README.md
-          
-          echo "✅ Version updated to $VERSION_NUM"
-          
-      - name: Check if README changed
-        id: check_changes
-        run: |
-          if git diff --quiet README.md; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No changes needed in README"
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✅ README has changes"
-            git diff README.md
-          fi
-      
-      - name: Commit and push changes
-        if: steps.check_changes.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          
-          # Commit with multi-line message
-          git commit -m "docs(readme): update version to ${{ github.ref_name }}" \
-                     -m "" \
-                     -m "Auto-updated by release workflow after publishing release." \
-                     -m "" \
-                     -m "Changes:" \
-                     -m "- Version tag: ${{ github.ref_name }}" \
-                     -m "- Download URLs updated" \
-                     -m "- Installation commands synced" \
-                     -m "" \
-                     -m "[skip ci]"
-          
-          git push origin main
-          echo "✅ README.md updated and pushed to main"
