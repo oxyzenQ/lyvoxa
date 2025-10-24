@@ -1,11 +1,12 @@
 # =============================================================================
-# AUR AUTO-RELEASE WORKFLOW
+# AUR AUTO-SYNC WORKFLOW (ADVANCED)
 # =============================================================================
-# Automatically sync PKGBUILD to AUR repository when updated
-# Single source of truth: GitHub repo → Auto mirror to AUR
-# Zero manual maintenance required
+# Auto-trigger: Changes in lyvoxa-bin/ or new version tag
+# Auto-update: pkgver, sha256sums, .SRCINFO
+# Auto-push: Only if changes detected
+# Author: rezky_nightky
 
-name: 📦 AUR Release
+name: 📦 AUR Sync
 
 on:
   push:
@@ -13,291 +14,166 @@ on:
       - 'lyvoxa-bin/**'
     branches:
       - main
+    tags:
+      - 'v*'
+      - '*.*'
   workflow_dispatch:
-    inputs:
-      force_push:
-        description: 'Force push even if no changes detected'
-        required: false
-        default: 'false'
 
 permissions:
   contents: read
 
 jobs:
   aur-sync:
-    name: 🔄 Sync to AUR Repository
+    name: 🔄 Sync to AUR
     runs-on: ubuntu-latest
-    
+    env:
+      PKGDIR: lyvoxa-bin
+      AUR_REPO: lyvoxa-bin
+      AUR_URL: ssh://aur@aur.archlinux.org/lyvoxa-bin.git
+
     steps:
-      - name: Checkout main repository
+      - name: Checkout repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup SSH for AUR
         env:
-          AUR_SSH_PRIVATE_KEY_BASE64: ${{ secrets.AUR_SSH_PRIVATE_KEY_BASE64 }}
-          SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
         run: |
           echo "🔐 Setting up SSH for AUR..."
           mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
           
-          # Check if secrets are set
-          if [ -z "$AUR_SSH_PRIVATE_KEY_BASE64" ]; then
-            echo "❌ Secret AUR_SSH_PRIVATE_KEY_BASE64 is empty!"
-            exit 1
-          fi
-          
-          if [ -z "$SSH_PASSWD" ]; then
-            echo "❌ Secret SSH_PASSWD is empty!"
-            exit 1
-          fi
-          
-          echo "✅ Both secrets are set"
-          
-          # Decode SSH key
-          echo "🔓 Decoding SSH key..."
-          if ! echo "$AUR_SSH_PRIVATE_KEY_BASE64" | base64 -d > ~/.ssh/aur; then
-            echo "❌ Failed to decode base64 SSH key!"
-            exit 1
-          fi
-          
-          # Verify file was created
-          if [ ! -f ~/.ssh/aur ]; then
-            echo "❌ SSH key file was not created!"
-            exit 1
-          fi
-          
-          echo "✅ SSH key decoded successfully ($(wc -c < ~/.ssh/aur) bytes)"
-          
-          chmod 600 ~/.ssh/aur
-          chmod 700 ~/.ssh
-          
-          # Install expect for passphrase handling
-          sudo apt-get update -qq
-          sudo apt-get install -y expect
-          
-          # Start ssh-agent and export for subsequent steps
-          echo "🔐 Starting ssh-agent..."
-          eval $(ssh-agent -s)
-          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
-          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
-          
-          # Add key to ssh-agent with passphrase using expect
-          echo "🔑 Adding key to ssh-agent..."
-          
-          # Expand home directory for expect script
-          SSH_KEY_PATH="$HOME/.ssh/aur"
-          
-          # Double-check file exists before ssh-add
-          if [ ! -f "$SSH_KEY_PATH" ]; then
-            echo "❌ SSH key file not found at: $SSH_KEY_PATH"
-            ls -la ~/.ssh/
-            exit 1
-          fi
-          
-          echo "✅ Key file confirmed at: $SSH_KEY_PATH"
-          
-          expect << EOF
-          spawn ssh-add $SSH_KEY_PATH
-          expect "Enter passphrase"
-          send "$SSH_PASSWD\r"
-          expect eof
-          EOF
-          
-          # Verify key was added
-          echo "✅ Keys in ssh-agent:"
-          ssh-add -l
-          
-          # Configure SSH
-          cat >> ~/.ssh/config << 'EOF'
+          cat > ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
             User aur
+            IdentityFile ~/.ssh/id_ed25519
             StrictHostKeyChecking accept-new
-            IdentitiesOnly yes
           EOF
           
           chmod 600 ~/.ssh/config
-          
-          # Test SSH connection
-          echo "🧪 Testing SSH connection to AUR..."
-          ssh -T aur@aur.archlinux.org || true
-          
-          echo "✅ SSH configured successfully"
+          echo "✅ SSH configured"
 
-      - name: Install makepkg tools
+      - name: Detect version from tag or PKGBUILD
+        id: version
         run: |
-          echo "📦 Installing Arch packaging tools..."
-          sudo apt-get update -qq
-          sudo apt-get install -y pacman-package-manager
-          
-          echo "✅ Tools installed"
+          echo "🔍 Detecting version..."
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+            echo "📌 Version from tag: $VERSION"
+          else
+            cd $PKGDIR
+            VERSION=$(grep -Po '(?<=pkgver=).*' PKGBUILD)
+            echo "📌 Version from PKGBUILD: $VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Validate PKGBUILD
+      - name: Update PKGBUILD pkgver and sha256sums
         run: |
-          echo "🔍 Validating PKGBUILD syntax..."
-          cd lyvoxa-bin
+          echo "🔧 Updating PKGBUILD..."
+          cd $PKGDIR
           
-          # Check basic PKGBUILD syntax
-          bash -n PKGBUILD || {
-            echo "❌ PKGBUILD has syntax errors!"
-            exit 1
-          }
+          # Update version
+          sed -i "s/^pkgver=.*/pkgver=${{ steps.version.outputs.version }}/" PKGBUILD
           
-          # Check required variables
+          # Extract source URL and update sha256sums
           source PKGBUILD
-          [[ -z "$pkgname" ]] && { echo "❌ pkgname not set!"; exit 1; }
-          [[ -z "$pkgver" ]] && { echo "❌ pkgver not set!"; exit 1; }
-          [[ -z "$pkgrel" ]] && { echo "❌ pkgrel not set!"; exit 1; }
-          
-          echo "✅ PKGBUILD validation passed"
-          echo "📋 Package: $pkgname-$pkgver-$pkgrel"
-
-      - name: Generate .SRCINFO
-        run: |
-          echo "📝 Generating .SRCINFO..."
-          cd lyvoxa-bin
-          
-          # Install namcap for validation (optional but good practice)
-          # makepkg --printsrcinfo > .SRCINFO
-          
-          # For now, use bash to extract info (since we don't have full makepkg)
-          source PKGBUILD
-          
-          cat > .SRCINFO << EOF
-          pkgbase = $pkgname
-          	pkgdesc = $pkgdesc
-          	pkgver = $pkgver
-          	pkgrel = $pkgrel
-          	url = $url
-          	arch = ${arch[0]}
-          	license = ${license[0]}
-          	depends = ${depends[0]}
-          	provides = ${provides[0]}
-          	conflicts = ${conflicts[0]}
-          	conflicts = ${conflicts[1]}
-          	options = ${options[0]}
-          	source = ${source[0]}
-          	source = ${source[1]}
-          	source = ${source[2]}
-          	validpgpkeys = ${validpgpkeys[0]}
-          	sha256sums = SKIP
-          	sha256sums = SKIP
-          	sha256sums = SKIP
-
-          pkgname = $pkgname
-          EOF
-          
-          echo "✅ .SRCINFO generated"
-          echo ""
-          echo "Preview:"
-          cat .SRCINFO
-
-      - name: Clone AUR repository
-        env:
-          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
-          SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
-          GIT_SSH_COMMAND: "ssh -v -i $HOME/.ssh/aur -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
-        run: |
-          echo "📥 Cloning AUR repository..."
-          
-          # Verify ssh-agent still has the key
-          echo "🔍 Verifying ssh-agent..."
-          ssh-add -l || {
-            echo "⚠️ No keys in agent, re-adding..."
-            eval $(ssh-agent -s)
-            expect << EOF
-            spawn ssh-add $HOME/.ssh/aur
-            expect "Enter passphrase"
-            send "$SSH_PASSWD\r"
-            expect eof
-          EOF
-          }
-          
-          # Test SSH connection before clone
-          echo "🧪 Testing SSH connection..."
-          ssh -T aur@aur.archlinux.org 2>&1 || true
-          
-          # Clone with verbose output
-          echo "📥 Cloning..."
-          git clone ssh://aur@aur.archlinux.org/lyvoxa-bin.git aur-repo || {
-            echo "❌ Failed to clone AUR repo."
-            echo "Debugging info:"
-            echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
-            ssh-add -l
-            exit 1
-          }
-          
-          echo "✅ AUR repo cloned"
-
-      - name: Update AUR repository
-        run: |
-          echo "🔄 Syncing files to AUR repo..."
-          
-          # Copy files
-          cp lyvoxa-bin/PKGBUILD aur-repo/
-          cp lyvoxa-bin/.SRCINFO aur-repo/
-          
-          # Optional: copy additional files
-          [[ -f lyvoxa-bin/.gitignore ]] && cp lyvoxa-bin/.gitignore aur-repo/
-          
-          cd aur-repo
-          
-          # Configure Git
-          git config user.name "Rezky Cahya Sahputra"
-          git config user.email "with.rezky@gmail.com"
-          
-          # Check for changes
-          if git diff --quiet && git diff --cached --quiet; then
-            if [ "${{ github.event.inputs.force_push }}" != "true" ]; then
-              echo "ℹ️ No changes detected in PKGBUILD or .SRCINFO"
-              echo "changed=false" >> $GITHUB_ENV
-              exit 0
-            else
-              echo "⚠️ Force push requested"
+          if [[ ${#source[@]} -gt 0 ]]; then
+            echo "📥 Calculating sha256sums for sources..."
+            SUMS=()
+            for src in "${source[@]}"; do
+              # Extract URL from 'name::url' format
+              url=$(echo "$src" | grep -oE 'https?://[^ ]+' || echo "$src")
+              
+              if [[ $url =~ ^https?:// ]]; then
+                echo "  Downloading: $url"
+                wget -q -O /tmp/source_file "$url" || { echo "⚠️  Skip (download failed)"; SUMS+=("SKIP"); continue; }
+                sha=$(sha256sum /tmp/source_file | cut -d' ' -f1)
+                SUMS+=("$sha")
+                echo "  ✅ SHA256: $sha"
+                rm -f /tmp/source_file
+              else
+                SUMS+=("SKIP")
+              fi
+            done
+            
+            # Update sha256sums in PKGBUILD
+            if [[ ${#SUMS[@]} -gt 0 ]]; then
+              SHA_ARRAY="sha256sums=("
+              for sum in "${SUMS[@]}"; do
+                SHA_ARRAY+="'$sum' "
+              done
+              SHA_ARRAY+=")"
+              
+              # Replace sha256sums line
+              sed -i "/^sha256sums=/c\\$SHA_ARRAY" PKGBUILD
+              echo "✅ Updated sha256sums in PKGBUILD"
             fi
           fi
           
-          echo "✅ Changes detected"
-          echo "changed=true" >> $GITHUB_ENV
-          
-          # Show diff
+          echo "✅ PKGBUILD updated (version=${{ steps.version.outputs.version }})"
+
+      - name: Generate .SRCINFO using Arch container
+        run: |
+          echo "📝 Generating .SRCINFO in Arch container..."
+          docker run --rm -v $PWD/$PKGDIR:/pkg archlinux:latest bash -c "
+            pacman -Sy --noconfirm base-devel > /dev/null 2>&1 &&
+            cd /pkg &&
+            makepkg --printsrcinfo > .SRCINFO
+          "
+          echo "✅ .SRCINFO generated"
           echo ""
-          echo "📝 Changes to be pushed:"
-          git diff HEAD
+          echo "Preview:"
+          head -20 $PKGDIR/.SRCINFO
+
+      - name: Clone AUR repository
+        run: |
+          echo "📥 Cloning AUR repository..."
+          git clone "$AUR_URL" aur-repo
+          echo "✅ AUR repo cloned"
+
+      - name: Sync files to AUR repo
+        run: |
+          echo "🔄 Syncing files to AUR..."
+          rsync -av --delete --exclude='.git' $PKGDIR/ aur-repo/
+          
+          cd aur-repo
+          git config user.name 'GitHub Action Bot'
+          git config user.email 'actions@github.com'
+          
+          # Check for changes
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add -A
+            echo "✅ Changes detected"
+            echo "changed=true" >> $GITHUB_ENV
+            
+            echo ""
+            echo "📝 Changes to commit:"
+            git status --short
+          else
+            echo "ℹ️  No changes detected"
+            echo "changed=false" >> $GITHUB_ENV
+          fi
 
       - name: Commit and push to AUR
         if: env.changed == 'true'
-        env:
-          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
-          GIT_SSH_COMMAND: "ssh -i $HOME/.ssh/aur -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
         run: |
           cd aur-repo
           
-          git add PKGBUILD .SRCINFO
-          
-          # Get version from PKGBUILD
-          source PKGBUILD
-          VERSION="${pkgver}-${pkgrel}"
-          
-          # Commit with descriptive message
-          git commit -m "chore(aur): update to version $VERSION" \
+          # Commit
+          git commit -m "ci: sync $AUR_REPO v${{ steps.version.outputs.version }}" \
                      -m "" \
-                     -m "Automated sync from GitHub repository" \
-                     -m "Source: https://github.com/oxyzenQ/lyvoxa" \
-                     -m "" \
-                     -m "Changes:" \
-                     -m "- Updated PKGBUILD" \
-                     -m "- Regenerated .SRCINFO" \
-                     -m "" \
-                     -m "Signed-off-by: Rezky Cahya Sahputra <with.rezky@gmail.com>"
+                     -m "Automated sync from GitHub" \
+                     -m "Source: https://github.com/oxyzenQ/lyvoxa"
           
           echo "🚀 Pushing to AUR..."
-          git push origin master
+          git push
           
-          echo ""
           echo "✅ Successfully pushed to AUR"
-          echo "🔗 https://aur.archlinux.org/packages/lyvoxa-bin"
+          echo "🔗 https://aur.archlinux.org/packages/$AUR_REPO"
 
       - name: Summary
         run: |
@@ -305,21 +181,18 @@ jobs:
           echo "📦 AUR SYNC SUMMARY"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
-          cd lyvoxa-bin
-          source PKGBUILD
-          
           if [ "${{ env.changed }}" == "true" ]; then
-            echo "✅ Package updated successfully"
-            echo "📋 Package: $pkgname"
-            echo "🔢 Version: $pkgver-$pkgrel"
-            echo "🔗 AUR URL: https://aur.archlinux.org/packages/lyvoxa-bin"
+            echo "✅ Package synced to AUR"
+            echo "📋 Package: $AUR_REPO"
+            echo "🔢 Version: ${{ steps.version.outputs.version }}"
+            echo "🔗 https://aur.archlinux.org/packages/$AUR_REPO"
             echo ""
             echo "🎯 Users can install with:"
-            echo "   yay -S lyvoxa-bin"
-            echo "   paru -S lyvoxa-bin"
+            echo "   yay -S $AUR_REPO"
+            echo "   paru -S $AUR_REPO"
           else
-            echo "ℹ️ No changes to push"
-            echo "📦 Package: $pkgname $pkgver-$pkgrel"
+            echo "ℹ️  No changes to push"
+            echo "📦 Package: $AUR_REPO v${{ steps.version.outputs.version }}"
           fi
           
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
