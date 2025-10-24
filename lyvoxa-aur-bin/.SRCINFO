@@ -1,5 +1,5 @@
 pkgbase = lyvoxa-bin
-	pkgdesc = Elegant Linux system monitor with real-time TUI built in Rust (precompiled binary)
+	pkgdesc = Optimize Linux system monitor with real-time TUI built in Rust (precompiled binary)
 	pkgver = 3.0.1
 	pkgrel = 1
 	url = https://github.com/oxyzenQ/lyvoxa

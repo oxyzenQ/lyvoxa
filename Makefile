@@ -3,7 +3,6 @@
 # =============================================================================
 # Optimized build automation and quality validation for Lyvoxa system monitor
 # Author: rezky_nightky
-# Version: Stellar 2.0
 
 # Configuration
 PROJECT_NAME := lyvoxa
