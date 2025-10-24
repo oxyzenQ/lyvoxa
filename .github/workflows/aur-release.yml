@@ -37,42 +37,55 @@ jobs:
       - name: Setup SSH for AUR
         env:
           AUR_SSH_PRIVATE_KEY_BASE64: ${{ secrets.AUR_SSH_PRIVATE_KEY_BASE64 }}
+          SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
         run: |
           echo "🔐 Setting up SSH for AUR..."
           mkdir -p ~/.ssh
           
-          # Debug: Check if secret is set
+          # Check if secrets are set
           if [ -z "$AUR_SSH_PRIVATE_KEY_BASE64" ]; then
             echo "❌ Secret AUR_SSH_PRIVATE_KEY_BASE64 is empty!"
             exit 1
           fi
           
-          echo "✅ Secret is set (length: ${#AUR_SSH_PRIVATE_KEY_BASE64} chars)"
+          if [ -z "$SSH_PASSWD" ]; then
+            echo "❌ Secret SSH_PASSWD is empty!"
+            exit 1
+          fi
           
-          # Debug: Show first 50 chars of base64 (safe to show)
-          echo "🔍 First 50 chars of base64: ${AUR_SSH_PRIVATE_KEY_BASE64:0:50}..."
+          echo "✅ Both secrets are set"
           
-          # Decode base64-encoded SSH key
+          # Decode SSH key
           echo "$AUR_SSH_PRIVATE_KEY_BASE64" | base64 -d > ~/.ssh/aur
-          
-          # Debug: Check decoded file
-          echo "🔍 Decoded file info:"
-          ls -lh ~/.ssh/aur
-          echo "🔍 First line of decoded key:"
-          head -n 1 ~/.ssh/aur
-          echo "🔍 Last line of decoded key:"
-          tail -n 1 ~/.ssh/aur
-          echo "🔍 Total lines in key:"
-          wc -l ~/.ssh/aur
-          
-          # Fix permissions (critical for SSH)
           chmod 600 ~/.ssh/aur
           chmod 700 ~/.ssh
+          
+          # Install expect for passphrase handling
+          sudo apt-get update -qq
+          sudo apt-get install -y expect
+          
+          # Start ssh-agent and export for subsequent steps
+          echo "🔐 Starting ssh-agent..."
+          eval $(ssh-agent -s)
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+          
+          # Add key to ssh-agent with passphrase using expect
+          echo "🔑 Adding key to ssh-agent..."
+          expect << EOF
+          spawn ssh-add ~/.ssh/aur
+          expect "Enter passphrase"
+          send "$SSH_PASSWD\r"
+          expect eof
+          EOF
+          
+          # Verify key was added
+          echo "✅ Keys in ssh-agent:"
+          ssh-add -l
           
           # Configure SSH
           cat >> ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
-            IdentityFile ~/.ssh/aur
             User aur
             StrictHostKeyChecking accept-new
             IdentitiesOnly yes
@@ -80,25 +93,9 @@ jobs:
           
           chmod 600 ~/.ssh/config
           
-          # Verify key format
-          echo "🔍 Verifying SSH key format..."
-          if ! ssh-keygen -y -f ~/.ssh/aur > ~/.ssh/pubkey.test 2> ~/.ssh/ssh-keygen.error; then
-            echo "❌ SSH key format is invalid!"
-            echo ""
-            echo "📋 ssh-keygen error output:"
-            cat ~/.ssh/ssh-keygen.error
-            echo ""
-            echo "🔍 Key file hex dump (first 100 bytes):"
-            xxd -l 100 ~/.ssh/aur
-            echo ""
-            echo "Make sure AUR_SSH_PRIVATE_KEY_BASE64 secret contains the base64-encoded private key"
-            echo "Generate it with:"
-            echo "  cat ~/.ssh/id_ed25519 | base64 -w 0"
-            exit 1
-          fi
-          
-          echo "✅ Public key extracted successfully:"
-          cat ~/.ssh/pubkey.test
+          # Test SSH connection
+          echo "🧪 Testing SSH connection to AUR..."
+          ssh -T aur@aur.archlinux.org || true
           
           echo "✅ SSH configured successfully"
 
