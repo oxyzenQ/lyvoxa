@@ -83,14 +83,14 @@ jobs:
       - name: DCO Check
         run: |
           echo "🔍 Checking DCO (Developer Certificate of Origin)..."
-          
+
           # Check if commits are signed off
           UNSIGNED=$(git log --format='%H %s' origin/main..HEAD | while read commit message; do
             if ! git log -1 --format='%B' $commit | grep -q 'Signed-off-by:'; then
               echo "❌ Missing sign-off: $commit - $message"
             fi
           done)
-          
+
           if [ -z "$UNSIGNED" ]; then
             echo "✅ All commits properly signed off"
           else
@@ -153,7 +153,7 @@ jobs:
           # Check if already installed
           if ! command -v cargo-audit &> /dev/null; then
             echo "Installing cargo-audit..."
-            cargo install cargo-audit --quiet
+            cargo install cargo-audit
           else
             echo "✅ cargo-audit already installed"
           fi

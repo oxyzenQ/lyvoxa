@@ -7,7 +7,7 @@ This directory contains the PKGBUILD for the `lyvoxa-bin` package on the [Arch U
 - **Package Name**: `lyvoxa-bin`
 - **Type**: Precompiled binary release
 - **License**: GPL-3.0
-- **Maintainer**: Rezky Cahya Sahputra (Investor)
+- **Maintainer**: oxyzenq
 
 ## 🚀 Installation
 
@@ -33,7 +33,7 @@ makepkg -si
 This package includes **triple verification**:
 
 1. **SHA256 Checksum** - Integrity verification
-2. **GPG Signature (.asc)** - Authenticity verification  
+2. **GPG Signature (.asc)** - Authenticity verification
 3. **validpgpkeys** - Trusted key whitelist
 
 ### GPG Key Import
@@ -202,13 +202,13 @@ This package follows [AUR submission guidelines](https://wiki.archlinux.org/titl
 
 ## 💡 Philosophy
 
-**Single Source of Truth**: GitHub repository is the master.  
-**Zero Manual Work**: Automation handles AUR sync.  
+**Single Source of Truth**: GitHub repository is the master.
+**Zero Manual Work**: Automation handles AUR sync.
 **Security First**: Triple verification (SHA256 + GPG + validpgpkeys).
 
 > "Maintain once, distribute everywhere" - The AUR automation way.
 
 ---
 
-**Maintained with ❤️ by Rezky Cahya Sahputra**  
+**Maintained with ❤️ by oxyzenq**
 **Automated by GitHub Actions** 🤖
