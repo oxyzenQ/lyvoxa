@@ -125,9 +125,11 @@ jobs:
         run: |
           echo "📝 Generating .SRCINFO in Arch container..."
           docker run --rm -v $PWD/$PKGDIR:/pkg archlinux:latest bash -c "
-            pacman -Sy --noconfirm base-devel > /dev/null 2>&1 &&
+            pacman -Sy --noconfirm base-devel sudo > /dev/null 2>&1 &&
+            useradd -m builder &&
+            chown -R builder:builder /pkg &&
             cd /pkg &&
-            makepkg --printsrcinfo > .SRCINFO
+            sudo -u builder makepkg --printsrcinfo > .SRCINFO
           "
           echo "✅ .SRCINFO generated"
           echo ""

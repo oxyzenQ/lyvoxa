@@ -81,7 +81,24 @@ jobs:
           fetch-depth: 0
 
       - name: DCO Check
-        uses: dco-check/action@v3
+        run: |
+          echo "🔍 Checking DCO (Developer Certificate of Origin)..."
+          
+          # Check if commits are signed off
+          UNSIGNED=$(git log --format='%H %s' origin/main..HEAD | while read commit message; do
+            if ! git log -1 --format='%B' $commit | grep -q 'Signed-off-by:'; then
+              echo "❌ Missing sign-off: $commit - $message"
+            fi
+          done)
+          
+          if [ -z "$UNSIGNED" ]; then
+            echo "✅ All commits properly signed off"
+          else
+            echo "$UNSIGNED"
+            echo ""
+            echo "⚠️  Some commits missing 'Signed-off-by' line"
+            echo "ℹ️  Use: git commit -s"
+          fi
         continue-on-error: true
 
   # =============================================================================
