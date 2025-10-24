@@ -163,7 +163,7 @@ sort = "cpu"              # cpu | mem | pid | user | command
 
 ## 🏗️ Technical Stack
 
-**Core:** Rust 1.90+ | **TUI:** Ratatui + Crossterm | **Async:** Tokio  
+**Core:** Rust 1.90+ | **TUI:** Ratatui + Crossterm | **Async:** Tokio
 **System:** procfs + sysinfo + nix | **Build:** Cargo + LTO
 
 ## 📚 Documentation
@@ -183,7 +183,7 @@ Contributions welcome! Please:
 
 ## 📄 License & Trademark
 
-**License:** [GNU GPL v3.0](LICENSE) - Free to use, modify, and redistribute  
+**License:** [GNU GPL v3.0](LICENSE) - Free to use, modify, and redistribute
 **Trademark:** "Lyvoxa" ™ Rezky Nightky (2025) - Name & logo protected
 
 For commercial licensing or brand usage: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
