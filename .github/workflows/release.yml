@@ -160,7 +160,6 @@ jobs:
           echo "✅ Optimized release build completed"
 
       - name: Setup GPG (if available)
-        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
         run: |
           echo "🔐 Setting up GPG for signing..."
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
@@ -198,7 +197,6 @@ jobs:
           echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
       - name: Sign Package (GPG)
-        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
         run: |
           echo "🔏 Signing package with GPG..."
           
