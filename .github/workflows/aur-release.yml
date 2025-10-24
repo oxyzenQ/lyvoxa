@@ -56,7 +56,20 @@ jobs:
           echo "✅ Both secrets are set"
           
           # Decode SSH key
-          echo "$AUR_SSH_PRIVATE_KEY_BASE64" | base64 -d > ~/.ssh/aur
+          echo "🔓 Decoding SSH key..."
+          if ! echo "$AUR_SSH_PRIVATE_KEY_BASE64" | base64 -d > ~/.ssh/aur; then
+            echo "❌ Failed to decode base64 SSH key!"
+            exit 1
+          fi
+          
+          # Verify file was created
+          if [ ! -f ~/.ssh/aur ]; then
+            echo "❌ SSH key file was not created!"
+            exit 1
+          fi
+          
+          echo "✅ SSH key decoded successfully ($(wc -c < ~/.ssh/aur) bytes)"
+          
           chmod 600 ~/.ssh/aur
           chmod 700 ~/.ssh
           
@@ -72,8 +85,21 @@ jobs:
           
           # Add key to ssh-agent with passphrase using expect
           echo "🔑 Adding key to ssh-agent..."
+          
+          # Expand home directory for expect script
+          SSH_KEY_PATH="$HOME/.ssh/aur"
+          
+          # Double-check file exists before ssh-add
+          if [ ! -f "$SSH_KEY_PATH" ]; then
+            echo "❌ SSH key file not found at: $SSH_KEY_PATH"
+            ls -la ~/.ssh/
+            exit 1
+          fi
+          
+          echo "✅ Key file confirmed at: $SSH_KEY_PATH"
+          
           expect << EOF
-          spawn ssh-add ~/.ssh/aur
+          spawn ssh-add $SSH_KEY_PATH
           expect "Enter passphrase"
           send "$SSH_PASSWD\r"
           expect eof
