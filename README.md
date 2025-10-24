@@ -1,43 +1,32 @@
-# 🌟 Lyvoxa Stellar - Futuristic System Monitor
+<div align="center">
 
-<!-- Badges: Build · Security · Release · Platform · Activity · Branding -->
+# 🌟 Lyvoxa Stellar
 
-<!-- Build & CI -->
-[![Build CI](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&label=build&style=plastic&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&label=codeql&style=plastic&logo=github&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
-[![DCO](https://img.shields.io/badge/DCO-required-4c1?style=plastic&logo=git&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/blob/main/docs/CONTRIBUTING.md#developer-certificate-of-origin-dco)
-[![Security](https://img.shields.io/badge/Security-Enhanced-00d084?style=plastic&logo=shield&logoColor=white)](docs/SECURITY.md)
+**Next-Generation Linux System Monitor**
 
-<!-- Release & License -->
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-663399?style=plastic&logo=gnu&logoColor=white)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?display_name=tag&sort=semver&style=plastic&logo=tag&logoColor=white)](https://github.com/oxyzenQ/lyvoxa/releases)
-[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=plastic&logo=github&logoColor=white&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&style=plastic&logo=github&label=build)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/oxyzenQ/lyvoxa/workflows/CodeQL%20Deep%20Analysis/badge.svg?branch=main)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/badge/License-GPLv3-663399?style=plastic&logo=gnu)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=tag)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=plastic&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
 
-<!-- Platform & Security -->
-![Arch Linux](https://img.shields.io/badge/ArchLinux-recommended-1793D1?logo=arch-linux&logoColor=white&style=plastic)
-![Linux x86_64](https://img.shields.io/badge/Linux-x86__64-black?logo=linux&logoColor=white&style=plastic)
-![Checksum SHA256](https://img.shields.io/badge/checksum-SHA256-4169E1?style=plastic&logo=lock&logoColor=white)
+[![Arch Linux](https://img.shields.io/badge/Arch_Linux-Recommended-1793D1?style=plastic&logo=arch-linux)](https://archlinux.org)
+[![Platform](https://img.shields.io/badge/Platform-Linux_x86__64-black?style=plastic&logo=linux)](https://github.com/oxyzenQ/lyvoxa)
+[![Security](https://img.shields.io/badge/Security-SHA256_+_GPG-4169E1?style=plastic&logo=lock)](docs/VERIFICATION.md)
 
-<!-- Code & Activity -->
-![Code Size](https://img.shields.io/github/languages/code-size/oxyzenQ/lyvoxa?style=plastic&logo=files&logoColor=white&color=orange)
-![Commit Activity](https://img.shields.io/github/commit-activity/m/oxyzenQ/lyvoxa?style=plastic&logo=github&logoColor=white&color=blue)
-![Last Commit](https://img.shields.io/github/last-commit/oxyzenQ/lyvoxa?style=plastic&logo=git&logoColor=white&color=green)
+---
 
-<!-- Branding -->
-![Stellar Edition](https://img.shields.io/badge/edition-stellar-7D2AE8?style=plastic&logo=starship&logoColor=white)
-![Themes](https://img.shields.io/badge/themes-Stellar%20%7C%20Matrix-00d084?style=plastic&logo=palette&logoColor=white)
-![Plugin Ready](https://img.shields.io/badge/plugin-ready-00bcd4?style=plastic&logo=puzzle&logoColor=white)
+**Elegant TUI · Real-time Monitoring · Process Management · Future-proof Architecture**
 
-<!-- Optional badges (uncomment when ready)
-[![crates.io](https://img.shields.io/crates/v/lyvoxa?style=for-the-badge)](https://crates.io/crates/lyvoxa)
-[![AUR](https://img.shields.io/aur/version/lyvoxa?style=for-the-badge)](https://aur.archlinux.org/packages/lyvoxa)
-[![Homebrew](https://img.shields.io/badge/homebrew-coming_soon-orange?logo=homebrew&style=for-the-badge)](https://formulae.brew.sh/)
--->
+*Version 3.0 Stellar* | *Built with Rust* 🦀
 
-An optimized monitoring system linux - a next-generation system monitoring tool built in Rust, designed as a futuristic alternative to traditional system monitors. Lyvoxa delivers an elegant Terminal User Interface (TUI) with advanced process management, real-time charts, and AI-powered insights.
+</div>
 
-**Current Version**: Stellar 3.0 (v3.0.0)
-**Supported Platforms**: ArchLinux (recommended), Linux x86_64 universal
+---
+
+## 📖 About
+
+Lyvoxa is a professional-grade system monitoring tool for Linux, combining elegance with performance. Built from the ground up in Rust, it delivers an intuitive Terminal User Interface (TUI) with advanced features for modern system administration.
 
 ## ✨ Features
 
@@ -76,331 +65,137 @@ An optimized monitoring system linux - a next-generation system monitoring tool 
 - **F9**: Kill selected process
 - **F10**: Quit application
 
-## Installation & Usage
+## 🚀 Installation
 
 ### Quick Install (Recommended)
 
-Download the latest release from [GitHub Releases](https://github.com/oxyzenQ/lyvoxa/releases) for your platform.
-
-#### Linux Universal Installation
-
 ```bash
-# Download universal Linux package
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/Stellar-2.0/lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
+# Download latest release (v3.0)
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz.sha256
 
-# Verify integrity (SHA256 - universal standard)
-sha256sum -c lyvoxa-Stellar-2.0-linux-x86_64.tar.gz.sha256
+# Verify integrity
+sha256sum -c lyvoxa-3.0-linux-amd64.tar.gz.sha256
 
 # Extract and install
-tar -xzf lyvoxa-Stellar-2.0-linux-x86_64.tar.gz
+tar -xzf lyvoxa-3.0-linux-amd64.tar.gz
+sudo cp lyvoxa-3.0-linux-amd64/bin/* /usr/local/bin/
 
-# Copy to system path
-sudo cp lyvoxa /usr/local/bin/
+# Run
+lyvoxa
 ```
 
-#### ArchLinux Installation (PKGBUILD)
+**Verification**: See [docs/VERIFICATION.md](docs/VERIFICATION.md) for SHA256 + GPG signature verification.
+
+### ArchLinux (AUR - Coming Soon)
 
 ```bash
-# For proper system integration
+# Will be available on AUR
+yay -S lyvoxa
+```
+
+### Build from Source
+
+```bash
+# Clone repository
 git clone https://github.com/oxyzenQ/lyvoxa.git
 cd lyvoxa
-make arch-pkg
-sudo pacman -U lyvoxa-*.pkg.tar.zst
-```
 
-### Build from source
+# Build release
+cargo build --release --target x86_64-unknown-linux-gnu
 
-#### Quick Build (Recommended)
-
-```bash
-# Clone the repository
-git clone https://github.com/oxyzenQ/lyvoxa.git
-cd lyvoxa
-
-# Use the optimized build script (limits CPU to 3 cores)
-./build.sh release
-
-# Run the TUI system monitor
-./target/x86_64-unknown-linux-gnu/release/lyvoxa
-```
-
-#### Manual Build
-
-```bash
-# Build with CPU core limits (recommended for heat control)
-cargo build --release --jobs 3 --target x86_64-unknown-linux-gnu
-
-# Or use Make for automation
+# Or use Makefile
 make release
 
-make all     # Full build cycle
-```
-
-#### Alternative: Manual Build
-
-```bash
-# Build from source
-git clone https://github.com/oxyzenQ/lyvoxa.git
-cd lyvoxa
-./build.sh release
-
-# Run the application
+# Run
 ./target/x86_64-unknown-linux-gnu/release/lyvoxa
 ```
 
-### 🎮 Controls
+## 🎮 Usage
 
-**Keyboard Shortcuts:**
+Run `lyvoxa` in your terminal. Use function keys (F1-F10) for navigation:
 
-- **F1**: Help overlay
-- **F2**: Setup menu
-- **F3**: Search processes
-- **F4**: Filter processes
-- **F5**: Charts toggle (on/off)
-- **F6**: Sort mode cycling
-- **F7**: Decrease process priority (Nice-)
-- **F8**: Increase process priority (Nice+)
-- **F9**: Kill selected process
-- **F10**: Quit application
-- **F11/F12**: Theme cycling (bonus)
-- **↑/↓**: Navigate process list
-- **q**: Quick quit
-- **Enter**: Confirm in dialogs
-- **Esc**: Close overlays
+| Key | Action | Description |
+|-----|--------|-------------|
+| **F1** | Help | Show all shortcuts |
+| **F2** | Setup | Configuration menu |
+| **F3** | Search | Find processes |
+| **F4** | Filter | Filter process list |
+| **F5** | Charts | Toggle graphs on/off |
+| **F6** | Sort | Change sort mode |
+| **F7/F8** | Nice | Adjust process priority |
+| **F9** | Kill | Terminate process |
+| **F10** | Quit | Exit application |
+| **Tab** | Theme | Cycle themes |
+| **↑/↓** | Navigate | Select process |
+| **q** | Quick quit | Fast exit |
 
-## Configuration
+## ⚙️ Configuration
 
-Lyvoxa reads configuration from a simple TOML file and persists your changes automatically.
-
-- **Precedence (highest to lowest):**
-
-  1. `LYVOXA_CONFIG=/path/to/config.toml`
-  2. `./lyvoxa.toml` | `./lyvoxa/config.toml` | `./config/lyvoxa.toml`
-  3. `./config.toml` (only if valid Lyvoxa AppConfig)
-  4. `/etc/lyvoxa/config.toml` (system-wide fallback)
-  5. `~/.config/lyvoxa/config.toml` (XDG-compliant; created on first run)
-
-- **What persists from the TUI:**
-
-  - Theme (Tab cycling)
-  - Sort mode (F6)
-  - Charts on/off (F5)
-
-- **Environment overrides (session-only):** `LYVOXA_UI_MS`, `LYVOXA_DATA_MS`, `LYVOXA_ROWS`, `LYVOXA_SHOW_CHARTS`
-
-Example `config.toml`:
+Auto-created at `~/.config/lyvoxa/config.toml` on first run. Settings persist automatically:
 
 ```toml
-# UI redraw interval in milliseconds
-ui_rate_ms = 500
-
-# System data refresh interval in milliseconds
-data_rate_ms = 5000
-
-# Maximum number of process rows shown in the table
-max_rows = 20
-
-# Show charts on startup
-show_charts = true
-
-# Startup theme: "dark" | "stellar" | "matrix"
-theme = "stellar"
-
-# Default sort: "cpu" | "mem" | "pid" | "user" | "command"
-sort = "cpu"
+ui_rate_ms = 500          # UI refresh (ms)
+data_rate_ms = 5000       # Data polling (ms)
+max_rows = 20             # Process table rows
+show_charts = true        # Enable charts
+theme = "stellar"         # dark | stellar | matrix
+sort = "cpu"              # cpu | mem | pid | user | command
 ```
 
-## Performance Benefits
+**Config priority**: `LYVOXA_CONFIG` env → local dir → `/etc/lyvoxa` → `~/.config/lyvoxa`
 
-This Rust-based monitor offers several advantages over traditional system monitors:
+## 🎯 Why Lyvoxa?
 
-1. **Memory Efficiency**: Rust's zero-cost abstractions and memory safety without garbage collection
-2. **Low CPU Overhead**: Compiled binary with optimized system calls
-3. **Fast Startup**: No interpreter or virtual machine overhead
-4. **Minimal Dependencies**: Self-contained binary with minimal runtime requirements
+| Feature | Traditional | Lyvoxa |
+|---------|-------------|--------|
+| **Memory** | ~2-4 MB | ~1-2 MB ✅ |
+| **Safety** | Manual (C/C++) | Memory-safe (Rust) ✅ |
+| **Performance** | Good | Optimized ✅ |
+| **Security** | Basic | SHA256 + GPG ✅ |
+| **Build** | - | Reproducible + Hardened ✅ |
 
-## Build Optimization
+**Key advantages:**
+- 🦀 Rust: Zero-cost abstractions, memory safety
+- ⚡ Fast: LTO optimization, native compilation
+- 🔒 Secure: Binary hardening, signed releases
+- 📦 Small: ~1.3MB optimized binary
 
-Lyvoxa uses an advanced build system optimized for developer machines:
+## 🏗️ Technical Stack
 
-### 🔥 **Heat Control**
+**Core:** Rust 1.90+ | **TUI:** Ratatui + Crossterm | **Async:** Tokio  
+**System:** procfs + sysinfo + nix | **Build:** Cargo + LTO
 
-- **CPU Core Limiting**: All builds limited to 3 cores maximum to prevent overheating
-- **Incremental Compilation**: Faster rebuilds with cached artifacts
-- **sccache Integration**: Shared compilation cache for even faster builds
+## 📚 Documentation
 
-### ⚡ **Performance Features**
+- **[Verification Guide](docs/VERIFICATION.md)** - SHA256 + GPG verification (Bahasa)
+- **[GPG Setup](docs/GITHUB_GPG_SETUP.md)** - Auto-signing configuration
+- **[Security Policy](docs/SECURITY.md)** - Security best practices
+- **[Contributing](docs/CONTRIBUTING.md)** - Contribution guidelines
 
-- **Target-Specific Optimization**: Builds optimized for `x86_64-unknown-linux-gnu`
-- **Link-Time Optimization (LTO)**: Smaller, faster binaries
-- **Native CPU Features**: Automatically uses your CPU's capabilities
-- **Mold Linker Support**: Faster linking when available
+## 🤝 Contributing
 
-### 🛠️ **Build Profiles**
+Contributions welcome! Please:
+1. Open an issue for major changes
+2. Fork → Feature branch → PR
+3. Follow [DCO](docs/CONTRIBUTING.md#developer-certificate-of-origin-dco)
+4. Sign commits with GPG (recommended)
 
-- `debug`: Fast compilation for development
-- `release`: Maximum optimization for production
-- `release-with-debug`: Optimized with debug info for profiling
+## 📄 License & Trademark
 
-### 📦 **Reproducible Builds**
+**License:** [GNU GPL v3.0](LICENSE) - Free to use, modify, and redistribute  
+**Trademark:** "Lyvoxa" ™ Rezky Nightky (2025) - Name & logo protected
 
-- Locked Rust toolchain via `rust-toolchain.toml`
-- Dependency locking with `Cargo.lock`
-- Containerized builds with Docker
+For commercial licensing or brand usage: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
 
-### 🔐 **Security & Integrity**
+---
 
-- **SHA256 Checksum**: Universal standard for integrity verification
-- **Reproducible Builds**: Consistent build environment and toolchain
-- **Memory Safety**: Rust's zero-cost abstractions prevent common vulnerabilities
-- **Supply Chain Security**: Automated verification in CI/CD
+<div align="center">
 
-### 🔒 Binary Hardening & High‑Effort RE
+**Made with 🦀 by [Rezky Nightky](https://github.com/oxyzenQ)**
 
-Lyvoxa enables strong hardening by default for release builds:
+[GitHub](https://github.com/oxyzenQ/lyvoxa) · [Releases](https://github.com/oxyzenQ/lyvoxa/releases) · [Issues](https://github.com/oxyzenQ/lyvoxa/issues) · [Security](docs/SECURITY.md)
 
-- LTO: `lto = "fat"` and `codegen-units = 1` for aggressive cross‑crate inlining
-- Optimizations: `opt-level = 3` for maximal flattening and performance
-- Strip: `strip = true` to remove symbols and debug info at link time
-- Panic behavior: `panic = "abort"` to remove unwind metadata
-- Linker hardening flags (via `.cargo/config.toml`):
-  - `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,--gc-sections`
-- Runtime hardening (Linux): disable core dumps with `prctl(PR_SET_DUMPABLE,0)`
-- Selective string obfuscation (via `obfstr`) for sensitive literals
+*Professional system monitoring for Linux · Built for performance, designed for elegance*
 
-#### Quick presets (already applied)
-
-```toml
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = true
-```
-
-#### Arch PKGBUILD
-
-The `PKGBUILD` builds with release profile and strips the installed binary. It also exports hardening flags during the build. See `PKGBUILD` for details.
-
-#### Verify hardening (Linux)
-
-```bash
-# Build
-cargo build --release -j 3
-
-# Inspect binary
-BIN=target/x86_64-unknown-linux-gnu/release/lyvoxa
-file "$BIN"
-
-# Check RELRO, BIND_NOW and NX stack
-readelf -lW "$BIN" | sed -n '/Program Headers:/,/Section to Segment/p'
-readelf -d "$BIN" | grep -E 'BIND_NOW|RELRO' || true
-
-# GNU_STACK should be RW, not RWE (noexecstack)
-readelf -lW "$BIN" | grep GNU_STACK
-
-# Optional (install checksec):
-# pacman -S checksec
-# checksec --file="$BIN"
-```
-
-Expected indicators:
-
-- `GNU_RELRO` segment present
-- `BIND_NOW` in dynamic section
-- `GNU_STACK` flags without `E` (non‑executable stack)
-- No debug symbols reported by `file`
-
-## 🏗️ Architecture
-
-The project features a clean, modular architecture:
-
-- `src/main.rs` - Advanced TUI interface with real-time charts and interactive controls
-- `src/monitor.rs` - Core system monitoring with procfs integration for detailed process info
-- `src/theme.rs` - Elegant theming system with multiple visual styles
-- Built with modern async Rust using tokio for responsive performance
-
-## 📦 Dependencies
-
-- `sysinfo` - Cross-platform system information gathering
-- `ratatui` - Modern terminal user interface framework
-- `crossterm` - Cross-platform terminal manipulation
-- `tokio` - Async runtime for responsive UI
-- `procfs` - Linux /proc filesystem parsing for detailed process info
-- `users` - User name resolution
-- `nix` - Unix system calls for process control
-- `humansize` - Human-readable size formatting
-
-## Comparison with Other Competitors
-
-| Feature           | Traditional Monitors     | lyvoxa      |
-| ----------------- | ------------------------ | ----------- |
-| Memory Usage      | ~2-4 MB                  | ~1-2 MB     |
-| CPU Overhead      | Medium                   | Low         |
-| Startup Time      | Fast                     | Very Fast   |
-| Language          | C/C++                    | Rust        |
-| Safety            | Manual memory management | Memory safe |
-| ArchLinux Support | Basic                    | Optimized   |
-
-## 🚀 Future Enhancements
-
-- [ ] Disk I/O statistics and charts
-- [ ] Advanced process tree visualization
-- [x] Configuration file with persistence (project-local + XDG + env overrides)
-- [ ] Custom color theme creation
-- [x] Export monitoring data (JSON)
-- [ ] Export monitoring data (CSV)
-- [x] Plugin system foundation for extensibility
-- [ ] Remote monitoring capabilities
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-## License & Brand
-
-Lyvoxa is released under the GNU GPL v3.0 — you are free to use, modify, and redistribute the source under the same license.
-Binary releases are signed and reproducible; verify signatures and checksums before use.
-
-Trademark: The name "Lyvoxa" and its logo are the property of Rezky Nightky. Use of the Lyvoxa name and logo in derivative or competing products requires explicit permission. For commercial licensing or partnership inquiries, contact: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
-
-### Trademark Notice
-
-“Lyvoxa” and the Lyvoxa logo are trademarks of Rezky Nightky (first use: 2025).
-This repository and its public commit history serve as documented evidence of first use and ongoing development.
-
-Use of the “Lyvoxa” name, logo, or confusingly similar branding in derivative or competing products without written permission is prohibited.
-Nominative fair use—for example, referencing or linking to this project—is permitted as long as it does not imply endorsement, sponsorship, or official affiliation.
-
-If the trademark is registered in any jurisdiction, registered trademark (®) protections will apply there. This document will be updated to reflect registration status (TM/®) when completed.
-
-For permission requests, brand usage guidelines, or commercial licensing, contact: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)
-
-## Security
-
-For security verification instructions and best practices, see [docs/SECURITY.md](docs/SECURITY.md).
-
-**Release Verification:**
-
-- All releases include SHA256 checksums (universal standard)
-- Reproducible builds ensure consistent binary generation
-- Follow verification steps before installation for maximum security
-
-## Repository
-
-- **GitHub**: [https://github.com/oxyzenQ/lyvoxa](https://github.com/oxyzenQ/lyvoxa)
-- **Issues**: [https://github.com/oxyzenQ/lyvoxa/issues](https://github.com/oxyzenQ/lyvoxa/issues)
-- **Releases**: [https://github.com/oxyzenQ/lyvoxa/releases](https://github.com/oxyzenQ/lyvoxa/releases)
-- **Security**: [docs/SECURITY.md](docs/SECURITY.md)
+</div>
