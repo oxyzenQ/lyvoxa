@@ -5,7 +5,7 @@
 **Next-Generation Linux System Monitor**
 
 [![Build](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&style=plastic&logo=github&label=build)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/oxyzenQ/lyvoxa/workflows/CodeQL%20Deep%20Analysis/badge.svg?branch=main)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&style=plastic&logo=github&label=codeql)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/badge/License-GPLv3-663399?style=plastic&logo=gnu)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=tag)](https://github.com/oxyzenQ/lyvoxa/releases)
 [![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=plastic&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
