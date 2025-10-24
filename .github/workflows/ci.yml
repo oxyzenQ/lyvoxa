@@ -149,11 +149,19 @@ jobs:
           cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit
+        run: |
+          # Check if already installed
+          if ! command -v cargo-audit &> /dev/null; then
+            echo "Installing cargo-audit..."
+            cargo install cargo-audit --quiet
+          else
+            echo "✅ cargo-audit already installed"
+          fi
 
       - name: Audit dependencies
         run: |
           # Run audit with configuration (ignores maintenance warnings)
+          # Note: "thiserror" version difference is normal (semver prevents auto-upgrade across major versions)
           cargo audit || echo "Audit completed with informational warnings"
 
   # =============================================================================
