@@ -187,73 +187,104 @@ jobs:
 
       - name: Create Release Notes
         run: |
-          cat > RELEASE_NOTES.md << EOF
-          # Lyvoxa $VERSION
+          cat > RELEASE_NOTES.md << 'EOF'
+          ```
+          ╔══════════════════════════════════════════════════════════╗
+          ║                                                          ║
+          ║     ██╗  ██╗   ██╗██╗   ██╗ ██████╗ ██╗  ██╗ █████╗    ║
+          ║     ██║  ╚██╗ ██╔╝██║   ██║██╔═══██╗╚██╗██╔╝██╔══██╗   ║
+          ║     ██║   ╚████╔╝ ██║   ██║██║   ██║ ╚███╔╝ ███████║   ║
+          ║     ██║    ╚██╔╝  ╚██╗ ██╔╝██║   ██║ ██╔██╗ ██╔══██║   ║
+          ║     ███████╗██║    ╚████╔╝ ╚██████╔╝██╔╝ ██╗██║  ██║   ║
+          ║     ╚══════╝╚═╝     ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ║
+          ║                                                          ║
+          ║          System Monitor · Born from Shadows             ║
+          ╚══════════════════════════════════════════════════════════╝
+          ```
 
-          **Linux x86_64 system monitoring tool**
+          > *"In the depths of your system, where processes whisper and metrics dance,*  
+          > *Lyvoxa watches. Silent. Precise. Unstoppable."*
 
-          ## Installation
+          ---
 
-          \`\`\`bash
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION/$ARTIFACT.tar.gz
-          wget https://github.com/oxyzenQ/lyvoxa/releases/download/$VERSION/$ARTIFACT.tar.gz.sha256
-          sha256sum -c $ARTIFACT.tar.gz.sha256
-          tar -xzf $ARTIFACT.tar.gz
-          sudo cp $ARTIFACT/bin/* /usr/local/bin/
-          \`\`\`
-
-          ## What's Changed
+          ## 🌑 What Lurks in This Release
 
           EOF
           cat CHANGELOG.txt >> RELEASE_NOTES.md
 
           cat >> RELEASE_NOTES.md << EOF
 
-          ## 🔐 Verification (Professional Security Suite)
+          ---
 
-          This release includes a complete verification chain following industry standards (Debian/Arch/Blender style).
+          ## 🔐 The Seal of Trust
 
-          ### Quick Verification (SHA256)
+          > Every byte signed. Every hash verified. Trust through mathematics.
+
+          <details>
+          <summary><b>🔍 Quick Integrity Check</b></summary>
+
           \`\`\`bash
+          # Verify the SHA256 fingerprint
           sha256sum -c $ARTIFACT.tar.gz.sha256
           \`\`\`
 
-          ### Full Verification (GPG + SHA256)
+          **Expected:** ✅ OK
 
-          **1. Import GPG public key (one-time setup):**
+          </details>
+
+          <details>
+          <summary><b>🗝️ Full Cryptographic Verification</b></summary>
+
+          **Step 1: Summon the Key** *(one-time ritual)*
           \`\`\`bash
           gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
           \`\`\`
 
-          **2. Verify binary signature (machine-readable):**
+          **Step 2: Verify the Signature**
           \`\`\`bash
+          # Machine signature (for automation)
           gpg --verify $ARTIFACT.tar.gz.sig $ARTIFACT.tar.gz
-          \`\`\`
 
-          **3. Verify ASCII signature (human-readable):**
-          \`\`\`bash
+          # Human signature (ASCII-armored)
           gpg --verify $ARTIFACT.tar.gz.asc $ARTIFACT.tar.gz
-          \`\`\`
 
-          **4. Verify signed checksum (full chain of trust):**
-          \`\`\`bash
+          # Chain of trust (signed checksum)
           gpg --verify $ARTIFACT.tar.gz.sha256.asc $ARTIFACT.tar.gz.sha256
           sha256sum -c $ARTIFACT.tar.gz.sha256
           \`\`\`
 
-          ### 📦 Available Files
-          - \`$ARTIFACT.tar.gz\` - Binary package
-          - \`$ARTIFACT.tar.gz.sha256\` - Integrity hash
-          - \`$ARTIFACT.tar.gz.sig\` - Binary signature (packaging systems)
-          - \`$ARTIFACT.tar.gz.asc\` - ASCII signature (humans/GitHub)
-          - \`$ARTIFACT.tar.gz.sha256.asc\` - Signed checksum (full chain)
-
-          **Expected GPG output:**
+          **Blessed Output:**
           \`\`\`
           gpg: Good signature from "Rezky Cahya Sahputra (Investor) <with.rezky@gmail.com>"
+          Primary key fingerprint: 3495 ABF0 957D 28A7 E850  1375 0D8D 13BB 989A F9F0
           \`\`\`
 
-          **Full Changelog**: https://github.com/oxyzenQ/lyvoxa/commits/$VERSION
+          </details>
+
+          ---
+
+          ## 📦 Artifacts Manifest
+
+          | File | Purpose | Size |
+          |------|---------|------|
+          | \`$ARTIFACT.tar.gz\` | Binary distribution | ~ |
+          | \`$ARTIFACT.tar.gz.sha256\` | Integrity checksum | 64 bytes |
+          | \`$ARTIFACT.tar.gz.sig\` | GPG signature (binary) | ~ |
+          | \`$ARTIFACT.tar.gz.asc\` | GPG signature (ASCII) | ~ |
+          | \`$ARTIFACT.tar.gz.sha256.asc\` | Signed checksum | ~ |
+
+          ---
+
+          <div align="center">
+
+          **Installation via AUR:**  
+          \`yay -S lyvoxa-bin\` or \`paru -S lyvoxa-bin\`
+
+          **Full Timeline:** [View all commits](${{ github.server_url }}/${{ github.repository }}/commits/$VERSION)
+
+          *Crafted with precision · Secured with cryptography*
+
+          </div>
           EOF
 
       - name: Upload release artifacts
