@@ -41,8 +41,25 @@ jobs:
           echo "🔐 Setting up SSH for AUR..."
           mkdir -p ~/.ssh
           
+          # Debug: Check if secret is set
+          if [ -z "$AUR_SSH_PRIVATE_KEY_BASE64" ]; then
+            echo "❌ Secret AUR_SSH_PRIVATE_KEY_BASE64 is empty!"
+            exit 1
+          fi
+          
+          echo "✅ Secret is set (length: ${#AUR_SSH_PRIVATE_KEY_BASE64} chars)"
+          
+          # Debug: Show first 50 chars of base64 (safe to show)
+          echo "🔍 First 50 chars of base64: ${AUR_SSH_PRIVATE_KEY_BASE64:0:50}..."
+          
           # Decode base64-encoded SSH key
           echo "$AUR_SSH_PRIVATE_KEY_BASE64" | base64 -d > ~/.ssh/aur
+          
+          # Debug: Check decoded file
+          echo "🔍 Decoded file info:"
+          ls -lh ~/.ssh/aur
+          echo "🔍 First line of decoded key:"
+          head -n 1 ~/.ssh/aur
           
           # Fix permissions (critical for SSH)
           chmod 600 ~/.ssh/aur
