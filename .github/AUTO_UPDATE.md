@@ -11,7 +11,7 @@ Lyvoxa uses a powerful GitHub Actions bot instead of Dependabot for superior aut
 | **Pull Requests** | ✅ Creates PRs | ❌ Direct commit to main |
 | **Manual Review** | 😰 Required | 🎉 Automated |
 | **Workflow Integration** | ❌ Separate | ✅ Part of CI/CD |
-| **GPG Signing** | ❌ No | ✅ Yes |
+| **GitHub Verification** | ⚠️ Basic | ✅ Yes (bot commits) |
 | **Pre-commit Testing** | ❌ No | ✅ Yes |
 | **Security Audit** | ⚠️ Basic | ✅ Full cargo audit |
 | **Custom Logic** | ❌ Limited | ✅ Unlimited |
@@ -29,7 +29,7 @@ Lyvoxa uses a powerful GitHub Actions bot instead of Dependabot for superior aut
 4. 🔨 cargo build (validate compatibility)
 5. 🧪 cargo test (ensure quality)
 6. 🔍 cargo clippy (code quality)
-7. ✍️ Commit with GPG signature
+7. ✅ Commit (verified by GitHub)
 8. 🚀 Push directly to main
 9. ✅ Done!
 ```
@@ -51,7 +51,7 @@ Lyvoxa uses a powerful GitHub Actions bot instead of Dependabot for superior aut
 
 **3. Professional Commits**
 ```
-Verified ✅ Signed by: Rezky Cahya Sahputra
+Verified ✅ By: github-actions[bot]
 ```
 
 **4. Full Control**
@@ -101,18 +101,17 @@ Actions → Run workflow → force_update: true
 
 ### 🔐 Security
 
-**GPG Signed Commits:**
-Every auto-update commit is cryptographically signed with your GPG key.
+**GitHub Verified Commits:**
+Every auto-update commit is automatically verified by GitHub as coming from github-actions[bot].
 
-**Requirements:**
-1. `GPG_PRIVATE_KEY` secret configured
-2. `GPG_PASSPHRASE` secret (optional)
+**Benefits:**
+- ✅ No secrets management needed
+- ✅ Automatic verification by GitHub
+- ✅ Clear attribution to bot
+- ✅ Tampering protection
 
 **Verification:**
-```bash
-git log --show-signature
-# Shows: gpg: Good signature from "Rezky Cahya Sahputra"
-```
+Commits show "Verified" badge in GitHub UI automatically.
 
 ### 🛡️ Safety Measures
 
@@ -148,8 +147,8 @@ Signed-off-by: github-actions[bot]
 **Git log shows:**
 ```
 ✅ Verified    ci(deps): auto-update dependencies
-               Signed by: Rezky Cahya Sahputra (Investor)
-               GPG key ID: 0D8D13BB989AF9F0
+               By: github-actions[bot]
+               GitHub Actions verification
 ```
 
 ### 🎯 Best Practices

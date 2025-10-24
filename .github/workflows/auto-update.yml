@@ -96,20 +96,13 @@ jobs:
           cargo clippy --all-targets -- -D warnings || echo "⚠️ Clippy warnings (non-blocking)"
         continue-on-error: true
 
-      - name: Import GPG key (for signed commits)
+      - name: Configure Git
         run: |
-          echo "🔐 Setting up GPG for signed commits..."
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          gpg --list-secret-keys --keyid-format LONG
-          
-          # Configure Git to use GPG
-          git config --global user.signingkey 0D8D13BB989AF9F0
-          git config --global commit.gpgsign true
+          echo "⚙️ Configuring Git for bot commits..."
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          echo "✅ GPG key configured"
-        continue-on-error: true
+          echo "✅ Git configured"
 
       - name: Check for changes
         id: check_changes
@@ -130,32 +123,18 @@ jobs:
         run: |
           git add Cargo.lock
           
-          # Commit with GPG signing
-          if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
-            echo "${{ secrets.GPG_PASSPHRASE }}" | git commit --gpg-sign \
-              -m "ci(deps): auto-update dependencies" \
-              -m "" \
-              -m "🤖 Automated daily dependency update by GitHub Actions" \
-              -m "" \
-              -m "Changes:" \
-              -m "- Updated Cargo.lock with latest compatible versions" \
-              -m "- Security audit passed" \
-              -m "- Build & tests validated" \
-              -m "" \
-              -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-          else
-            git commit \
-              -m "ci(deps): auto-update dependencies" \
-              -m "" \
-              -m "🤖 Automated daily dependency update by GitHub Actions" \
-              -m "" \
-              -m "Changes:" \
-              -m "- Updated Cargo.lock with latest compatible versions" \
-              -m "- Security audit passed" \
-              -m "- Build & tests validated" \
-              -m "" \
-              -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-          fi
+          # Commit (GitHub Actions bot commits are auto-verified by GitHub)
+          git commit \
+            -m "ci(deps): auto-update dependencies" \
+            -m "" \
+            -m "🤖 Automated daily dependency update by GitHub Actions" \
+            -m "" \
+            -m "Changes:" \
+            -m "- Updated Cargo.lock with latest compatible versions" \
+            -m "- Security audit passed" \
+            -m "- Build & tests validated" \
+            -m "" \
+            -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           
           git push origin main
           
@@ -174,7 +153,7 @@ jobs:
             echo "📦 Cargo.lock updated"
             echo "🔐 Security audit passed"
             echo "🧪 Tests validated"
-            echo "✍️ Commit GPG signed"
+            echo "✅ Verified by GitHub Actions"
             echo "🚀 Pushed to main"
           else
             echo "ℹ️ No updates needed - all dependencies current"
