@@ -1,4 +1,4 @@
-name: CodeQL Deep Analysis
+name: 🔍 CodeQL Deep Analysis
 
 on:
   push:

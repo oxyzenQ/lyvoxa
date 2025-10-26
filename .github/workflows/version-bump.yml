@@ -175,13 +175,16 @@ jobs:
           if [[ -n "$(git status --porcelain)" ]]; then
             git add -A
             
-            # Create detailed commit message
-            git commit -m "chore(version): bump to v$VERSION" \
+            # Create creative commit message
+            git commit -m "🚀 version: welcome v$VERSION to the universe!" \
                        -m "" \
-                       -m "Automated version update triggered by tag: ${{ github.ref_name }}" \
+                       -m "🎊 A new version has emerged from the cosmic void" \
+                       -m "✨ Tag trigger: ${{ github.ref_name }}" \
                        -m "" \
-                       -m "Updated files:" \
-                       -m "$(git diff --cached --name-only | sed 's/^/- /')" \
+                       -m "📝 Files touched by the version fairy:" \
+                       -m "$(git diff --cached --name-only | sed 's/^/  ✓ /')" \
+                       -m "" \
+                       -m "Every version bump is a step toward greatness. 🌟" \
                        -m "" \
                        -m "[skip ci]"
             

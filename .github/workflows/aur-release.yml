@@ -47,20 +47,51 @@ jobs:
         env:
           AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
           echo "🔐 Setting up SSH for AUR..."
+          
+          # Validate SSH key exists
+          if [ -z "$AUR_SSH_PRIVATE_KEY" ]; then
+            echo "❌ ERROR: AUR_SSH_PRIVATE_KEY secret is not set!"
+            echo "📖 Please follow: docs/AUR_SSH_SETUP.md"
+            exit 1
+          fi
+          
+          # Setup SSH directory
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # Write SSH key (preserving newlines)
           echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
+          
+          # Verify key format
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519; then
+            echo "⚠️  WARNING: SSH key might be in wrong format"
+            echo "Expected: -----BEGIN OPENSSH PRIVATE KEY-----"
+            head -1 ~/.ssh/id_ed25519
+          fi
+          
+          # Create SSH config
           cat > ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
             User aur
             IdentityFile ~/.ssh/id_ed25519
             StrictHostKeyChecking accept-new
+            ServerAliveInterval 60
+            ServerAliveCountMax 10
           EOF
-
+          
           chmod 600 ~/.ssh/config
           echo "✅ SSH configured"
+          
+          # Test SSH connection
+          echo "🧪 Testing SSH connection to AUR..."
+          if ssh -T -o ConnectTimeout=10 aur@aur.archlinux.org 2>&1 | grep -q "successfully authenticated"; then
+            echo "✅ SSH authentication successful!"
+          else
+            echo "⚠️  SSH test completed (AUR doesn't provide shell access)"
+          fi
 
       - name: Detect version from tag or PKGBUILD
         id: version
@@ -138,9 +169,24 @@ jobs:
 
       - name: Clone AUR repository
         run: |
-          echo "📥 Cloning AUR repository..."
-          git clone "$AUR_URL" aur-repo
-          echo "✅ AUR repo cloned"
+          set -euo pipefail
+          echo "📥 Cloning AUR repository: $AUR_REPO"
+          echo "🔗 URL: $AUR_URL"
+          
+          # Clone with verbose output for debugging
+          GIT_SSH_COMMAND="ssh -v" git clone "$AUR_URL" aur-repo 2>&1 | grep -v "debug" || true
+          
+          if [ -d "aur-repo/.git" ]; then
+            echo "✅ AUR repository cloned successfully"
+            cd aur-repo
+            echo "📊 Current HEAD: $(git rev-parse --short HEAD)"
+            echo "📝 Last commit: $(git log -1 --oneline)"
+          else
+            echo "❌ Failed to clone AUR repository"
+            echo "💡 Check: SSH key is added to your AUR account"
+            echo "🔗 https://aur.archlinux.org/account/"
+            exit 1
+          fi
 
       - name: Sync files to AUR repo
         run: |
@@ -168,19 +214,36 @@ jobs:
       - name: Commit and push to AUR
         if: env.changed == 'true'
         run: |
+          set -euo pipefail
           cd aur-repo
 
-          # Commit
-          git commit -m "ci: sync $AUR_REPO v${{ steps.version.outputs.version }}" \
+          # Commit with creative flair
+          git commit -m "📦 aur: $AUR_REPO v${{ steps.version.outputs.version }} lands on Arch territory" \
                      -m "" \
-                     -m "Automated sync from GitHub" \
-                     -m "Source: https://github.com/oxyzenQ/lyvoxa"
+                     -m "🎯 Fresh package materialized from the GitHub dimension" \
+                     -m "🔗 Origin: https://github.com/oxyzenQ/lyvoxa" \
+                     -m "" \
+                     -m "Arch users rejoice! Another update in your realm. 🏰"
 
+          echo "📋 Commit details:"
+          git show --stat HEAD
+          
+          echo ""
           echo "🚀 Pushing to AUR..."
-          git push
-
-          echo "✅ Successfully pushed to AUR"
-          echo "🔗 https://aur.archlinux.org/packages/$AUR_REPO"
+          
+          # Push with verbose output
+          if git push origin master 2>&1; then
+            echo "✅ Successfully pushed to AUR"
+            echo "🔗 Package: https://aur.archlinux.org/packages/$AUR_REPO"
+            echo "⏰ Changes will be visible in ~5 minutes"
+          else
+            echo "❌ Push failed"
+            echo "🔍 Checking remote status..."
+            git remote -v
+            git fetch origin
+            git status
+            exit 1
+          fi
 
       - name: Summary
         run: |

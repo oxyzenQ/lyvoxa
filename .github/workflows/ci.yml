@@ -6,7 +6,7 @@
 # Release mode (tag): CI runs first, then Release, then AUR
 # Author: rezky_nightky
 
-name: CI Pipeline
+name: 🔧 CI Pipeline
 
 on:
   push:

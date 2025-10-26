@@ -120,16 +120,15 @@ jobs:
         run: |
           git add Cargo.lock
           
-          # Commit (GitHub Actions bot commits are auto-verified by GitHub)
+          # Commit with creative message
           git commit \
-            -m "ci(deps): auto-update dependencies" \
+            -m "✨ deps: fresh dependencies delivered by your friendly bot" \
             -m "" \
-            -m "🤖 Automated daily dependency update by GitHub Actions" \
+            -m "🎯 Mission accomplished: All dependencies upgraded to their latest compatible versions" \
+            -m "🔐 Security: Audit passed with flying colors" \
+            -m "✅ Quality: Build verified, tests conquered" \
             -m "" \
-            -m "Changes:" \
-            -m "- Updated Cargo.lock with latest compatible versions" \
-            -m "- Security audit passed" \
-            -m "- Build & tests validated" \
+            -m "Your code stays sharp, secure, and up-to-date while you sleep. 🌙" \
             -m "" \
             -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           
