@@ -95,10 +95,10 @@ lyvoxa
 
 **Verification**: See [docs/VERIFICATION.md](docs/VERIFICATION.md) for SHA256 + GPG signature verification.
 
-### ArchLinux (AUR - Coming Soon)
+### ArchLinux (AUR)
 
 ```bash
-# Will be available on AUR
+# Available on AUR
 yay -S lyvoxa-bin
 
 or
