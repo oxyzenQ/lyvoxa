@@ -79,7 +79,7 @@ The package downloads from GitHub Releases:
 
 ### Provides & Conflicts
 
-- **Provides**: `lyvoxa`
+- **Provides**: `lyvoxa-bin`
 - **Conflicts**: `lyvoxa`, `lyvoxa-git`
 
 This means you can only have one version installed at a time.
@@ -147,46 +147,6 @@ After installation:
 - **Releases**: https://github.com/oxyzenQ/lyvoxa/releases
 - **Issue Tracker**: https://github.com/oxyzenQ/lyvoxa/issues
 
-## 🔑 SSH Setup (For Maintainers)
-
-### 1. Generate SSH Key
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/aur -C "AUR access key"
-```
-
-### 2. Add Public Key to AUR
-
-1. Login to https://aur.archlinux.org
-2. Go to "My Account"
-3. Paste content of `~/.ssh/aur.pub` in "SSH Public Key"
-4. Save
-
-### 3. Configure SSH
-
-Add to `~/.ssh/config`:
-
-```
-Host aur.archlinux.org
-    IdentityFile ~/.ssh/aur
-    User aur
-    StrictHostKeyChecking accept-new
-```
-
-### 4. Test Connection
-
-```bash
-ssh aur@aur.archlinux.org
-```
-
-Expected: Connection established, then closed immediately.
-
-### 5. Add to GitHub Secrets
-
-Add the **private key** content to GitHub repository secrets:
-
-- Secret name: `AUR_SSH_PRIVATE_KEY`
-- Value: Content of `~/.ssh/aur` (the private key)
 
 ## 🎯 AUR Guidelines Compliance
 
