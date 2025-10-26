@@ -1,20 +1,26 @@
 <div align="center">
 
 # 🌟 Lyvoxa Stellar
-
 **Next-Generation Linux System Monitor**
 
-[![Build](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?branch=main&style=plastic&logo=github&label=build)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/ci.yml)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&style=plastic&logo=github&label=codeql)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
-[![License](https://img.shields.io/badge/License-GPLv3-663399?style=plastic&logo=gnu)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=tag)](https://github.com/oxyzenQ/lyvoxa/releases)
+<p>
+  <a href="https://github.com/oxyzenQ/lyvoxa/releases/latest">
+    <img src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=flat&logo=starship&logoColor=white&color=8B5CF6&labelColor=1E1B4B" alt="Release"/>
+  </a>
+  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
+    <img src="https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=flat&logo=download&logoColor=white&color=10B981&labelColor=065F46" alt="Downloads"/>
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-GPLv3-EC4899?style=flat&logo=gnu&logoColor=white&labelColor=831843" alt="License"/>
+  </a>
+</p>
 
-[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=plastic&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
-[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge&logo=github&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
-
-[![Arch Linux](https://img.shields.io/badge/Arch_Linux-Recommended-1793D1?style=plastic&logo=arch-linux)](https://archlinux.org)
-[![Platform](https://img.shields.io/badge/Platform-Linux_x86__64-black?style=plastic&logo=linux)](https://github.com/oxyzenQ/lyvoxa)
-[![Security](https://img.shields.io/badge/Security-SHA256_+_GPG-4169E1?style=plastic&logo=lock)](docs/VERIFICATION.md)
+<p>
+  <img src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?style=flat&logo=githubactions&logoColor=white&label=CI%2FCD&labelColor=1E293B" alt="CI/CD"/>
+  <img src="https://img.shields.io/badge/Security-Verified-06B6D4?style=flat&logo=security&logoColor=white&labelColor=164E63" alt="Security"/>
+  <img src="https://img.shields.io/aur/version/lyvoxa-bin?style=flat&logo=archlinux&logoColor=white&label=AUR&color=1793D1&labelColor=0C4A6E" alt="AUR"/>
+  <img src="https://img.shields.io/github/stars/oxyzenQ/lyvoxa?style=flat&logo=github&logoColor=white&color=F59E0B&labelColor=78350F" alt="Stars"/>
+</p>
 
 ---
 
