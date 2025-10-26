@@ -99,7 +99,11 @@ lyvoxa
 
 ```bash
 # Will be available on AUR
-yay -S lyvoxa
+yay -S lyvoxa-bin
+
+or
+
+paru -S lycoxa-bin
 ```
 
 ### Build from Source
