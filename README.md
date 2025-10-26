@@ -8,7 +8,9 @@
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/codeql.yml?branch=main&style=plastic&logo=github&label=codeql)](https://github.com/oxyzenQ/lyvoxa/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/badge/License-GPLv3-663399?style=plastic&logo=gnu)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=tag)](https://github.com/oxyzenQ/lyvoxa/releases)
+
 [![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=plastic&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
+[![Downloads](https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=for-the-badge&logo=github&color=brightgreen)](https://github.com/oxyzenQ/lyvoxa/releases)
 
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-Recommended-1793D1?style=plastic&logo=arch-linux)](https://archlinux.org)
 [![Platform](https://img.shields.io/badge/Platform-Linux_x86__64-black?style=plastic&logo=linux)](https://github.com/oxyzenQ/lyvoxa)
