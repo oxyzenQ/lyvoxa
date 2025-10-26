@@ -53,9 +53,6 @@ jobs:
         run: |
           echo "📊 Current dependency versions:"
           cargo tree --depth 1
-          echo ""
-          echo "🔍 Outdated dependencies:"
-          cargo outdated --root-deps-only || echo "No outdated check available"
 
       - name: Update dependencies
         run: |
