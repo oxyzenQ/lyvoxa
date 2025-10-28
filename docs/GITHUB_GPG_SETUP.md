@@ -178,12 +178,12 @@ https://github.com/oxyzenQ/lyvoxa/actions/workflows/release.yml
 gpg: key 0D8D13BB989AF9F0: secret key imported
 
 🔏 Signing package with GPG...
-✅ Signature created: lyvoxa-3.0.1-linux-amd64.tar.gz.sig (1.0K)
+✅ Signature created: lyvoxa-3.1-linux-amd64.tar.gz.sig (1.0K)
 gpg: Good signature from "Rezky Cahya Sahputra (Investor) <with.rezky@gmail.com>"
 
-📦 Package: lyvoxa-3.0.1-linux-amd64.tar.gz
-🔐 Checksum: lyvoxa-3.0.1-linux-amd64.tar.gz.sha256
-🔏 Signature: lyvoxa-3.0.1-linux-amd64.tar.gz.sig
+📦 Package: lyvoxa-3.1-linux-amd64.tar.gz
+🔐 Checksum: lyvoxa-3.1-linux-amd64.tar.gz.sha256
+🔏 Signature: lyvoxa-3.1-linux-amd64.tar.gz.sig
 ```
 
 ### Step 10: Verify Release Assets
@@ -195,9 +195,9 @@ https://github.com/oxyzenQ/lyvoxa/releases/tag/3.0.1
 
 **Expected assets:**
 ```
-✅ lyvoxa-3.0.1-linux-amd64.tar.gz          (binary package)
-✅ lyvoxa-3.0.1-linux-amd64.tar.gz.sha256   (checksum)
-✅ lyvoxa-3.0.1-linux-amd64.tar.gz.sig      (GPG signature) ← NEW!
+✅ lyvoxa-3.1-linux-amd64.tar.gz          (binary package)
+✅ lyvoxa-3.1-linux-amd64.tar.gz.sha256   (checksum)
+✅ lyvoxa-3.1-linux-amd64.tar.gz.sig      (GPG signature) ← NEW!
 ✅ Source code (zip)
 ✅ Source code (tar.gz)
 ```
@@ -208,14 +208,14 @@ Simulate user verifying download:
 
 ```bash
 # Download files
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0.1/lyvoxa-3.0.1-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0.1/lyvoxa-3.0.1-linux-amd64.tar.gz.sig
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0.1/lyvoxa-3.1-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0.1/lyvoxa-3.1-linux-amd64.tar.gz.sig
 
 # Import public key
 gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 
 # Verify signature
-gpg --verify lyvoxa-3.0.1-linux-amd64.tar.gz.sig lyvoxa-3.0.1-linux-amd64.tar.gz
+gpg --verify lyvoxa-3.1-linux-amd64.tar.gz.sig lyvoxa-3.1-linux-amd64.tar.gz
 
 # Expected output:
 # gpg: Signature made [date]

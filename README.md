@@ -26,7 +26,7 @@
 
 **Elegant TUI · Real-time Monitoring · Process Management · Future-proof Architecture**
 
-*Version 3.0 Stellar* | *Built with Rust* 🦀
+*Version 3.1 Stellar* | *Built with Rust* 🦀
 
 </div>
 
@@ -78,16 +78,16 @@ Lyvoxa is a professional-grade system monitoring tool for Linux, combining elega
 ### Quick Install (Recommended)
 
 ```bash
-# Download latest release (v3.0.1)
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.0-linux-amd64.tar.gz.sha256
+# Download latest release (v3.1)
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1/lyvoxa-3.1-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1/lyvoxa-3.1-linux-amd64.tar.gz.sha256
 
 # Verify integrity
-sha256sum -c lyvoxa-3.0-linux-amd64.tar.gz.sha256
+sha256sum -c lyvoxa-3.1-linux-amd64.tar.gz.sha256
 
 # Extract and install
-tar -xzf lyvoxa-3.0-linux-amd64.tar.gz
-sudo cp lyvoxa-3.0-linux-amd64/bin/* /usr/local/bin/
+tar -xzf lyvoxa-3.1-linux-amd64.tar.gz
+sudo cp lyvoxa-3.1-linux-amd64/bin/* /usr/local/bin/
 
 # Run
 lyvoxa
@@ -196,7 +196,7 @@ Contributions welcome! Please:
 
 ## 📄 License & Trademark
 
-**License:** [GNU GPL v3.0](LICENSE) - Free to use, modify, and redistribute
+**License:** [GNU GPL v3.1](LICENSE) - Free to use, modify, and redistribute
 **Trademark:** "Lyvoxa" ™ Rezky Nightky (2025) - Name & logo protected
 
 For commercial licensing or brand usage: [with.rezky@gmail.com](mailto:with.rezky@gmail.com)

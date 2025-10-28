@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v3.1.html).
 
 ## [Unreleased]
 
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Supply Chain Security**: Automated verification in CI/CD pipeline
 - **Comprehensive Documentation**: Detailed security verification guides
 
-_Note: This approach was simplified in v2.0.0 to use universal SHA256 standard_
+_Note: This approach was simplified in v3.1 to use universal SHA256 standard_
 
 ### ⚡ Performance Improvements
 
@@ -173,13 +173,13 @@ Lyvoxa uses themed release names to reflect the project's vision of high-perform
 
 ## Security Notice
 
-**v2.0.0 and onwards:**
+**v3.1 and onwards:**
 
 - SHA256 checksum verification (universal standard)
 - Reproducible builds with locked toolchain
 - ArchLinux and Linux x86_64 universal compatibility
 
-**v2.0.0 (Legacy):**
+**v3.1 (Legacy):**
 
 - Multi-algorithm checksum verification
 - SSH signature authentication

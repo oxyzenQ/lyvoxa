@@ -1,7 +1,7 @@
 # Maintainer: oxyzenq <with dot rezky at gmail dot com>
 
 pkgname=lyvoxa-bin
-pkgver=3.0.1
+pkgver=3.1
 pkgrel=1
 pkgdesc='Optimize Linux system monitor with real-time TUI built in Rust (precompiled binary)'
 arch=('x86_64')

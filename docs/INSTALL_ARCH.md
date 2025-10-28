@@ -50,7 +50,7 @@ cd lyvoxa
 make arch-pkg
 
 # Install the package
-sudo pacman -U lyvoxa-2.0.0-1-x86_64.pkg.tar.zst       # Source-built (optimized)
+sudo pacman -U lyvoxa-3.1-1-x86_64.pkg.tar.zst       # Source-built (optimized)
 ```
 
 ### Method 3: Manual PKGBUILD (Advanced)
