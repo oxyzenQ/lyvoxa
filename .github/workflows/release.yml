@@ -10,8 +10,7 @@ name: 🌟 Release
 on:
   push:
     tags:
-      - 'v*'
-      - '*.*'
+      - '**'  # trigger on any tag
   workflow_run:
     workflows: ["🤖 Version Bump Bot"]
     types:
@@ -54,6 +53,14 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
 
     steps:
+      - name: Determine release tag
+        id: reltag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "REL_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "REL_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          fi
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -330,8 +337,8 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          name: "Lyvoxa ${{ github.ref_name }}"
-          tag_name: ${{ github.ref_name }}
+          name: "Lyvoxa ${{ env.REL_TAG }}"
+          tag_name: ${{ env.REL_TAG }}
           body_path: release/RELEASE_NOTES.md
           draft: false
           prerelease: false

@@ -15,6 +15,9 @@ on:
     workflows: ["🌟 Release"]
     types:
       - completed
+  release:
+    types:
+      - published
   push:
     paths:
       - 'lyvoxa-aur-bin/**'
