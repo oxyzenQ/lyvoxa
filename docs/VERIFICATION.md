@@ -6,13 +6,13 @@ Panduan untuk memverifikasi keaslian dan integritas file download Lyvoxa.
 
 ```bash
 # Download binary package
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz
 
 # Download checksum
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1-linux-amd64.tar.gz.sha256
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
 
 # Download GPG signature (optional)
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1-linux-amd64.tar.gz.sig
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz.sig
 ```
 
 ## ✅ Verifikasi SHA256 (Wajib)
@@ -20,17 +20,17 @@ wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1-linux-am
 Verifikasi checksum untuk memastikan file tidak corrupt/rusak:
 
 ```bash
-sha256sum -c lyvoxa-3.1-linux-amd64.tar.gz.sha256
+sha256sum -c lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
 ```
 
 **Output yang benar:**
 ```
-lyvoxa-3.1-linux-amd64.tar.gz: OK
+lyvoxa-3.1.0-linux-amd64.tar.gz: OK
 ```
 
 **Output salah (file corrupt/tampered):**
 ```
-lyvoxa-3.1-linux-amd64.tar.gz: FAILED
+lyvoxa-3.1.0-linux-amd64.tar.gz: FAILED
 sha256sum: WARNING: 1 computed checksum did NOT match
 ```
 
@@ -66,7 +66,7 @@ gpg --keyserver hkps://keys.gnupg.net --recv-keys 0D8D13BB989AF9F0
 ### Step 2: Verify Signature
 
 ```bash
-gpg --verify lyvoxa-3.1-linux-amd64.tar.gz.sig lyvoxa-3.1-linux-amd64.tar.gz
+gpg --verify lyvoxa-3.1.0-linux-amd64.tar.gz.sig lyvoxa-3.1.0-linux-amd64.tar.gz
 ```
 
 **Output yang benar:**

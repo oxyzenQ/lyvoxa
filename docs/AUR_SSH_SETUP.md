@@ -144,8 +144,8 @@ Your `aur-release.yml` workflow should have this structure:
 ### Option B: Create a test release
 
 ```bash
-git tag v3.1-test
-git push origin v3.1-test
+git tag v3.1.0-test
+git push origin v3.1.0-test
 ```
 
 This will trigger:
@@ -220,7 +220,7 @@ chmod 600 ~/.ssh/config
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Developer pushes tag (v3.1)                              │
+│  Developer pushes tag (v3.1.0)                              │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
