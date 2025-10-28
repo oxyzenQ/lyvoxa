@@ -4,7 +4,6 @@
 # Replaces Dependabot with more powerful automation:
 # - Daily auto-update (no PR, direct commit)
 # - Security audit before commit
-# - GPG signed commits
 # - Test validation
 # - One bot to rule them all 🔥
 
@@ -12,7 +11,7 @@ name: 🤖 Auto Update Dependencies
 
 on:
   schedule:
-    - cron: '0 7 * * *'    # Daily at 07:00 UTC (14:00 WIB)
+    - cron: '0 0 * * *'   # Daily at 00:00 UTC (07:00 WIB)
   workflow_dispatch:        # Manual trigger
     inputs:
       force_update:
@@ -31,7 +30,7 @@ jobs:
   auto-update:
     name: 🔄 Update Rust Dependencies
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -58,7 +57,7 @@ jobs:
         run: |
           echo "🔄 Updating Cargo.lock..."
           cargo update
-          
+
           echo ""
           echo "📦 Updated dependency tree:"
           cargo tree --depth 1
@@ -66,7 +65,7 @@ jobs:
       - name: Security audit
         run: |
           echo "🔐 Running security audit..."
-          cargo install cargo-audit --quiet || true
+          cargo install cargo-audit || true
           cargo audit || echo "⚠️ Audit warnings detected (non-blocking)"
         continue-on-error: true
 
@@ -74,7 +73,7 @@ jobs:
         run: |
           echo "🔨 Building with updated dependencies..."
           cargo build --release
-          
+
           echo ""
           echo "✅ Build successful with updated deps"
 
@@ -82,7 +81,7 @@ jobs:
         run: |
           echo "🧪 Running test suite..."
           cargo test --all
-          
+
           echo ""
           echo "✅ All tests passed"
         continue-on-error: ${{ github.event.inputs.force_update == 'true' }}
@@ -98,7 +97,7 @@ jobs:
           echo "⚙️ Configuring Git for bot commits..."
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           echo "✅ Git configured"
 
       - name: Check for changes
@@ -119,7 +118,7 @@ jobs:
         if: steps.check_changes.outputs.changed == 'true'
         run: |
           git add Cargo.lock
-          
+
           # Commit with creative message
           git commit \
             -m "✨ deps: fresh dependencies delivered by your friendly bot" \
@@ -131,9 +130,9 @@ jobs:
             -m "Your code stays sharp, secure, and up-to-date while you sleep. 🌙" \
             -m "" \
             -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-          
+
           git push origin main
-          
+
           echo ""
           echo "✅ Dependencies updated and pushed to main"
           echo "🔗 Commit: $(git rev-parse HEAD)"
@@ -143,7 +142,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🤖 AUTO-UPDATE SUMMARY"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
+
           if [ "${{ steps.check_changes.outputs.changed }}" == "true" ]; then
             echo "✅ Dependencies updated successfully"
             echo "📦 Cargo.lock updated"
@@ -154,7 +153,7 @@ jobs:
           else
             echo "ℹ️ No updates needed - all dependencies current"
           fi
-          
+
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "⏰ Next run: Tomorrow 07:00 UTC (14:00 WIB)"

@@ -16,12 +16,28 @@ pub struct Theme {
     pub fg: Color,
     pub bg: Color,
     pub accent: Color,
-    pub cpu: Color,
-    pub mem: Color,
+    #[allow(dead_code)]
+    pub cpu: Color, // Kept for future chart colors
+    #[allow(dead_code)]
+    pub mem: Color, // Kept for future chart colors
     pub net_rx: Color,
     pub net_tx: Color,
     pub table_header: Color,
     pub selection_bg: Color,
+    // htop-style bar colors
+    pub bar_low: Color,    // Green (0-50%)
+    pub bar_medium: Color, // Yellow (50-75%)
+    pub bar_high: Color,   // Red (75-100%)
+    pub bar_empty: Color,  // Empty bar
+    // Labels
+    pub cpu_label: Color,
+    pub mem_label: Color,
+    pub swap_label: Color,
+}
+
+// Helper function for task status colors
+pub fn get_run_color(_theme: &Theme) -> Color {
+    Color::Green
 }
 
 impl Theme {
@@ -37,6 +53,13 @@ impl Theme {
                 net_tx: Color::LightMagenta,
                 table_header: Color::Cyan,
                 selection_bg: Color::DarkGray,
+                bar_low: Color::Green,
+                bar_medium: Color::Yellow,
+                bar_high: Color::Red,
+                bar_empty: Color::DarkGray,
+                cpu_label: Color::Cyan,
+                mem_label: Color::Green,
+                swap_label: Color::Magenta,
             },
             ThemeKind::Stellar => Self {
                 fg: Color::Rgb(200, 210, 255),
@@ -48,6 +71,13 @@ impl Theme {
                 net_tx: Color::Rgb(255, 120, 240),
                 table_header: Color::Rgb(140, 120, 255),
                 selection_bg: Color::Rgb(20, 25, 50),
+                bar_low: Color::Rgb(100, 255, 150), // Stellar green
+                bar_medium: Color::Rgb(255, 220, 100), // Stellar yellow
+                bar_high: Color::Rgb(255, 100, 120), // Stellar red
+                bar_empty: Color::Rgb(30, 35, 55),  // Dark stellar
+                cpu_label: Color::Rgb(150, 200, 255),
+                mem_label: Color::Rgb(120, 255, 180),
+                swap_label: Color::Rgb(255, 150, 240),
             },
             ThemeKind::Matrix => Self {
                 fg: Color::Rgb(180, 255, 180),
@@ -59,6 +89,13 @@ impl Theme {
                 net_tx: Color::Rgb(0, 180, 120),
                 table_header: Color::Rgb(0, 255, 120),
                 selection_bg: Color::Rgb(0, 40, 0),
+                bar_low: Color::Rgb(0, 255, 100), // Matrix green bright
+                bar_medium: Color::Rgb(200, 255, 0), // Matrix yellow-green
+                bar_high: Color::Rgb(255, 50, 50), // Matrix red alert
+                bar_empty: Color::Rgb(0, 30, 0),  // Dark matrix
+                cpu_label: Color::Rgb(100, 255, 100),
+                mem_label: Color::Rgb(0, 255, 150),
+                swap_label: Color::Rgb(150, 255, 100),
             },
         }
     }

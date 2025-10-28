@@ -14,9 +14,8 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
-    widgets::{
-        Axis, Block, Borders, Chart, Clear, Dataset, Gauge, Paragraph, Row, Table, TableState,
-    },
+    text::{Line, Span},
+    widgets::{Axis, Block, Borders, Chart, Clear, Dataset, Paragraph, Row, Table, TableState},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -984,11 +983,12 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    // Adaptive layout depending on charts toggle
+    // Adaptive layout depending on charts toggle - more compact like htop
+    let cpu_rows = app.monitor.get_cpu_count().div_ceil(2) as u16;
     let mut vertical = vec![
-        Constraint::Length(3), // Header
-        Constraint::Length(7), // CPU and Memory gauges
-        Constraint::Length(5), // Per-core gauges
+        Constraint::Length(3),            // Header
+        Constraint::Length(5 + cpu_rows), // CPU bars (htop-style)
+        Constraint::Length(4),            // Memory, Swap, Tasks
     ];
     if app.config.show_charts {
         vertical.push(Constraint::Length(12)); // Charts
@@ -1001,109 +1001,161 @@ fn ui(f: &mut Frame, app: &App) {
         .constraints(vertical)
         .split(f.area());
 
-    // Header
-    let cfg_label = config_source_label(app.config_source);
-    let cfg_file = app
-        .config_path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("?");
-    let header_text = format!(
-        "Lyvoxa v{} | Config: {} ({}) | Theme: {:?} | Sort: {:?} | Filter: {} | {}",
-        VERSION,
-        cfg_label,
-        cfg_file,
-        app.theme_kind,
-        app.sort_key,
-        if app.filter.is_empty() {
-            "(none)".to_string()
-        } else {
-            app.filter.clone()
-        },
-        app.status_message.clone().unwrap_or_default()
+    // Header - htop style with system info
+    let (load1, load5, load15) = app.monitor.get_load_average();
+    let uptime_secs = app.monitor.get_uptime();
+    let uptime_str = format!(
+        "{}:{:02}:{:02}",
+        uptime_secs / 3600,
+        (uptime_secs / 60) % 60,
+        uptime_secs % 60
     );
-    let header = Paragraph::new(header_text)
-        .style(Style::default().fg(app.theme.fg).bg(app.theme.bg))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Lyvoxa - F1 Help | F5 Charts | F11 Export | F12 Insights | Tab Themes | F10 Quit")
-                .style(Style::default().fg(app.theme.accent)),
-        );
+    let process_count = app.monitor.get_process_count();
+
+    let header_text = vec![
+        Line::from(vec![
+            Span::styled(
+                "Lyvoxa",
+                Style::default()
+                    .fg(app.theme.accent)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" - F1 Help | F5 Charts | F11 Export | F12 Insights | Tab Themes | F10 Quit"),
+        ]),
+        Line::from(vec![
+            Span::styled("Tasks: ".to_string(), Style::default().fg(app.theme.accent)),
+            Span::styled(
+                format!("{}", process_count),
+                Style::default()
+                    .fg(app.theme.fg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" thr; "),
+            Span::styled("1", Style::default().fg(theme::get_run_color(&app.theme))),
+            Span::raw(" running"),
+            Span::raw("   "),
+            Span::styled("Load average: ", Style::default().fg(app.theme.accent)),
+            Span::styled(
+                format!("{:.2} {:.2} {:.2}", load1, load5, load15),
+                Style::default()
+                    .fg(app.theme.fg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("   "),
+            Span::styled("Uptime: ", Style::default().fg(app.theme.accent)),
+            Span::styled(
+                uptime_str,
+                Style::default()
+                    .fg(app.theme.fg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+    ];
+    let header =
+        Paragraph::new(header_text).style(Style::default().fg(app.theme.fg).bg(app.theme.bg));
     f.render_widget(header, chunks[0]);
 
-    // CPU and Memory info layout
-    let info_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[1]);
+    // CPU bars - htop style with colored █ characters
+    let per_core = app.monitor.get_cpu_usage_per_core();
+    let cpu_count = per_core.len();
+    let halfway = cpu_count.div_ceil(2);
 
-    // CPU gauge
-    let cpu_usage = app.monitor.get_global_cpu_usage();
-    let cpu_gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("CPU Usage"))
-        .gauge_style(Style::default().fg(app.theme.cpu))
-        .percent(cpu_usage as u16)
-        .label(format!("{:.1}%", cpu_usage));
-    f.render_widget(cpu_gauge, info_chunks[0]);
+    let mut cpu_lines = Vec::new();
+    let bar_width = 25; // Width of each progress bar
 
-    // Memory gauge
+    for row in 0..halfway {
+        let mut line_spans = Vec::new();
+
+        // Left column
+        if row < cpu_count {
+            let val = per_core[row];
+            line_spans.push(Span::styled(
+                format!("{:>3}[", row),
+                Style::default().fg(app.theme.cpu_label),
+            ));
+            line_spans.extend(make_colored_bar(val, bar_width, &app.theme));
+            line_spans.push(Span::styled(
+                format!("]{:>5.1}%", val),
+                Style::default().fg(app.theme.cpu_label),
+            ));
+        }
+
+        // Spacing
+        line_spans.push(Span::raw("  "));
+
+        // Right column
+        let right_idx = row + halfway;
+        if right_idx < cpu_count {
+            let val = per_core[right_idx];
+            line_spans.push(Span::styled(
+                format!("{:>3}[", right_idx),
+                Style::default().fg(app.theme.cpu_label),
+            ));
+            line_spans.extend(make_colored_bar(val, bar_width, &app.theme));
+            line_spans.push(Span::styled(
+                format!("]{:>5.1}%", val),
+                Style::default().fg(app.theme.cpu_label),
+            ));
+        }
+
+        cpu_lines.push(Line::from(line_spans));
+    }
+
+    let cpu_widget =
+        Paragraph::new(cpu_lines).style(Style::default().fg(app.theme.fg).bg(app.theme.bg));
+    f.render_widget(cpu_widget, chunks[1]);
+
+    // Memory and Swap - htop style
     let memory_usage = app.monitor.get_memory_usage_percent();
     let (used_mem, total_mem) = app.monitor.get_memory_info();
-    let memory_gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Memory Usage"))
-        .gauge_style(Style::default().fg(app.theme.mem))
-        .percent(memory_usage as u16)
-        .label(format!(
-            "{:.1}% ({}/{})",
-            memory_usage,
-            humansize::format_size(used_mem, humansize::DECIMAL),
-            humansize::format_size(total_mem, humansize::DECIMAL)
-        ));
-    f.render_widget(memory_gauge, info_chunks[1]);
+    let (used_swap, total_swap) = app.monitor.get_swap_info();
+    let swap_usage = if total_swap > 0 {
+        (used_swap as f64 / total_swap as f64) * 100.0
+    } else {
+        0.0
+    };
 
-    // Per-core gauges (show up to 8 cores)
-    let per_core = app.monitor.get_cpu_usage_per_core();
-    let n = per_core.len().min(8);
-    let grid = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[2]);
-    // Left column 0..n/2, Right column n/2..n
-    let halfway = n.div_ceil(2);
-    let left_rows = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            (0..halfway)
-                .map(|_| Constraint::Length(1))
-                .collect::<Vec<_>>(),
-        )
-        .split(grid[0]);
-    let right_rows = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            (0..(n - halfway))
-                .map(|_| Constraint::Length(1))
-                .collect::<Vec<_>>(),
-        )
-        .split(grid[1]);
-    for (i, &val) in per_core.iter().take(halfway).enumerate() {
-        let g = Gauge::default()
-            .block(Block::default().title(format!("CPU{}", i)))
-            .gauge_style(Style::default().fg(app.theme.cpu))
-            .percent(val as u16)
-            .label(format!("{:.0}%", val));
-        f.render_widget(g, left_rows[i]);
-    }
-    for (i, &val) in per_core.iter().skip(halfway).take(n - halfway).enumerate() {
-        let idx = i + halfway;
-        let g = Gauge::default()
-            .block(Block::default().title(format!("CPU{}", idx)))
-            .gauge_style(Style::default().fg(app.theme.cpu))
-            .percent(val as u16)
-            .label(format!("{:.0}%", val));
-        f.render_widget(g, right_rows[i]);
-    }
+    let mut mem_lines = Vec::new();
+
+    // Memory bar
+    let mut mem_line = Vec::new();
+    mem_line.push(Span::styled(
+        "Mem[",
+        Style::default().fg(app.theme.mem_label),
+    ));
+    mem_line.extend(make_colored_bar(memory_usage as f32, bar_width, &app.theme));
+    mem_line.push(Span::styled(
+        format!(
+            "]{:>5.1}% {}/{}",
+            memory_usage,
+            humansize::format_size(used_mem * 1024, humansize::DECIMAL),
+            humansize::format_size(total_mem * 1024, humansize::DECIMAL)
+        ),
+        Style::default().fg(app.theme.mem_label),
+    ));
+    mem_lines.push(Line::from(mem_line));
+
+    // Swap bar
+    let mut swap_line = Vec::new();
+    swap_line.push(Span::styled(
+        "Swp[",
+        Style::default().fg(app.theme.swap_label),
+    ));
+    swap_line.extend(make_colored_bar(swap_usage as f32, bar_width, &app.theme));
+    swap_line.push(Span::styled(
+        format!(
+            "]{:>5.1}% {}/{}",
+            swap_usage,
+            humansize::format_size(used_swap * 1024, humansize::DECIMAL),
+            humansize::format_size(total_swap * 1024, humansize::DECIMAL)
+        ),
+        Style::default().fg(app.theme.swap_label),
+    ));
+    mem_lines.push(Line::from(swap_line));
+
+    let mem_widget =
+        Paragraph::new(mem_lines).style(Style::default().fg(app.theme.fg).bg(app.theme.bg));
+    f.render_widget(mem_widget, chunks[2]);
 
     // Charts layout (CPU, Memory, Network)
     if app.config.show_charts {
@@ -1406,6 +1458,36 @@ fn ui(f: &mut Frame, app: &App) {
         }
         Overlay::None => {}
     }
+}
+
+// Generate htop-style colored progress bar with █ characters
+fn make_colored_bar(percent: f32, width: usize, theme: &Theme) -> Vec<Span<'static>> {
+    let filled = ((percent / 100.0) * width as f32) as usize;
+    let filled = filled.min(width);
+
+    let mut spans = Vec::new();
+
+    // Color logic: green (0-50%), yellow (50-75%), red (75-100%)
+    for i in 0..width {
+        let pos_percent = (i as f32 / width as f32) * 100.0;
+        let color = if pos_percent < 50.0 {
+            theme.bar_low // Green
+        } else if pos_percent < 75.0 {
+            theme.bar_medium // Yellow
+        } else {
+            theme.bar_high // Red
+        };
+
+        if i < filled {
+            spans.push(Span::styled("█".to_string(), Style::default().fg(color)));
+        } else {
+            spans.push(Span::styled(
+                "░".to_string(),
+                Style::default().fg(theme.bar_empty),
+            ));
+        }
+    }
+    spans
 }
 
 fn centered_rect(
