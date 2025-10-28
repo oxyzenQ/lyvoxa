@@ -36,6 +36,13 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"  # Remove 'v' prefix if exists
           
+          # Normalize to semantic versioning (3 parts)
+          # If version is X.Y, make it X.Y.0
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            VERSION="${VERSION}.0"
+            echo "🔧 Normalized version to: $VERSION"
+          fi
+          
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📌 Detected version: $VERSION (from tag: $TAG)"
