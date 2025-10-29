@@ -96,13 +96,24 @@ jobs:
           echo ""
           echo "✅ Optimized release build completed"
 
-      - name: Setup GPG (if available)
+      - name: Check GPG availability
+        id: check_gpg
+        run: |
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "gpg_available=true" >> $GITHUB_OUTPUT
+            echo "✅ GPG_PRIVATE_KEY secret is configured"
+          else
+            echo "gpg_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️  GPG_PRIVATE_KEY secret not found - signatures will be skipped"
+          fi
+
+      - name: Setup GPG
+        if: steps.check_gpg.outputs.gpg_available == 'true'
         run: |
           echo "🔐 Setting up GPG for signing..."
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
           gpg --list-secret-keys --keyid-format LONG
-          echo "✅ GPG key imported"
-        continue-on-error: true
+          echo "✅ GPG key imported successfully"
 
       - name: Create Package
         run: |
@@ -134,6 +145,7 @@ jobs:
           echo "✅ Package: $ARTIFACT.tar.gz ($(du -h $ARTIFACT.tar.gz | cut -f1))"
 
       - name: Sign Package (GPG - Full Verification Chain)
+        if: steps.check_gpg.outputs.gpg_available == 'true'
         run: |
           echo "🔏 Creating professional signature chain..."
           echo ""
@@ -193,7 +205,16 @@ jobs:
           echo "  🤖 $ARTIFACT.tar.gz.sig (machine signature)"
           echo "  📜 $ARTIFACT.tar.gz.asc (human signature)"
           echo "  ✅ $ARTIFACT.tar.gz.sha256.asc (signed hash)"
-        continue-on-error: true
+
+      - name: Skip GPG Signing Notice
+        if: steps.check_gpg.outputs.gpg_available != 'true'
+        run: |
+          echo "⚠️  GPG signing skipped - GPG_PRIVATE_KEY secret not configured"
+          echo "📦 Release will only include:"
+          echo "  - $ARTIFACT.tar.gz (binary)"
+          echo "  - $ARTIFACT.tar.gz.sha256 (checksum)"
+          echo ""
+          echo "ℹ️  To enable GPG signatures, add GPG_PRIVATE_KEY to repository secrets"
 
       - name: Generate Changelog
         run: |
