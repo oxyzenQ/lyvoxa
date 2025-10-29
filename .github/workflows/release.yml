@@ -330,7 +330,7 @@ jobs:
             ${{ env.ARTIFACT }}.tar.gz.asc
             ${{ env.ARTIFACT }}.tar.gz.sha256.asc
             RELEASE_NOTES.md
-          retention-days: 30
+          retention-days: 1
 
   # =============================================================================
   # STEP 3: PUBLISH RELEASE

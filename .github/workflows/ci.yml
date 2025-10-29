@@ -226,7 +226,7 @@ jobs:
         with:
           name: lyvoxa-debug-${{ github.sha }}
           path: target/x86_64-unknown-linux-gnu/debug/lyvoxa
-          retention-days: 7
+          retention-days: 1
 
       - name: Show sccache stats
         run: sccache --show-stats || true
@@ -370,7 +370,7 @@ jobs:
         with:
           name: lyvoxa-release-${{ github.sha }}
           path: target/x86_64-unknown-linux-gnu/release/lyvoxa
-          retention-days: 30
+          retention-days: 1
 
 # =============================================================================
 # WORKFLOW CONFIGURATION
