@@ -25,6 +25,8 @@ permissions:
   contents: write
   security-events: write
   actions: read
+  pull-requests: write
+  checks: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -41,6 +43,8 @@ jobs:
       contents: read
       checks: write
       security-events: write
+      actions: read
+      pull-requests: write
 
   # =============================================================================
   # STEP 2: BUILD OPTIMIZED RELEASE
