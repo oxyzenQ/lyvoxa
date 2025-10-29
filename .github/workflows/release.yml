@@ -51,16 +51,23 @@ jobs:
     needs: run-ci
     # Only run if CI succeeded (or manual trigger or tag push)
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
+      rel_tag: ${{ steps.set_version.outputs.rel_tag }}
 
     steps:
       - name: Determine release tag
-        id: reltag
+        id: set_version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "REL_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+            REL_TAG="${{ github.event.inputs.version }}"
           else
-            echo "REL_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+            REL_TAG="${GITHUB_REF_NAME}"
           fi
+          echo "REL_TAG=$REL_TAG" >> $GITHUB_ENV
+          echo "rel_tag=$REL_TAG" >> $GITHUB_OUTPUT
+          VERSION=$(echo "$REL_TAG" | sed 's/^v//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -337,8 +344,8 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          name: "Lyvoxa ${{ env.REL_TAG }}"
-          tag_name: ${{ env.REL_TAG }}
+          name: "Lyvoxa ${{ needs.build-release.outputs.rel_tag }}"
+          tag_name: ${{ needs.build-release.outputs.rel_tag }}
           body_path: release/RELEASE_NOTES.md
           draft: false
           prerelease: false
