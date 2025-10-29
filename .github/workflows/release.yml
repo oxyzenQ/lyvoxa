@@ -1,18 +1,15 @@
 # =============================================================================
 # LYVOXA RELEASE PIPELINE - PROFESSIONAL ORDERED BUILD
 # =============================================================================
-# Runs AFTER Version Bump Bot completes
-# Order: Version Bump → CI Pipeline → Release Build → AUR Sync
+# Runs AFTER CI Pipeline completes successfully
+# Order: Tag Push → CI Pipeline → Release Build → AUR Sync
 # Author: rezky_nightky
 
 name: 🌟 Release
 
 on:
-  push:
-    tags:
-      - '**'  # trigger on any tag
   workflow_run:
-    workflows: ["🤖 Version Bump Bot"]
+    workflows: ["🔧 CI Pipeline"]  # Wait for CI to complete
     types:
       - completed
   workflow_dispatch:
@@ -34,27 +31,18 @@ env:
 
 jobs:
   # =============================================================================
-  # STEP 1: RUN CI PIPELINE (CodeQL → DCO → Build/Test → Performance)
+  # STEP 1: BUILD OPTIMIZED RELEASE
   # =============================================================================
-  run-ci:
-    name: 1️⃣ Run CI Pipeline
-    uses: ./.github/workflows/ci.yml
-    permissions:
-      contents: read
-      checks: write
-      security-events: write
-      actions: read
-      pull-requests: write
-
-  # =============================================================================
-  # STEP 2: BUILD OPTIMIZED RELEASE
-  # =============================================================================
+  # Note: CI Pipeline runs first independently, this runs after CI completes
   build-release:
-    name: 2️⃣ Build Optimized Release
+    name: 1️⃣ Build Optimized Release
     runs-on: ubuntu-latest
-    needs: run-ci
-    # Only run if CI succeeded (or manual trigger or tag push)
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    # Only run if CI succeeded AND triggered by a tag (or manual trigger)
+    if: |
+      (github.event_name == 'workflow_run' && 
+       github.event.workflow_run.conclusion == 'success' && 
+       startsWith(github.event.workflow_run.head_branch, '3.')) ||
+      github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.set_version.outputs.version }}
       rel_tag: ${{ steps.set_version.outputs.rel_tag }}
@@ -65,6 +53,9 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             REL_TAG="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Extract tag from the workflow_run event
+            REL_TAG="${{ github.event.workflow_run.head_branch }}"
           else
             REL_TAG="${GITHUB_REF_NAME}"
           fi
@@ -72,9 +63,11 @@ jobs:
           echo "rel_tag=$REL_TAG" >> $GITHUB_OUTPUT
           VERSION=$(echo "$REL_TAG" | sed 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🏷️  Release tag: $REL_TAG"
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: ${{ env.REL_TAG }}  # Checkout the tag
           fetch-depth: 0
 
       - name: Setup Rust
@@ -333,10 +326,10 @@ jobs:
           retention-days: 1
 
   # =============================================================================
-  # STEP 3: PUBLISH RELEASE
+  # STEP 2: PUBLISH RELEASE
   # =============================================================================
   publish:
-    name: 3️⃣ Publish Release
+    name: 2️⃣ Publish Release
     runs-on: ubuntu-latest
     needs: build-release
     permissions:

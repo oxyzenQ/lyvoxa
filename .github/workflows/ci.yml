@@ -12,7 +12,7 @@ on:
   push:
     branches: [main]  # Only main branch (single active branch)
     tags:
-      - '**'  # Also run on tag pushes for release pipeline
+      - '**'  # Run on all tag pushes for release pipeline (no path filter)
     paths:
       - "src/**"
       - "Cargo.toml"
