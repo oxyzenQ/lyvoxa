@@ -5,26 +5,26 @@
 
 <p>
   <a href="https://github.com/oxyzenQ/lyvoxa/releases/latest">
-    <img src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=flat-square&logo=github&logoColor=white&color=6366F1&labelColor=312E81" alt="Release"/>
+    <img src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=github&logoColor=white&color=6366F1&labelColor=312E81" alt="Release"/>
   </a>
-  <a href="https://github.com/oxyzenQ/lyvoxa/releases">
-    <img src="https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/total?style=flat-square&logo=download&logoColor=white&color=10B981&labelColor=065F46" alt="Downloads"/>
+  <a href="https://github.com/oxyzenQ/lyvoxa/releases/latest">
+    <img src="https://img.shields.io/github/downloads/oxyzenQ/lyvoxa/latest/total?style=plastic&logo=download&logoColor=white&color=10B981&labelColor=065F46" alt="Downloads"/>
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-GPLv3-2563EB?style=flat-square&logo=gnu&logoColor=white&labelColor=1E3A8A" alt="License"/>
+    <img src="https://img.shields.io/badge/License-GPLv3-2563EB?style=plastic&logo=gnu&logoColor=white&labelColor=1E3A8A" alt="License"/>
   </a>
 </p>
 
 <p>
   <a href="https://github.com/oxyzenQ/lyvoxa/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI%2FCD&labelColor=1E293B" alt="CI/CD"/>
+    <img src="https://img.shields.io/github/actions/workflow/status/oxyzenQ/lyvoxa/ci.yml?style=plastic&logo=githubactions&logoColor=white&label=CI%2FCD&labelColor=1E293B" alt="CI/CD"/>
   </a>
-  <img src="https://img.shields.io/badge/Security-Verified-06B6D4?style=flat-square&logo=security&logoColor=white&labelColor=164E63" alt="Security"/>
+  <img src="https://img.shields.io/badge/Security-Verified-06B6D4?style=plastic&logo=security&logoColor=white&labelColor=164E63" alt="Security"/>
   <a href="https://aur.archlinux.org/packages/lyvoxa-bin">
-    <img src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=flat-square&logo=archlinux&logoColor=white&label=AUR&color=1793D1&labelColor=0C4A6E" alt="AUR"/>
+    <img src="https://img.shields.io/github/v/release/oxyzenQ/lyvoxa?style=plastic&logo=archlinux&logoColor=white&label=AUR&color=1793D1&labelColor=0C4A6E" alt="AUR"/>
   </a>
   <a href="https://github.com/oxyzenQ/lyvoxa/stargazers">
-    <img src="https://img.shields.io/github/stars/oxyzenQ/lyvoxa?style=flat-square&logo=github&logoColor=white&color=F59E0B&labelColor=78350F" alt="Stars"/>
+    <img src="https://img.shields.io/github/stars/oxyzenQ/lyvoxa?style=plastic&logo=github&logoColor=white&color=F59E0B&labelColor=78350F" alt="Stars"/>
   </a>
 </p>
 
