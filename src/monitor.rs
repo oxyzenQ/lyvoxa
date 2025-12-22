@@ -9,6 +9,7 @@ use std::ffi::CStr;
 use std::time::Instant;
 use sysinfo::{CpuExt, PidExt, ProcessExt, System, SystemExt};
 #[allow(dead_code)]
+#[derive(Clone, Debug)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub ppid: Option<u32>,
@@ -56,14 +57,24 @@ impl SystemMonitor {
     }
 
     pub fn refresh(&mut self) {
-        // Refresh at fine granularity for more efficient updates
+        self.refresh_fast();
+        self.refresh_slow();
+    }
+
+    pub fn refresh_fast(&mut self) {
+        // Refresh frequent metrics
         self.system.refresh_cpu();
         self.system.refresh_memory();
+        self.system.refresh_networks();
+        self.system.refresh_system();
+        // Network snapshot maintained separately via procfs for cumulative totals
+    }
+
+    pub fn refresh_slow(&mut self) {
+        // Refresh heavier metrics
         self.system.refresh_processes();
         self.system.refresh_disks_list();
         self.system.refresh_disks();
-        self.system.refresh_networks();
-        // Network snapshot maintained separately via procfs for cumulative totals
     }
 
     pub fn get_global_cpu_usage(&self) -> f64 {
@@ -120,7 +131,7 @@ impl SystemMonitor {
         self.system.processes().len()
     }
 
-    pub fn get_top_processes(&self, limit: usize) -> Vec<ProcessInfo> {
+    pub fn get_processes(&self) -> Vec<ProcessInfo> {
         let total_mem = self.system.total_memory().max(1);
 
         let mut processes: Vec<ProcessInfo> = Vec::with_capacity(self.system.processes().len());
@@ -198,7 +209,11 @@ impl SystemMonitor {
                 time_total_secs,
             });
         }
+        processes
+    }
 
+    pub fn get_top_processes(&self, limit: usize) -> Vec<ProcessInfo> {
+        let mut processes = self.get_processes();
         // Sort by CPU usage (descending)
         processes.sort_by(|a, b| {
             b.cpu_usage
@@ -211,7 +226,7 @@ impl SystemMonitor {
 
     pub fn get_process_by_name(&self, name: &str) -> Vec<ProcessInfo> {
         let term = name.to_lowercase();
-        self.get_top_processes(usize::MAX)
+        self.get_processes()
             .into_iter()
             .filter(|p| {
                 p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term)

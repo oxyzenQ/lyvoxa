@@ -249,7 +249,7 @@ jobs:
           path: audit-${{ github.run_id }}.json
 
       - name: Install cargo-deny
-        run: cargo install --locked cargo-deny@0.18.5
+        run: cargo install --locked cargo-deny@0.18.9
 
       - name: Cargo Deny Check (all)
         run: cargo deny check all

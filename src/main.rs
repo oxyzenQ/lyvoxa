@@ -15,7 +15,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::{Axis, Block, Borders, Chart, Clear, Dataset, Paragraph, Row, Table, TableState},
+    widgets::{Axis, Block, Borders, Cell, Chart, Clear, Dataset, Paragraph, Row, Table, TableState},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -372,6 +372,9 @@ struct App {
     net_rx_history: VecDeque<f64>,
     net_tx_history: VecDeque<f64>,
     last_update: Instant,
+    processes: Vec<monitor::ProcessInfo>,
+    process_view: Vec<usize>,
+    process_view_dirty: bool,
     theme_kind: ThemeKind,
     theme: Theme,
     overlay: Overlay,
@@ -442,6 +445,9 @@ impl App {
             net_rx_history: VecDeque::with_capacity(30),
             net_tx_history: VecDeque::with_capacity(30),
             last_update: Instant::now(),
+            processes: Vec::new(),
+            process_view: Vec::new(),
+            process_view_dirty: true,
             theme_kind,
             theme: Theme::palette(theme_kind),
             overlay: Overlay::None,
@@ -457,6 +463,72 @@ impl App {
             setup_sources: Vec::new(),
             setup_selected: 0,
         }
+    }
+
+    fn rebuild_process_view(&mut self) {
+        if !self.process_view_dirty {
+            return;
+        }
+
+        self.process_view.clear();
+        self.process_view.extend(0..self.processes.len());
+
+        let filter_term = self.filter.trim();
+        let search_term = self.search.trim();
+
+        if !filter_term.is_empty() || !search_term.is_empty() {
+            let filter_lc = filter_term.to_lowercase();
+            let search_lc = search_term.to_lowercase();
+
+            self.process_view.retain(|&idx| {
+                let p = &self.processes[idx];
+                let cmd = p.command.to_lowercase();
+                let usr = p.user.to_lowercase();
+
+                let filter_ok = if filter_term.is_empty() {
+                    true
+                } else {
+                    cmd.contains(&filter_lc) || usr.contains(&filter_lc)
+                };
+
+                let search_ok = if search_term.is_empty() {
+                    true
+                } else {
+                    cmd.contains(&search_lc) || usr.contains(&search_lc)
+                };
+
+                filter_ok && search_ok
+            });
+        }
+
+        match self.sort_key {
+            SortKey::Cpu => self.process_view.sort_by(|&a, &b| {
+                self.processes[b]
+                    .cpu_usage
+                    .partial_cmp(&self.processes[a].cpu_usage)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }),
+            SortKey::Mem => {
+                self.process_view
+                    .sort_by(|&a, &b| self.processes[b].mem_bytes.cmp(&self.processes[a].mem_bytes));
+            }
+            SortKey::Pid => {
+                self.process_view.sort_by(|&a, &b| self.processes[a].pid.cmp(&self.processes[b].pid));
+            }
+            SortKey::User => {
+                self.process_view.sort_by(|&a, &b| self.processes[a].user.cmp(&self.processes[b].user));
+            }
+            SortKey::Command => {
+                self.process_view
+                    .sort_by(|&a, &b| self.processes[a].command.cmp(&self.processes[b].command));
+            }
+        }
+
+        if self.process_view.len() > self.config.max_rows {
+            self.process_view.truncate(self.config.max_rows);
+        }
+
+        self.process_view_dirty = false;
     }
 
     fn refresh_config_candidates(&mut self) {
@@ -488,6 +560,7 @@ impl App {
                     self.config = cfg;
                     self.config_path = path;
                     self.config_source = source;
+                    self.process_view_dirty = true;
                     self.status_message =
                         Some(format!("Config switched: {}", self.config_path.display()));
                 }
@@ -522,6 +595,7 @@ impl App {
                 Some("command") => SortKey::Command,
                 _ => SortKey::Cpu,
             };
+            self.process_view_dirty = true;
             self.status_message = Some(format!("Config switched: {}", self.config_path.display()));
         }
     }
@@ -707,26 +781,21 @@ impl App {
         self.status_message = Some(insights.join("\n"));
     }
 
-    fn update(&mut self) {
-        // Refresh system data
-        self.monitor.refresh();
+    fn update_fast(&mut self) {
+        self.monitor.refresh_fast();
 
-        // Update CPU history - reduced buffer size
         let cpu_usage = self.monitor.get_global_cpu_usage();
         self.cpu_history.push_back(cpu_usage);
         if self.cpu_history.len() > 30 {
-            // Further reduced to 30 points
             self.cpu_history.pop_front();
         }
 
-        // Update memory history - further reduced buffer size
         let memory_usage = self.monitor.get_memory_usage_percent();
         self.memory_history.push_back(memory_usage);
         if self.memory_history.len() > 30 {
             self.memory_history.pop_front();
         }
 
-        // Update network history - further reduced buffer size
         let (rx, tx) = self.monitor.get_network_rates();
         self.net_rx_history.push_back(rx);
         self.net_tx_history.push_back(tx);
@@ -738,6 +807,12 @@ impl App {
         }
 
         self.last_update = Instant::now();
+    }
+
+    fn update_slow(&mut self) {
+        self.monitor.refresh_slow();
+        self.processes = self.monitor.get_processes();
+        self.process_view_dirty = true;
     }
 
     fn handle_key(&mut self, key: KeyEvent) {
@@ -877,50 +952,24 @@ impl App {
         }
     }
 
-    fn collect_processes(&self, limit: usize) -> Vec<monitor::ProcessInfo> {
-        // Only get what we need + small buffer for filtering
-        let fetch_limit = if self.filter.is_empty() {
-            limit
-        } else {
-            limit * 2
-        };
-        let mut procs = self.monitor.get_top_processes(fetch_limit.min(50));
 
-        // Filter first to reduce sorting overhead
-        if !self.filter.is_empty() {
-            let term = self.filter.to_lowercase();
-            procs.retain(|p| {
-                p.command.to_lowercase().contains(&term) || p.user.to_lowercase().contains(&term)
-            });
-        }
-
-        // Sort only the processes we'll actually display
-        match self.sort_key {
-            SortKey::Cpu => procs.sort_by(|a, b| {
-                b.cpu_usage
-                    .partial_cmp(&a.cpu_usage)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            }),
-            SortKey::Mem => procs.sort_by(|a, b| b.mem_bytes.cmp(&a.mem_bytes)),
-            SortKey::Pid => procs.sort_by(|a, b| a.pid.cmp(&b.pid)),
-            SortKey::User => procs.sort_by(|a, b| a.user.cmp(&b.user)),
-            SortKey::Command => procs.sort_by(|a, b| a.command.cmp(&b.command)),
-        }
-
-        // Truncate to requested limit
-        if procs.len() > limit {
-            procs.truncate(limit);
-        }
-        procs
+    fn collect_processes(&mut self, limit: usize) -> Vec<monitor::ProcessInfo> {
+        self.rebuild_process_view();
+        self.process_view
+            .iter()
+            .take(limit)
+            .filter_map(|&idx| self.processes.get(idx).cloned())
+            .collect()
     }
 
-    fn selected_pid(&self) -> Option<u32> {
-        let list = self.collect_processes(self.config.max_rows); // respect config rows
-        if list.is_empty() {
+    fn selected_pid(&mut self) -> Option<u32> {
+        self.rebuild_process_view();
+        if self.process_view.is_empty() {
             return None;
         }
-        let idx = self.selected.min(list.len().saturating_sub(1));
-        Some(list[idx].pid)
+        let idx = self.selected.min(self.process_view.len().saturating_sub(1));
+        let pidx = self.process_view[idx];
+        self.processes.get(pidx).map(|p| p.pid)
     }
 
     fn adjust_nice(&mut self, increase: bool) {
@@ -957,15 +1006,21 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Re
     let mut input_tick = tokio::time::interval(Duration::from_millis(25));
     input_tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
+    app.update_slow();
+    app.update_fast();
+    app.rebuild_process_view();
+
     loop {
         tokio::select! {
             _ = ui_tick.tick() => {
+                app.update_fast();
+                app.rebuild_process_view();
                 terminal
                     .draw(|f| ui(f, &app))
                     .map_err(|e| io::Error::other(e.to_string()))?;
             },
             _ = data_tick.tick() => {
-                app.update();
+                app.update_slow();
             },
             _ = input_tick.tick() => {
                 while crossterm::event::poll(Duration::from_millis(0))? {
@@ -1267,11 +1322,12 @@ fn ui(f: &mut Frame, app: &App) {
     }
 
     // Process list - only collect what fits on screen (configurable)
-    let processes = app.collect_processes(app.config.max_rows);
-    let selected = app.selected.min(processes.len().saturating_sub(1));
-    let process_items: Vec<Row> = processes
+    let selected = app.selected.min(app.process_view.len().saturating_sub(1));
+    let process_items: Vec<Row> = app
+        .process_view
         .iter()
         .enumerate()
+        .filter_map(|(idx, pidx)| app.processes.get(*pidx).map(|p| (idx, p)))
         .map(|(idx, p)| {
             let fmt_time = format!(
                 "{:02}:{:02}:{:02}",
@@ -1280,18 +1336,18 @@ fn ui(f: &mut Frame, app: &App) {
                 p.time_total_secs % 60
             );
             let row = Row::new(vec![
-                p.nice.to_string(),
-                p.priority.to_string(),
-                p.pid.to_string(),
-                p.user.clone(),
-                p.command.clone(),
-                fmt_time,
-                humansize::format_size(p.mem_bytes, humansize::DECIMAL),
-                format!("{:.1}", p.cpu_usage),
-                humansize::format_size(p.virt, humansize::DECIMAL),
-                humansize::format_size(p.res, humansize::DECIMAL),
-                humansize::format_size(p.shr, humansize::DECIMAL),
-                p.state.to_string(),
+                Cell::from(p.nice.to_string()),
+                Cell::from(p.priority.to_string()),
+                Cell::from(p.pid.to_string()),
+                Cell::from(p.user.as_str()),
+                Cell::from(p.command.as_str()),
+                Cell::from(fmt_time),
+                Cell::from(humansize::format_size(p.mem_bytes, humansize::DECIMAL)),
+                Cell::from(format!("{:.1}", p.cpu_usage)),
+                Cell::from(humansize::format_size(p.virt, humansize::DECIMAL)),
+                Cell::from(humansize::format_size(p.res, humansize::DECIMAL)),
+                Cell::from(humansize::format_size(p.shr, humansize::DECIMAL)),
+                Cell::from(p.state.to_string()),
             ]);
             if idx == selected {
                 row.style(Style::default().bg(app.theme.selection_bg))
@@ -1465,7 +1521,7 @@ fn make_colored_bar(percent: f32, width: usize, theme: &Theme) -> Vec<Span<'stat
     let filled = ((percent / 100.0) * width as f32) as usize;
     let filled = filled.min(width);
 
-    let mut spans = Vec::new();
+    let mut spans = Vec::with_capacity(width);
 
     // Color logic: green (0-50%), yellow (50-75%), red (75-100%)
     for i in 0..width {
@@ -1479,10 +1535,10 @@ fn make_colored_bar(percent: f32, width: usize, theme: &Theme) -> Vec<Span<'stat
         };
 
         if i < filled {
-            spans.push(Span::styled("█".to_string(), Style::default().fg(color)));
+            spans.push(Span::styled("█", Style::default().fg(color)));
         } else {
             spans.push(Span::styled(
-                "░".to_string(),
+                "░",
                 Style::default().fg(theme.bar_empty),
             ));
         }
