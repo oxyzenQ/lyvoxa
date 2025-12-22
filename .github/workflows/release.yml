@@ -39,9 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if CI succeeded AND triggered by a tag (or manual trigger)
     if: |
-      (github.event_name == 'workflow_run' && 
-       github.event.workflow_run.conclusion == 'success' && 
-       startsWith(github.event.workflow_run.head_branch, '3.')) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       (startsWith(github.event.workflow_run.head_branch, 'v') ||
+        startsWith(github.event.workflow_run.head_branch, 'stellar-'))) ||
       github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.set_version.outputs.version }}
@@ -227,7 +229,7 @@ jobs:
           # LYVOXA
           ### System Monitor · Born from Shadows
 
-          > *"In the depths of your system, where processes whisper and metrics dance,*  
+          > *"In the depths of your system, where processes whisper and metrics dance,*
           > *Lyvoxa watches. Silent. Precise. Unstoppable."*
 
           ---
@@ -302,7 +304,7 @@ jobs:
 
           <div align="center">
 
-          **Installation via AUR:**  
+          **Installation via AUR:**
           \`yay -S lyvoxa-bin\` or \`paru -S lyvoxa-bin\`
 
           **Full Timeline:** [View all commits](${{ github.server_url }}/${{ github.repository }}/commits/$VERSION)
@@ -367,4 +369,3 @@ jobs:
           echo "✅ Release ${{ github.ref_name }} published successfully"
           echo "📦 Artifacts uploaded to GitHub Releases"
           echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/${{ github.ref_name }}"
-

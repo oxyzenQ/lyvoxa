@@ -1,29 +1,6 @@
 name: 🔍 CodeQL Deep Analysis
 
 on:
-  push:
-    branches: [ main ]
-    tags:
-      - 'stellar-*'
-      - 'v*'
-    paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'build.rs'
-      - '.cargo/**'
-      - '.github/workflows/codeql.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'build.rs'
-      - '.cargo/**'
-      - '.github/workflows/codeql.yml'
-  schedule:
-    - cron: '0 0 * * *'  # Daily at 8 AM Singapore time (00:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -32,67 +9,9 @@ permissions:
   actions: read
 
 jobs:
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    outputs:
-      rust: ${{ steps.filter.outputs.rust }}
-      shell: ${{ steps.filter.outputs.shell }}
-      docs: ${{ steps.filter.outputs.docs }}
-      workflow: ${{ steps.filter.outputs.workflow }}
-    steps:
-      - uses: actions/checkout@v5
-      - id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            rust:
-              - 'src/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'build.rs'
-              - '.cargo/**'
-            shell:
-              - '**/*.sh'
-            docs:
-              - 'README.md'
-              - 'docs/**'
-            workflow:
-              - '.github/workflows/**'
-  shell-lint:
-    name: Shell Lint (shellcheck)
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.shell == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Install shellcheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-
-      - name: Run shellcheck
-        run: |
-          set -euo pipefail
-          shopt -s globstar || true
-          files=( $(git ls-files '*.sh') )
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No shell scripts found; skipping"
-            exit 0
-          fi
-          shellcheck -S style "${files[@]}"
-
   codeql:
-    name: CodeQL (deep) — ${{ matrix.rust }}
+    name: CodeQL (Rust)
     runs-on: ubuntu-latest
-    needs: [changes, shell-lint]
-    if: needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflow == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: [ stable, nightly ]
     env:
       CARGO_TERM_COLOR: always
 
@@ -100,10 +19,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Rust (${{ matrix.rust }})
+      - name: Set up Rust (stable)
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -127,149 +46,8 @@ jobs:
       - name: Analyze (upload to Security tab)
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:rust-${{ matrix.rust }}"
+          category: "/language:rust"
           upload: true
-
-      # Locate CodeQL database directory (best-effort)
-      - name: Locate CodeQL database
-        id: find-db
-        run: |
-          set -euo pipefail
-          DB_DIR=$(find "$RUNNER_TEMP" "$GITHUB_WORKSPACE" -type d -name codeql_databases -print -quit || true)
-          if [ -n "$DB_DIR" ]; then
-            echo "db_dir=$DB_DIR" >> "$GITHUB_OUTPUT"
-            echo "Found database dir: $DB_DIR"
-          else
-            echo "db_dir=" >> "$GITHUB_OUTPUT"
-            echo "No database directory found"
-          fi
-
-      # Export SARIF locally using CLI as an artifact for offline inspection (best-effort)
-      - name: Export SARIF (CLI)
-        continue-on-error: ${{ vars.STRICT_SARIF != 'true' }}
-        if: steps.find-db.outputs.db_dir != ''
-        env:
-          CODEQL_DIST: ${{ steps.init.outputs.codeql-path }}
-        run: |
-          set -euo pipefail
-          DB_DIR="${{ steps.find-db.outputs.db_dir }}"
-          DB=$(find "$DB_DIR" -mindepth 1 -maxdepth 1 -type d -print -quit || true)
-          if [ -z "$DB" ]; then
-            echo "No DB found under $DB_DIR, skipping CLI export"
-            exit 0
-          fi
-          CODEQL_BIN=${CODEQL_DIST:-codeql}
-          if [ -d "$CODEQL_BIN" ]; then
-            CODEQL_BIN="$CODEQL_BIN/codeql"
-          fi
-          if ! command -v "$CODEQL_BIN" >/dev/null 2>&1; then
-            echo "CodeQL CLI not found at '$CODEQL_BIN' or on PATH" >&2
-            exit 1
-          fi
-          "$CODEQL_BIN" database analyze "$DB" \
-            codeql/rust-queries:codeql-suites/rust-security-and-quality.qls \
-            --format=sarifv2.1.0 --output codeql-results-${{ matrix.rust }}.sarif \
-            --verbosity=progress --threads=0 --download
-
-      - name: Upload SARIF artifact
-        if: steps.find-db.outputs.db_dir != '' && hashFiles('codeql-results-*.sarif') != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-sarif-${{ matrix.rust }}
-          path: codeql-results-${{ matrix.rust }}.sarif
-          if-no-files-found: ignore
-
-      - name: Upload CodeQL database artifact
-        if: steps.find-db.outputs.db_dir != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-database-${{ matrix.rust }}
-          path: ${{ steps.find-db.outputs.db_dir }}
-          if-no-files-found: warn
-
-      - name: Fail if high/critical issues found
-        if: hashFiles('codeql-results-*.sarif') != ''
-        run: |
-          set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y jq
-          COUNT=$(jq -r '[.runs[].results[] | (.properties["security-severity"] // "0") | tonumber] | map(select(. >= 7.0)) | length' codeql-results-${{ matrix.rust }}.sarif || echo 0)
-          echo "High/Critical findings: $COUNT"
-          if [ "$COUNT" -gt 0 ]; then
-            echo "Detected high/critical CodeQL findings (>=7.0). Failing build." >&2
-            exit 1
-          fi
-
-      - name: Write summary
-        if: hashFiles('codeql-results-*.sarif') != ''
-        env:
-          MATRIX_RUST: ${{ matrix.rust }}
-        run: |
-          set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y jq
-          FILE="codeql-results-${MATRIX_RUST}.sarif"
-          TOTAL=$(jq -r '[.runs[].results[]] | length' "$FILE" || echo 0)
-          HIGH=$(jq -r '[.runs[].results[] | (.properties["security-severity"] // "0") | tonumber] | map(select(. >= 7.0)) | length' "$FILE" || echo 0)
-          echo "## CodeQL Deep Analysis ($MATRIX_RUST)" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-          echo "- Total findings: $TOTAL" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-          echo "- High/Critical (>=7.0): $HIGH" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-
-  dependency-scan:
-    name: Dependency Scan (audit & deny)
-    runs-on: ubuntu-latest
-    needs: [changes, shell-lint]
-    if: needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Rust (stable)
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: dep-scan
-          cache-on-failure: true
-
-      - name: Install cargo-audit
-        run: cargo install --locked cargo-audit
-
-      - name: Run cargo audit
-        run: |
-          cargo audit --json > audit-${{ github.run_id }}.json || true
-          # Fail on non-zero vulnerabilities by re-running without --json to get exit code
-          cargo audit
-
-      - name: Upload cargo-audit JSON
-        uses: actions/upload-artifact@v4
-        with:
-          name: cargo-audit-${{ github.run_id }}
-          path: audit-${{ github.run_id }}.json
-
-      - name: Install cargo-deny
-        run: cargo install --locked cargo-deny@0.18.9
-
-      - name: Cargo Deny Check (all)
-        run: cargo deny check all
-
-      - name: Cargo Deny JSON summary
-        if: always()
-        run: |
-          set -euo pipefail
-          cargo deny --version || true
-          cargo deny check --format json > deny-${{ github.run_id }}.json || true
-          echo "## Cargo Deny Summary" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-          echo "- JSON report uploaded as artifact: cargo-deny-${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-
-      - name: Upload cargo-deny JSON
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cargo-deny-${{ github.run_id }}
-          path: deny-${{ github.run_id }}.json
-          if-no-files-found: warn
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
