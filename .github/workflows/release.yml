@@ -360,6 +360,41 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Force publish and set latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build-release.outputs.rel_tag }}
+          REPO: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+        run: |
+          set -euo pipefail
+
+          release_id=""
+          for i in 1 2 3 4 5; do
+            release_json=$(curl -sS \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "$API_URL/repos/$REPO/releases/tags/$TAG")
+
+            release_id=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))' <<<"$release_json" 2>/dev/null || true)
+            if [ -n "$release_id" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -z "$release_id" ]; then
+            echo "Failed to resolve release for tag $TAG" >&2
+            echo "$release_json" >&2
+            exit 1
+          fi
+
+          curl -sS --fail-with-body -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "$API_URL/repos/$REPO/releases/$release_id" \
+            -d '{"draft":false,"prerelease":false,"make_latest":"true"}' >/dev/null
+
       - name: Release Summary
         run: |
           echo "✅ Release ${{ needs.build-release.outputs.rel_tag }} published successfully"
