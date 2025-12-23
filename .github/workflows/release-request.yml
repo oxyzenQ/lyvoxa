@@ -11,7 +11,7 @@ permissions:
 jobs:
   request:
     runs-on: ubuntu-latest
-    if: startsWith(github.event.head_commit.message, 'release: ')
+    if: "${{ startsWith(github.event.head_commit.message, 'release: ') }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v5
