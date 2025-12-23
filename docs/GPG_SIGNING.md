@@ -157,14 +157,14 @@ After pushing a tag:
 
 ```bash
 # Download release + signature
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz.sig
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz.sig
 
 # Import developer's public key (first time only)
 gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 
 # Verify signature
-gpg --verify lyvoxa-3.1.0-linux-amd64.tar.gz.sig lyvoxa-3.1.0-linux-amd64.tar.gz
+gpg --verify lyvoxa-3.1.2-linux-amd64.tar.gz.sig lyvoxa-3.1.2-linux-amd64.tar.gz
 
 # Expected output:
 # gpg: Signature made [date]
@@ -240,16 +240,16 @@ gpg --import public-key.asc
 **Before Setup:**
 ```
 Assets:
-├── lyvoxa-3.1.0-linux-amd64.tar.gz
-└── lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
+├── lyvoxa-3.1.2-linux-amd64.tar.gz
+└── lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
 ```
 
 **After Setup:**
 ```
 Assets:
-├── lyvoxa-3.1.0-linux-amd64.tar.gz
-├── lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
-└── lyvoxa-3.1.0-linux-amd64.tar.gz.sig          ← GPG signature (binary)
+├── lyvoxa-3.1.2-linux-amd64.tar.gz
+├── lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
+└── lyvoxa-3.1.2-linux-amd64.tar.gz.sig          ← GPG signature (binary)
 ```
 
 **Verification Chain:**
