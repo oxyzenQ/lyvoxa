@@ -15,7 +15,9 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::{Axis, Block, Borders, Cell, Chart, Clear, Dataset, Paragraph, Row, Table, TableState},
+    widgets::{
+        Axis, Block, Borders, Cell, Chart, Clear, Dataset, Paragraph, Row, Table, TableState,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -509,14 +511,19 @@ impl App {
                     .unwrap_or(std::cmp::Ordering::Equal)
             }),
             SortKey::Mem => {
-                self.process_view
-                    .sort_by(|&a, &b| self.processes[b].mem_bytes.cmp(&self.processes[a].mem_bytes));
+                self.process_view.sort_by(|&a, &b| {
+                    self.processes[b]
+                        .mem_bytes
+                        .cmp(&self.processes[a].mem_bytes)
+                });
             }
             SortKey::Pid => {
-                self.process_view.sort_by(|&a, &b| self.processes[a].pid.cmp(&self.processes[b].pid));
+                self.process_view
+                    .sort_by(|&a, &b| self.processes[a].pid.cmp(&self.processes[b].pid));
             }
             SortKey::User => {
-                self.process_view.sort_by(|&a, &b| self.processes[a].user.cmp(&self.processes[b].user));
+                self.process_view
+                    .sort_by(|&a, &b| self.processes[a].user.cmp(&self.processes[b].user));
             }
             SortKey::Command => {
                 self.process_view
@@ -951,7 +958,6 @@ impl App {
             _ => {}
         }
     }
-
 
     fn collect_processes(&mut self, limit: usize) -> Vec<monitor::ProcessInfo> {
         self.rebuild_process_view();
@@ -1537,10 +1543,7 @@ fn make_colored_bar(percent: f32, width: usize, theme: &Theme) -> Vec<Span<'stat
         if i < filled {
             spans.push(Span::styled("█", Style::default().fg(color)));
         } else {
-            spans.push(Span::styled(
-                "░",
-                Style::default().fg(theme.bar_empty),
-            ));
+            spans.push(Span::styled("░", Style::default().fg(theme.bar_empty)));
         }
     }
     spans
