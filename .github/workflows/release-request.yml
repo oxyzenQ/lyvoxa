@@ -1,0 +1,137 @@
+name: 🚀 Release Request
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'release: ')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: v
+        run: |
+          set -euo pipefail
+          msg="${{ github.event.head_commit.message }}"
+          first_line=$(printf '%s' "$msg" | head -n1)
+
+          if printf '%s' "$first_line" | grep -qE '^release: v'; then
+            echo "Invalid format. Use: release: 3.1.2 (no leading v)" >&2
+            exit 1
+          fi
+
+          tag=$(printf '%s' "$first_line" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)
+          if [ -z "$tag" ]; then
+            echo "No version tag found in commit message: $first_line" >&2
+            exit 1
+          fi
+          version=$tag
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not exist
+        run: |
+          set -euo pipefail
+          tag="${{ steps.v.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag already exists locally: $tag" >&2
+            exit 1
+          fi
+          if git ls-remote --tags origin "refs/tags/$tag" | grep -q .; then
+            echo "Tag already exists on origin: $tag" >&2
+            exit 1
+          fi
+
+      - name: Bump versions in repo
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -f Cargo.toml ]; then
+            sed -i "0,/^version = .*/{s/^version = .*/version = \"$VERSION\"/}" Cargo.toml
+          fi
+
+          if [ -f README.md ]; then
+            sed -i "s/Version [0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/Version $VERSION/g" README.md
+            sed -i "s|releases/download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|releases/download/$VERSION|g" README.md
+            sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?-linux-amd64|lyvoxa-$VERSION-linux-amd64|g" README.md
+          fi
+
+          if [ -f lyvoxa-aur-bin/PKGBUILD ]; then
+            sed -i "s/^pkgver=.*/pkgver=$VERSION/" lyvoxa-aur-bin/PKGBUILD
+            sed -i "s/^pkgrel=.*/pkgrel=1/" lyvoxa-aur-bin/PKGBUILD
+          fi
+
+          if [ -d docs ]; then
+            find docs -name "*.md" -type f | while read -r file; do
+              sed -i "s/Version [0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?/Version $VERSION/g" "$file" || true
+              sed -i "s|releases/download/v\?[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|releases/download/$VERSION|g" "$file" || true
+              sed -i "s|lyvoxa-[0-9]\+\.[0-9]\+\(\.[0-9]\+\)\?|lyvoxa-$VERSION|g" "$file" || true
+            done
+          fi
+
+      - name: Commit version bump
+        env:
+          TAG: ${{ steps.v.outputs.tag }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add Cargo.toml README.md docs lyvoxa-aur-bin/PKGBUILD 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: bump version to $TAG [skip ci]"
+          fi
+
+      - name: Create tag
+        env:
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git tag -a "$TAG" -m "$TAG"
+
+      - name: Push commit + tag
+        env:
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git push origin HEAD:main
+          git push origin "$TAG"
+
+      - name: Trigger Release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # Wait for the tag to be visible via the API
+          for i in 1 2 3 4 5; do
+            if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+              break
+            fi
+            sleep 2
+          done
+
+          # Trigger workflow_dispatch (push events from GITHUB_TOKEN won't start other workflows)
+          curl -sS --fail-with-body -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yml/dispatches" \
+            -d "{\"ref\":\"$TAG\",\"inputs\":{\"version\":\"$TAG\"}}"

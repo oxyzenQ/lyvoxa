@@ -15,14 +15,6 @@ on:
     workflows: ["🌟 Release"]
     types:
       - completed
-  release:
-    types:
-      - published
-  push:
-    paths:
-      - 'lyvoxa-aur-bin/**'
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -32,8 +24,7 @@ jobs:
   aur-sync:
     name: 🔄 Sync to AUR
     runs-on: ubuntu-latest
-    # Only run if release workflow succeeded (or manual/path trigger)
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     env:
       PKGDIR: lyvoxa-aur-bin
       AUR_REPO: lyvoxa-bin
@@ -45,6 +36,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup SSH for AUR
         env:
@@ -52,29 +44,29 @@ jobs:
         run: |
           set -euo pipefail
           echo "🔐 Setting up SSH for AUR..."
-          
+
           # Validate SSH key exists
           if [ -z "$AUR_SSH_PRIVATE_KEY" ]; then
             echo "❌ ERROR: AUR_SSH_PRIVATE_KEY secret is not set!"
             echo "📖 Please follow: docs/AUR_SSH_SETUP.md"
             exit 1
           fi
-          
+
           # Setup SSH directory
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          
+
           # Write SSH key (preserving newlines)
           echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          
+
           # Verify key format
           if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519; then
             echo "⚠️  WARNING: SSH key might be in wrong format"
             echo "Expected: -----BEGIN OPENSSH PRIVATE KEY-----"
             head -1 ~/.ssh/id_ed25519
           fi
-          
+
           # Create SSH config
           cat > ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
@@ -84,10 +76,10 @@ jobs:
             ServerAliveInterval 60
             ServerAliveCountMax 10
           EOF
-          
+
           chmod 600 ~/.ssh/config
           echo "✅ SSH configured"
-          
+
           # Test SSH connection
           echo "🧪 Testing SSH connection to AUR..."
           if ssh -T -o ConnectTimeout=10 aur@aur.archlinux.org 2>&1 | grep -q "successfully authenticated"; then
@@ -102,7 +94,7 @@ jobs:
           echo "🔍 Detecting version..."
           if git describe --tags --abbrev=0 >/dev/null 2>&1; then
             VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-            echo "📌 Version from tag: $VERSION"
+            echo "📌 Version from git tag: $VERSION"
           else
             cd $PKGDIR
             VERSION=$(grep -Po '(?<=pkgver=).*' PKGBUILD)
@@ -175,10 +167,10 @@ jobs:
           set -euo pipefail
           echo "📥 Cloning AUR repository: $AUR_REPO"
           echo "🔗 URL: $AUR_URL"
-          
+
           # Clone with verbose output for debugging
           GIT_SSH_COMMAND="ssh -v" git clone "$AUR_URL" aur-repo 2>&1 | grep -v "debug" || true
-          
+
           if [ -d "aur-repo/.git" ]; then
             echo "✅ AUR repository cloned successfully"
             cd aur-repo
@@ -230,10 +222,10 @@ jobs:
 
           echo "📋 Commit details:"
           git show --stat HEAD
-          
+
           echo ""
           echo "🚀 Pushing to AUR..."
-          
+
           # Push with verbose output
           if git push origin master 2>&1; then
             echo "✅ Successfully pushed to AUR"

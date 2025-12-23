@@ -11,8 +11,6 @@ name: 🔧 CI Pipeline
 on:
   push:
     branches: [main]  # Only main branch (single active branch)
-    tags:
-      - '**'  # Run on all tag pushes for release pipeline (no path filter)
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -36,6 +34,7 @@ jobs:
   security:
     name: 3️⃣ Security & Quality
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'push' || !startsWith(github.ref, 'refs/heads/') || (!contains(github.event.head_commit.message, '[skip ci]') && !startsWith(github.event.head_commit.message, 'release: ')) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

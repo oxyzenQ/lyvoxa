@@ -8,14 +8,14 @@
 name: 🌟 Release
 
 on:
-  workflow_run:
-    workflows: ["🔧 CI Pipeline"]  # Wait for CI to complete
-    types:
-      - completed
+  push:
+    tags:
+      - '*.*.*'
+      - 'stellar-*'
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g., 3.0, 3.0.1)"
+        description: "Release version/tag (e.g., 3.1.2)"
         required: true
 
 permissions:
@@ -30,6 +30,14 @@ env:
   PROJECT_NAME: lyvoxa
 
 jobs:
+  ci:
+    name: 0️⃣ CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
   # =============================================================================
   # STEP 1: BUILD OPTIMIZED RELEASE
   # =============================================================================
@@ -37,14 +45,9 @@ jobs:
   build-release:
     name: 1️⃣ Build Optimized Release
     runs-on: ubuntu-latest
-    # Only run if CI succeeded AND triggered by a tag (or manual trigger)
-    if: |
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
-       (startsWith(github.event.workflow_run.head_branch, 'v') ||
-        startsWith(github.event.workflow_run.head_branch, 'stellar-'))) ||
-      github.event_name == 'workflow_dispatch'
+    needs: ci
+    # Only run for tag push or manual trigger
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     outputs:
       version: ${{ steps.set_version.outputs.version }}
       rel_tag: ${{ steps.set_version.outputs.rel_tag }}
@@ -55,9 +58,9 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             REL_TAG="${{ github.event.inputs.version }}"
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # Extract tag from the workflow_run event
-            REL_TAG="${{ github.event.workflow_run.head_branch }}"
+            if [[ "$REL_TAG" =~ ^v[0-9] ]]; then
+              REL_TAG="${REL_TAG#v}"
+            fi
           else
             REL_TAG="${GITHUB_REF_NAME}"
           fi
@@ -112,14 +115,7 @@ jobs:
 
       - name: Create Package
         run: |
-          # Get version
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
-
-          VERSION=$(echo "$VERSION" | sed 's/^v//')
+          VERSION="${{ steps.set_version.outputs.version }}"
           ARTIFACT="$PROJECT_NAME-$VERSION-linux-amd64"
 
           # Create clean package structure
@@ -366,6 +362,6 @@ jobs:
 
       - name: Release Summary
         run: |
-          echo "✅ Release ${{ github.ref_name }} published successfully"
+          echo "✅ Release ${{ needs.build-release.outputs.rel_tag }} published successfully"
           echo "📦 Artifacts uploaded to GitHub Releases"
-          echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/${{ github.ref_name }}"
+          echo "🔗 https://github.com/oxyzenQ/lyvoxa/releases/tag/${{ needs.build-release.outputs.rel_tag }}"
