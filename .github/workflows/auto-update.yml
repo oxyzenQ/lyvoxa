@@ -18,13 +18,19 @@ on:
         description: 'Force update even if tests fail'
         required: false
         default: 'false'
+      strategy:
+        description: 'Update strategy: direct (push to main) or pr (open a pull request)'
+        required: false
+        default: 'direct'
 
 permissions:
   contents: write
   actions: read
+  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
+  UPDATE_STRATEGY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.strategy || 'direct' }}
 
 jobs:
   auto-update:
@@ -103,33 +109,30 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          if git diff --quiet Cargo.lock; then
+          if [[ -z "$(git status --porcelain)" ]]; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No dependency updates needed"
+            echo "ℹ️ No updates needed"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✅ Dependencies updated, changes detected"
+            echo "✅ Updates detected"
             echo ""
-            echo "📝 Changes in Cargo.lock:"
-            git diff --stat Cargo.lock
+            echo "📝 Changed files:"
+            git status --porcelain
+            echo ""
+            echo "📊 Diff stat:"
+            git diff --stat
           fi
 
       - name: Commit and push changes
-        if: steps.check_changes.outputs.changed == 'true'
+        if: steps.check_changes.outputs.changed == 'true' && env.UPDATE_STRATEGY == 'direct'
         run: |
-          git add Cargo.lock
+          git add -A
 
-          # Commit with creative message
-          git commit \
-            -m "✨ deps: fresh dependencies delivered by your friendly bot" \
+          git commit -s \
+            -m "chore(deps): auto-update dependencies" \
             -m "" \
-            -m "🎯 Mission accomplished: All dependencies upgraded to their latest compatible versions" \
-            -m "🔐 Security: Audit passed with flying colors" \
-            -m "✅ Quality: Build verified, tests conquered" \
-            -m "" \
-            -m "Your code stays sharp, secure, and up-to-date while you sleep. 🌙" \
-            -m "" \
-            -m "Signed-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+            -m "Automated update run by GitHub Actions." \
+            -m "Includes any repository changes produced by the update pipeline (deps, workflows, src, etc.)."
 
           git push origin main
 
@@ -137,24 +140,50 @@ jobs:
           echo "✅ Dependencies updated and pushed to main"
           echo "🔗 Commit: $(git rev-parse HEAD)"
 
+      - name: Create pull request
+        id: cpr
+        if: steps.check_changes.outputs.changed == 'true' && env.UPDATE_STRATEGY == 'pr'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(deps): auto-update dependencies"
+          title: "chore(deps): auto-update dependencies"
+          body: |
+            Automated update run by GitHub Actions.
+
+            This PR may include dependency, workflow, and source updates produced by the update pipeline.
+          branch: bot/auto-update
+          delete-branch: true
+          signoff: true
+
       - name: Summary
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🤖 AUTO-UPDATE SUMMARY"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+          echo "📌 Strategy: ${{ env.UPDATE_STRATEGY }}"
+
           if [ "${{ steps.check_changes.outputs.changed }}" == "true" ]; then
-            echo "✅ Dependencies updated successfully"
-            echo "📦 Cargo.lock updated"
-            echo "🔐 Security audit passed"
-            echo "🧪 Tests validated"
-            echo "✅ Verified by GitHub Actions"
-            echo "🚀 Pushed to main"
+            echo "✅ Updates detected"
+            echo "🔐 Security audit ran"
+            echo "🧪 Tests ran (or were forced)"
+
+            if [ "${{ env.UPDATE_STRATEGY }}" == "direct" ]; then
+              echo "🚀 Changes pushed to main"
+            else
+              echo "🔀 Pull request created/updated"
+              echo "🔗 PR: ${{ steps.cpr.outputs.pull-request-url }}"
+            fi
           else
             echo "ℹ️ No updates needed - all dependencies current"
           fi
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "⏰ Next run: Tomorrow 07:00 UTC (14:00 WIB)"
+          echo "⏰ Next run: Tomorrow 00:00 UTC (07:00 WIB / 08:00 SGT)"
           echo "🔧 Manual trigger: Actions → Auto Update Dependencies → Run workflow"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

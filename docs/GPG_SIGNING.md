@@ -33,22 +33,7 @@ GPG signing ensures that releases are authentic and haven't been tampered with. 
 
 ## 🔧 Step-by-Step Setup
 
-### 1️⃣ Generate GPG Key (if you don't have one)
-
-```bash
-# Generate new key
-gpg --full-generate-key
-
-# Select:
-# - Kind: (1) RSA and RSA (default)
-# - Size: 4096 bits
-# - Expiry: 0 = key does not expire (or set expiration)
-# - Name: Your Name
-# - Email: your.email@example.com
-# - Passphrase: Create strong passphrase
-```
-
-### 2️⃣ Identify Your Key
+### 1️⃣ Identify Your Key
 
 ```bash
 # List your keys
@@ -60,10 +45,10 @@ gpg --list-secret-keys --keyid-format LONG
 # uid   [ultimate] Your Name <your.email@example.com>
 # ssb   rsa4096/XYZ789... 2024-01-01 [E]
 
-# Your Key ID: 0D8D13BB989AF9F0 (use this)
+# Your Key ID: 0D8D13BB989AF9F0
 ```
 
-### 3️⃣ Export Private Key (ASCII-armored)
+### 2️⃣ Export Private Key (ASCII-armored)
 
 ```bash
 # Replace KEY_ID with your actual key ID
@@ -77,7 +62,7 @@ gpg --armor --export-secret-keys 0D8D13BB989AF9F0 > private-key.asc
 
 ⚠️ **IMPORTANT**: Keep `private-key.asc` secure. Delete after setup.
 
-### 4️⃣ Export Public Key (for users to verify)
+### 3️⃣ Export Public Key (for users to verify)
 
 ```bash
 # Export public key
@@ -132,11 +117,7 @@ The workflow is already configured in `.github/workflows/release.yml`:
       --pinentry-mode loopback --detach-sign $ARTIFACT.tar.gz
 ```
 
-**Features:**
-- ✅ Automatic fallback if GPG not configured
-- ✅ Won't break releases if secrets are missing
-- ✅ Uses `continue-on-error: true` for safety
-- ✅ Verifies signature after creation
+The release workflow will skip signing if `GPG_PRIVATE_KEY` is not configured.
 
 ## ✔️ Verification
 
@@ -157,14 +138,14 @@ After pushing a tag:
 
 ```bash
 # Download release + signature
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz.sig
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.0/lyvoxa-3.1.0-linux-amd64.tar.gz.sig
 
 # Import developer's public key (first time only)
 gpg --keyserver hkps://keys.openpgp.org --recv-keys 0D8D13BB989AF9F0
 
 # Verify signature
-gpg --verify lyvoxa-3.1.2-linux-amd64.tar.gz.sig lyvoxa-3.1.2-linux-amd64.tar.gz
+gpg --verify lyvoxa-3.1.0-linux-amd64.tar.gz.sig lyvoxa-3.1.0-linux-amd64.tar.gz
 
 # Expected output:
 # gpg: Signature made [date]
@@ -240,16 +221,16 @@ gpg --import public-key.asc
 **Before Setup:**
 ```
 Assets:
-├── lyvoxa-3.1.2-linux-amd64.tar.gz
-└── lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
+├── lyvoxa-3.1.0-linux-amd64.tar.gz
+└── lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
 ```
 
 **After Setup:**
 ```
 Assets:
-├── lyvoxa-3.1.2-linux-amd64.tar.gz
-├── lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
-└── lyvoxa-3.1.2-linux-amd64.tar.gz.sig          ← GPG signature (binary)
+├── lyvoxa-3.1.0-linux-amd64.tar.gz
+├── lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
+└── lyvoxa-3.1.0-linux-amd64.tar.gz.sig          ← GPG signature (binary)
 ```
 
 **Verification Chain:**
@@ -260,6 +241,6 @@ GPG    → Authenticity (file from official maintainer)
 
 ---
 
-**Author**: Lyvoxa Maintainers  
-**Last Updated**: October 2025  
+**Author**: Lyvoxa Maintainers
+**Last Updated**: October 2025
 **Version**: Stellar 3.0

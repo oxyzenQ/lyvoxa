@@ -10,8 +10,11 @@ CARGO := cargo
 TARGET := x86_64-unknown-linux-gnu
 JOBS := 3
 
+VERSION := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
+MAX_JOBS := $(JOBS)
+
 # Override system MAKEFLAGS for consistent 3-core builds
-export MAKEFLAGS := -j$(JOBS)
+export MAKEFLAGS := -j$(MAX_JOBS)
 
 # Directories
 TARGET_DIR := target
@@ -248,35 +251,26 @@ cd: ci ## Run CD pipeline
 .PHONY: test-local
 test-local: ## Run full local build test before commit/push
 	@echo "$(BLUE)[TEST]$(NC) Running local build test..."
-	./test-local.sh
+	./build.sh check --depth-check
 
 .PHONY: pre-commit
 pre-commit: ## Run full pre-commit quality checks
 	@echo "$(BLUE)[QA]$(NC) Running comprehensive pre-commit checks..."
-	./pre-commit.sh
+	./build.sh check --depth-check
 
 .PHONY: pre-commit-quick
 pre-commit-quick: ## Run quick pre-commit checks (no tests/audit)
 	@echo "$(BLUE)[QA]$(NC) Running quick pre-commit checks..."
-	./pre-commit.sh --quick
-
-.PHONY: setup-hooks
-setup-hooks: ## Setup Git pre-commit and pre-push hooks
-	@echo "$(BLUE)[SETUP]$(NC) Installing Git hooks..."
-	./lyvoxa-maintain.sh setup
+	./build.sh check
 
 .PHONY: update-deps
-update-deps: ## Update all dependencies
+update-deps: ## Update dependencies and run security audit
 	@echo "$(BLUE)[UPDATE]$(NC) Updating dependencies..."
-	./lyvoxa-maintain.sh update-deps
+	./build.sh update
 
 .PHONY: show-version
 show-version: ## Show current version
-	./lyvoxa-maintain.sh version
-
-.PHONY: maintain
-maintain: ## Run maintenance tool (interactive)
-	./lyvoxa-maintain.sh help
+	@echo "$(VERSION)"
 
 .PHONY: quality-full
 quality-full: fmt-check clippy test audit ## Run all quality checks
@@ -293,12 +287,12 @@ quality-quick: fmt-check clippy debug ## Run quick quality checks
 .PHONY: arch-pkg
 arch-pkg: ## Build Arch Linux source package
 	@echo "$(BLUE)[PKG]$(NC) Building Arch Linux source package..."
-	./build-arch-pkg.sh source
+	cd lyvoxa-aur-bin && makepkg -f
 
 .PHONY: arch-pkg-clean
 arch-pkg-clean: ## Clean Arch Linux package build artifacts
 	@echo "$(BLUE)[PKG]$(NC) Cleaning package build artifacts..."
-	./build-arch-pkg.sh clean
+	rm -rf lyvoxa-aur-bin/pkg lyvoxa-aur-bin/src
 
 # =============================================================================
 # PHONY DECLARATIONS
@@ -311,5 +305,5 @@ arch-pkg-clean: ## Clean Arch Linux package build artifacts
 .PHONY: profile flamegraph size
 .PHONY: sccache-stats sccache-zero
 .PHONY: ci cd help
-.PHONY: pre-commit pre-commit-quick setup-hooks quality-full quality-quick
+.PHONY: test-local pre-commit pre-commit-quick update-deps show-version quality-full quality-quick
 .PHONY: arch-pkg arch-pkg-clean

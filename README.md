@@ -32,7 +32,7 @@
 
 **Elegant TUI · Real-time Monitoring · Process Management · Future-proof Architecture**
 
-*Version 3.1.2 Stellar* | *Built with Rust* 🦀
+*Version 3.1.0 Stellar* | *Built with Rust* 🦀
 
 </div>
 
@@ -85,21 +85,21 @@ Lyvoxa is a professional-grade system monitoring tool for Linux, combining elega
 
 ```bash
 # Download latest release (v3.1.0)
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz
-wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.2/lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.0/lyvoxa-3.1.0-linux-amd64.tar.gz
+wget https://github.com/oxyzenQ/lyvoxa/releases/download/3.1.0/lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
 
 # Verify integrity
-sha256sum -c lyvoxa-3.1.2-linux-amd64.tar.gz.sha256
+sha256sum -c lyvoxa-3.1.0-linux-amd64.tar.gz.sha256
 
 # Extract and install
-tar -xzf lyvoxa-3.1.2-linux-amd64.tar.gz
-sudo cp lyvoxa-3.1.2-linux-amd64/bin/* /usr/local/bin/
+tar -xzf lyvoxa-3.1.0-linux-amd64.tar.gz
+sudo cp lyvoxa-3.1.0-linux-amd64/bin/* /usr/local/bin/
 
 # Run
 lyvoxa
 ```
 
-**Verification**: See [docs/VERIFICATION.md](docs/VERIFICATION.md) for SHA256 + GPG signature verification.
+**Verification**: See [docs/VERIFICATION.md](docs/VERIFICATION.md) for SHA256 + optional GPG verification.
 
 ### ArchLinux (AUR - repository)
 
@@ -187,9 +187,10 @@ sort = "cpu"              # cpu | mem | pid | user | command
 
 ## 📚 Documentation
 
-- **[Verification Guide](docs/VERIFICATION.md)** - SHA256 + GPG verification (Bahasa)
-- **[GPG Setup](docs/GITHUB_GPG_SETUP.md)** - Auto-signing configuration
-- **[Security Policy](docs/SECURITY.md)** - Security best practices
+- **[Verification](docs/VERIFICATION.md)** - SHA256 + optional GPG verification
+- **[Release Signing (GPG)](docs/GPG_SIGNING.md)** - Configure GitHub Actions signing
+- **[Security](docs/SECURITY.md)** - Security notes and reporting
+- **[Releasing](docs/RELEASING.md)** - Release workflow
 - **[Contributing](docs/CONTRIBUTING.md)** - Contribution guidelines
 
 ## 🤝 Contributing

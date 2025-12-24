@@ -1,6 +1,8 @@
 name: ✍️ DCO Check
 
 on:
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 # Security: Explicit permissions (principle of least privilege)

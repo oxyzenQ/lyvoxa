@@ -2,26 +2,42 @@
 # =============================================================================
 # LYVOXA BUILD AUTOMATION SCRIPT
 # =============================================================================
-# Optimized build script with CPU core limits and caching for Arch Linux
+# Optimized build script with intelligent core detection and advanced caching
 # Author: rezky_nightky
-# Version: Stellar 3.0
+# Version: Stellar 4.0
 
 set -euo pipefail
 
 # Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly NC='\033[0m'
 
-# Configuration
-MAX_JOBS=3
-TARGET="x86_64-unknown-linux-gnu"
-PROJECT_NAME="lyvoxa"
+# Configuration with intelligent defaults
+readonly PROJECT_NAME="lyvoxa"
+readonly TARGET="${LYVOXA_TARGET:-x86_64-unknown-linux-gnu}"
+readonly RUST_BACKTRACE="${RUST_BACKTRACE:-1}"
 
-# Override system MAKEFLAGS for heat control
+# Intelligent job calculation: 75% of cores, min 1, max 8 for heat control
+calculate_jobs() {
+    local cores
+    cores=$(nproc 2>/dev/null || echo 4)
+    local jobs=$((cores * 3 / 4))
+    jobs=$((jobs < 1 ? 1 : jobs))
+    jobs=$((jobs > 8 ? 8 : jobs))
+    echo "$jobs"
+}
+
+MAX_JOBS="${LYVOXA_JOBS:-$(calculate_jobs)}"
 export MAKEFLAGS="-j${MAX_JOBS}"
+export CARGO_BUILD_JOBS="${MAX_JOBS}"
+
+# Rust optimization flags
+export CARGO_TERM_COLOR=always
+export RUST_BACKTRACE
 
 # Functions
 log_info() {
@@ -29,261 +45,513 @@ log_info() {
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo -e "${GREEN}[✓]${NC} $1"
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo -e "${YELLOW}[⚠]${NC} $1"
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[✗]${NC} $1" >&2
 }
 
-update_dependencies() {
-    log_info "Updating Rust dependencies..."
-    
-    # Update dependencies within semver constraints
-    log_info "Running cargo update..."
-    cargo update
-    
-    # Install cargo-audit for security checks if not present
-    if ! command -v cargo-audit &> /dev/null; then
-        log_info "Installing cargo-audit for security checks..."
-        cargo install cargo-audit
-    fi
-    
-    # Run security audit
-    log_info "Running security audit..."
-    cargo audit || log_warning "Security audit completed with informational warnings"
-    
-    log_success "Dependencies updated successfully"
+log_step() {
+    echo -e "${CYAN}[→]${NC} $1"
 }
 
-check_dependencies() {
-    log_info "Checking build dependencies..."
-    
-    # Check if rustup is installed
+# Spinner for long operations
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    while ps -p "$pid" > /dev/null 2>&1; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
+check_rust_toolchain() {
+    log_step "Checking Rust toolchain..."
+
     if ! command -v rustup &> /dev/null; then
-        log_error "rustup is not installed. Please install it first."
+        log_error "rustup not installed. Install from: https://rustup.rs"
         exit 1
     fi
-    
-    # Check if sccache is available
-    if command -v sccache &> /dev/null; then
-        log_success "sccache found - build caching enabled"
-        export RUSTC_WRAPPER=sccache
-    else
-        log_warning "sccache not found - consider installing for faster builds: 'cargo install sccache'"
+
+    # Ensure target is installed
+    if ! rustup target list --installed | grep -q "^${TARGET}$"; then
+        log_info "Installing target: ${TARGET}"
+        rustup target add "${TARGET}"
     fi
-    
-    # Check if mold linker is available
-    if command -v mold &> /dev/null; then
-        log_success "mold linker found - faster linking enabled"
+
+    log_success "Rust toolchain ready"
+}
+
+setup_build_cache() {
+    log_step "Configuring build acceleration..."
+
+    # Check and setup sccache
+    if command -v sccache &> /dev/null; then
+        # Disable incremental compilation when using sccache (they conflict)
+        export CARGO_INCREMENTAL=0
+        export RUSTC_WRAPPER=sccache
+        # Start sccache server if not running
+        sccache --start-server 2>/dev/null || true
+        log_success "sccache enabled (build caching active)"
     else
-        log_warning "mold linker not found - consider installing for faster linking: 'paru -S mold'"
+        # Enable incremental compilation when not using sccache
+        export CARGO_INCREMENTAL=1
+        log_warning "sccache not found. Install: cargo install sccache --locked"
+    fi
+
+    # Check for mold linker
+    if command -v mold &> /dev/null; then
+        export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-fuse-ld=mold"
+        log_success "mold linker enabled (faster linking)"
+    elif command -v lld &> /dev/null; then
+        export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-fuse-ld=lld"
+        log_success "lld linker enabled"
+    else
+        log_warning "Fast linker not found. Install mold: cargo install mold"
+    fi
+
+    # Setup cargo-nextest if available
+    if command -v cargo-nextest &> /dev/null; then
+        NEXTEST_AVAILABLE=1
+        log_success "cargo-nextest available (faster testing)"
+    else
+        NEXTEST_AVAILABLE=0
+        log_warning "cargo-nextest not found. Install: cargo install cargo-nextest --locked"
     fi
 }
 
 show_system_info() {
-    log_info "System Information:"
-    echo "  OS: $(uname -s) $(uname -m)"
-    echo "  CPU Cores: $(nproc)"
-    echo "  Build Jobs: ${MAX_JOBS} (limited for heat control)"
-    echo "  Target: ${TARGET}"
-    echo "  Rust Version: $(rustc --version)"
-    echo "  Cargo Version: $(cargo --version)"
+    log_info "Build Configuration:"
+    echo "  ├─ OS: $(uname -s) $(uname -m)"
+    echo "  ├─ CPU Cores: $(nproc)"
+    echo "  ├─ Build Jobs: ${MAX_JOBS}"
+    echo "  ├─ Target: ${TARGET}"
+    echo "  ├─ Rust: $(rustc --version)"
+    echo "  ├─ Cargo: $(cargo --version)"
+    echo "  ├─ Incremental: ${CARGO_INCREMENTAL:-1}"
+    echo "  └─ Cache: ${RUSTC_WRAPPER:-none}"
+}
+
+update_dependencies() {
+    log_step "Updating dependencies..."
+
+    if ! cargo update --quiet; then
+        log_error "Failed to update dependencies"
+        return 1
+    fi
+
+    # Security audit
+    if command -v cargo-audit &> /dev/null; then
+        if cargo audit --quiet 2>/dev/null; then
+            log_success "Security audit passed"
+        else
+            log_warning "Security vulnerabilities detected (run 'cargo audit' for details)"
+        fi
+    else
+        log_warning "cargo-audit not installed. Install: cargo install cargo-audit --locked"
+    fi
+
+    log_success "Dependencies updated"
 }
 
 build_debug() {
-    log_info "Building debug version with ${MAX_JOBS} CPU cores..."
-    log_info "Command: cargo build --jobs ${MAX_JOBS} --target ${TARGET}"
-    
-    if time cargo build --jobs "${MAX_JOBS}" --target "${TARGET}"; then
-        log_success "Debug build completed successfully!"
-        log_info "Binary location: target/${TARGET}/debug/${PROJECT_NAME}"
+    log_step "Building debug binary..."
+
+    if cargo build --target "${TARGET}" --jobs "${MAX_JOBS}"; then
+        local binary="target/${TARGET}/debug/${PROJECT_NAME}"
+        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        log_success "Debug build complete (${size})"
+        echo "  └─ Binary: ${binary}"
     else
-        log_error "Debug build failed!"
-        exit 1
+        log_error "Debug build failed"
+        return 1
     fi
 }
 
 build_release() {
-    log_info "Building release version with ${MAX_JOBS} CPU cores..."
-    log_info "Command: cargo build --release --jobs ${MAX_JOBS} --target ${TARGET}"
-    
-    if time cargo build --release --jobs "${MAX_JOBS}" --target "${TARGET}"; then
-        log_success "Release build completed successfully!"
-        log_info "Binary location: target/${TARGET}/release/${PROJECT_NAME}"
-        
-        # Show binary size
-        local binary_path="target/${TARGET}/release/${PROJECT_NAME}"
-        if [ -f "$binary_path" ]; then
-            local size
-            size=$(du -h "$binary_path" | cut -f1)
-            log_info "Binary size: ${size}"
+    log_step "Building optimized release binary..."
+
+    if cargo build --release --target "${TARGET}" --jobs "${MAX_JOBS}"; then
+        local binary="target/${TARGET}/release/${PROJECT_NAME}"
+        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        log_success "Release build complete (${size})"
+        echo "  └─ Binary: ${binary}"
+
+        # Strip binary for smaller size
+        if command -v strip &> /dev/null && [ -f "$binary" ]; then
+            local before=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
+            strip "$binary"
+            local after=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
+            local saved=$(( (before - after) / 1024 ))
+            log_info "Stripped binary (saved ${saved}KB)"
         fi
     else
-        log_error "Release build failed!"
-        exit 1
+        log_error "Release build failed"
+        return 1
     fi
 }
 
 build_release_with_debug() {
-    log_info "Building release with debug info for profiling..."
-    log_info "Command: cargo build --profile release-with-debug --jobs ${MAX_JOBS} --target ${TARGET}"
-    
-    if time cargo build --profile release-with-debug --jobs "${MAX_JOBS}" --target "${TARGET}"; then
-        log_success "Release with debug build completed successfully!"
-        log_info "Binary location: target/${TARGET}/release-with-debug/${PROJECT_NAME}"
+    log_step "Building release with debug symbols..."
+
+    if cargo build --profile release-with-debug --target "${TARGET}" --jobs "${MAX_JOBS}"; then
+        local binary="target/${TARGET}/release-with-debug/${PROJECT_NAME}"
+        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        log_success "Release-debug build complete (${size})"
+        echo "  └─ Binary: ${binary}"
     else
-        log_error "Release with debug build failed!"
-        exit 1
+        log_error "Release-debug build failed"
+        return 1
     fi
 }
 
 run_tests() {
-    log_info "Running tests with ${MAX_JOBS} CPU cores..."
-    log_info "Command: cargo test --jobs ${MAX_JOBS} --target ${TARGET}"
-    
-    if cargo test --jobs "${MAX_JOBS}" --target "${TARGET}"; then
-        log_success "All tests passed!"
+    log_step "Running test suite..."
+
+    if [ "${NEXTEST_AVAILABLE:-0}" -eq 1 ]; then
+        if cargo nextest run --target "${TARGET}" --jobs "${MAX_JOBS}"; then
+            log_success "All tests passed (nextest)"
+        else
+            log_error "Tests failed"
+            return 1
+        fi
     else
-        log_error "Tests failed!"
-        exit 1
+        if cargo test --target "${TARGET}" --jobs "${MAX_JOBS}" -- --test-threads="${MAX_JOBS}"; then
+            log_success "All tests passed"
+        else
+            log_error "Tests failed"
+            return 1
+        fi
     fi
 }
 
 run_clippy() {
-    log_info "Running Clippy linter..."
-    if cargo clippy --target "${TARGET}" -- -D warnings; then
-        log_success "Clippy checks passed!"
+    log_step "Running Clippy linter..."
+
+    if cargo clippy --target "${TARGET}" --all-targets --all-features -- -D warnings -D clippy::all; then
+        log_success "Clippy checks passed"
     else
-        log_error "Clippy found issues!"
-        exit 1
+        log_error "Clippy found issues"
+        return 1
     fi
 }
 
 run_fmt_check() {
-    log_info "Checking code formatting..."
-    if cargo fmt --check; then
-        log_success "Code formatting is correct!"
+    log_step "Checking code formatting..."
+
+    if cargo fmt --all -- --check; then
+        log_success "Code formatting is correct"
     else
-        log_error "Code formatting issues found! Run 'cargo fmt' to fix."
-        exit 1
+        log_error "Formatting issues found. Run: cargo fmt --all"
+        return 1
     fi
 }
 
-clean_build() {
-    log_info "Cleaning build artifacts..."
-    cargo clean
-    log_success "Build artifacts cleaned!"
+run_fmt_fix() {
+    log_step "Formatting code..."
+    cargo fmt --all
+    log_success "Code formatted"
 }
 
-show_sccache_stats() {
+run_audit() {
+    log_step "Running security audit..."
+
+    if ! command -v cargo-audit &> /dev/null; then
+        log_warning "cargo-audit not installed"
+        log_info "Installing cargo-audit (this may take a few minutes)..."
+
+        # Temporarily disable sccache for installation to avoid conflicts
+        local old_wrapper="${RUSTC_WRAPPER:-}"
+        unset RUSTC_WRAPPER
+
+        if ! cargo install cargo-audit --locked; then
+            log_error "Failed to install cargo-audit"
+            export RUSTC_WRAPPER="$old_wrapper"
+            return 1
+        fi
+
+        # Restore sccache if it was set
+        if [ -n "$old_wrapper" ]; then
+            export RUSTC_WRAPPER="$old_wrapper"
+        fi
+
+        log_success "cargo-audit installed"
+    fi
+
+    if cargo audit; then
+        log_success "Security audit passed"
+    else
+        log_warning "Security issues detected"
+        return 1
+    fi
+}
+
+run_deny_check() {
+    log_step "Checking dependency policies..."
+
+    if ! command -v cargo-deny &> /dev/null; then
+        log_warning "cargo-deny not installed"
+        log_info "Installing cargo-deny (this may take a few minutes)..."
+
+        # Temporarily disable sccache for installation to avoid conflicts
+        local old_wrapper="${RUSTC_WRAPPER:-}"
+        unset RUSTC_WRAPPER
+
+        if cargo install cargo-deny --locked 2>&1 | grep -q "error:"; then
+            log_error "Failed to install cargo-deny"
+            export RUSTC_WRAPPER="$old_wrapper"
+            return 1
+        fi
+
+        # Restore sccache if it was set
+        if [ -n "$old_wrapper" ]; then
+            export RUSTC_WRAPPER="$old_wrapper"
+        fi
+
+        log_success "cargo-deny installed"
+    fi
+
+    if cargo deny check all; then
+        log_success "Dependency policy checks passed"
+    else
+        log_error "Dependency policy violations found"
+        return 1
+    fi
+}
+
+run_comprehensive_check() {
+    local failed=0
+
+    echo ""
+    log_info "=== Comprehensive Code Quality Check ==="
+    echo ""
+
+    check_rust_toolchain || ((failed++))
+    run_fmt_check || ((failed++))
+    run_clippy || ((failed++))
+    run_tests || ((failed++))
+    run_audit || ((failed++))
+    run_deny_check || ((failed++))
+
+    echo ""
+    if [ $failed -eq 0 ]; then
+        log_success "All quality checks passed! ✨"
+        return 0
+    else
+        log_error "$failed check(s) failed"
+        return 1
+    fi
+}
+
+run_quick_check() {
+    log_step "Running quick checks..."
+
+    run_fmt_check && run_clippy
+}
+
+clean_build() {
+    log_step "Cleaning build artifacts..."
+
+    cargo clean
+
     if command -v sccache &> /dev/null; then
-        log_info "sccache statistics:"
+        sccache --zero-stats 2>/dev/null || true
+    fi
+
+    log_success "Build artifacts cleaned"
+}
+
+show_cache_stats() {
+    if command -v sccache &> /dev/null; then
+        echo ""
+        log_info "=== Build Cache Statistics ==="
         sccache --show-stats
+    else
+        log_warning "sccache not available"
+    fi
+}
+
+run_benchmark() {
+    log_step "Running benchmarks..."
+
+    if cargo bench --no-fail-fast; then
+        log_success "Benchmarks complete"
+    else
+        log_error "Benchmarks failed"
+        return 1
     fi
 }
 
 show_help() {
-    echo "Lyvoxa Build Script - Stellar 3.0"
-    echo ""
-    echo "Usage: $0 [COMMAND]"
-    echo ""
-    echo "Commands:"
-    echo "  debug          Build debug version (default)"
-    echo "  release        Build optimized release version"
-    echo "  release-debug  Build release with debug info"
-    echo "  test           Run all tests"
-    echo "  check          Run quick checks (clippy + fmt)"
-    echo "  clean          Clean build artifacts"
-    echo "  update         Update dependencies and run security audit"
-    echo "  all            Build debug + release + run tests"
-    echo "  stats          Show sccache statistics"
-    echo "  help           Show this help message"
-    echo ""
-    echo "Environment Variables:"
-    echo "  LYVOXA_JOBS    Override CPU core limit (default: 3)"
-    echo ""
-    echo "Examples:"
-    echo "  $0 release     # Build release version"
-    echo "  $0 all         # Full build and test cycle"
-    echo "  LYVOXA_JOBS=2 $0 release  # Build with 2 cores"
+    cat << 'EOF'
+╔════════════════════════════════════════════════════════════════╗
+║            Lyvoxa Build Script - Stellar 4.0                   ║
+╚════════════════════════════════════════════════════════════════╝
+
+USAGE:
+    ./build.sh [COMMAND] [OPTIONS]
+
+COMMANDS:
+    debug           Build debug version (default)
+    release         Build optimized release version
+    release-debug   Build release with debug symbols
+    test            Run test suite
+    bench           Run benchmarks
+
+    check           Quick checks (fmt + clippy)
+    check-all       Comprehensive checks (fmt + clippy + test + audit + deny)
+    fmt             Format code
+    clean           Clean build artifacts
+    update          Update dependencies and audit
+
+    all             Full pipeline (check + debug + release + test)
+    ci              CI pipeline (check-all + release)
+    stats           Show build cache statistics
+    help            Show this help
+
+OPTIONS:
+    --no-cache      Disable build caching
+    --verbose       Enable verbose output
+
+ENVIRONMENT VARIABLES:
+    LYVOXA_JOBS     Override CPU core limit (default: auto)
+    LYVOXA_TARGET   Override build target (default: x86_64-unknown-linux-gnu)
+    RUST_BACKTRACE  Control backtrace verbosity (default: 1)
+
+EXAMPLES:
+    ./build.sh release              # Build release version
+    ./build.sh check-all            # Run all quality checks
+    ./build.sh ci                   # Run CI pipeline
+    LYVOXA_JOBS=4 ./build.sh all    # Full build with 4 cores
+    ./build.sh --verbose release    # Verbose release build
+
+TOOLS INTEGRATION:
+    sccache   - Build caching (install: cargo install sccache)
+    mold      - Fast linker (install: cargo install mold)
+    nextest   - Fast test runner (install: cargo install cargo-nextest)
+    audit     - Security auditing (install: cargo install cargo-audit)
+    deny      - Dependency policies (install: cargo install cargo-deny)
+
+EOF
 }
+
+# Parse options
+VERBOSE=0
+NO_CACHE=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --verbose|-v)
+            VERBOSE=1
+            export RUST_BACKTRACE=full
+            shift
+            ;;
+        --no-cache)
+            NO_CACHE=1
+            unset RUSTC_WRAPPER
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 # Main execution
 main() {
-    # Override MAX_JOBS if environment variable is set
-    if [ -n "${LYVOXA_JOBS:-}" ]; then
-        MAX_JOBS="${LYVOXA_JOBS}"
-        log_info "CPU core limit overridden to: ${MAX_JOBS}"
-    fi
-    
-    # Ensure we're in the project directory
+    # Ensure we're in a Rust project
     if [ ! -f "Cargo.toml" ]; then
-        log_error "Not in a Rust project directory!"
+        log_error "Not in a Rust project directory (Cargo.toml not found)"
         exit 1
     fi
-    
-    case "${1:-debug}" in
-        "debug")
-            check_dependencies
-            update_dependencies
+
+    # Setup environment
+    if [ $NO_CACHE -eq 0 ]; then
+        setup_build_cache
+    fi
+
+    local command="${1:-debug}"
+
+    case "$command" in
+        debug)
+            check_rust_toolchain
             show_system_info
             build_debug
             ;;
-        "release")
-            check_dependencies
-            update_dependencies
+        release)
+            check_rust_toolchain
             show_system_info
             build_release
             ;;
-        "release-debug")
-            check_dependencies
-            update_dependencies
+        release-debug)
+            check_rust_toolchain
             show_system_info
             build_release_with_debug
             ;;
-        "test")
-            check_dependencies
+        test)
+            check_rust_toolchain
             run_tests
             ;;
-        "check")
-            run_clippy
-            run_fmt_check
+        bench|benchmark)
+            check_rust_toolchain
+            run_benchmark
             ;;
-        "clean")
+        check)
+            check_rust_toolchain
+            run_quick_check
+            ;;
+        check-all|ci)
+            run_comprehensive_check
+            ;;
+        fmt|format)
+            run_fmt_fix
+            ;;
+        clean)
             clean_build
             ;;
-        "update")
+        update)
+            check_rust_toolchain
             update_dependencies
             ;;
-        "all")
-            check_dependencies
-            update_dependencies
+        all)
+            check_rust_toolchain
             show_system_info
             run_fmt_check
             run_clippy
             build_debug
             build_release
             run_tests
-            show_sccache_stats
+            show_cache_stats
             ;;
-        "stats")
-            show_sccache_stats
+        stats)
+            show_cache_stats
             ;;
-        "help"|"-h"|"--help")
+        help|-h|--help)
             show_help
             ;;
         *)
-            log_error "Unknown command: $1"
+            log_error "Unknown command: $command"
+            echo ""
             show_help
             exit 1
             ;;
     esac
 }
 
-# Execute main function with all arguments
-main "$@"
+# Execute with error handling
+if main "$@"; then
+    exit 0
+else
+    log_error "Build script failed"
+    exit 1
+fi

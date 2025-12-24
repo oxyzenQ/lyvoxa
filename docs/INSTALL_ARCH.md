@@ -50,7 +50,7 @@ cd lyvoxa
 make arch-pkg
 
 # Install the package
-sudo pacman -U lyvoxa-3.1.2-1-x86_64.pkg.tar.zst       # Source-built (optimized)
+sudo pacman -U lyvoxa-3.1.0-1-x86_64.pkg.tar.zst       # Source-built (optimized)
 ```
 
 ### Method 3: Manual PKGBUILD (Advanced)
@@ -124,10 +124,6 @@ The repository includes everything needed:
 # Available make targets
 make arch-pkg           # Build source package
 make arch-pkg-clean     # Clean build artifacts
-
-# Or use the script directly
-./build-arch-pkg.sh source   # Build source package
-./build-arch-pkg.sh clean    # Clean up
 ```
 
 ## 🔍 Package Contents
