@@ -5,6 +5,7 @@
 # Optimized build script with intelligent core detection and advanced caching
 # Author: rezky_nightky
 # Version: Stellar 4.0
+# shellcheck disable=SC2155
 
 set -euo pipefail
 
@@ -60,7 +61,8 @@ log_step() {
     echo -e "${CYAN}[→]${NC} $1"
 }
 
-# Spinner for long operations
+# Spinner for long operations (currently unused, kept for future use)
+# shellcheck disable=SC2317,SC2329
 spinner() {
     local pid=$1
     local delay=0.1
@@ -69,7 +71,7 @@ spinner() {
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
+        sleep "$delay"
         printf "\b\b\b\b\b\b"
     done
     printf "    \b\b\b\b"
@@ -169,7 +171,8 @@ build_debug() {
 
     if cargo build --target "${TARGET}" --jobs "${MAX_JOBS}"; then
         local binary="target/${TARGET}/debug/${PROJECT_NAME}"
-        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        local size
+        size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
         log_success "Debug build complete (${size})"
         echo "  └─ Binary: ${binary}"
     else
@@ -183,15 +186,18 @@ build_release() {
 
     if cargo build --release --target "${TARGET}" --jobs "${MAX_JOBS}"; then
         local binary="target/${TARGET}/release/${PROJECT_NAME}"
-        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        local size
+        size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
         log_success "Release build complete (${size})"
         echo "  └─ Binary: ${binary}"
 
         # Strip binary for smaller size
         if command -v strip &> /dev/null && [ -f "$binary" ]; then
-            local before=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
+            local before
+            local after
+            before=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
             strip "$binary"
-            local after=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
+            after=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null)
             local saved=$(( (before - after) / 1024 ))
             log_info "Stripped binary (saved ${saved}KB)"
         fi
@@ -206,7 +212,8 @@ build_release_with_debug() {
 
     if cargo build --profile release-with-debug --target "${TARGET}" --jobs "${MAX_JOBS}"; then
         local binary="target/${TARGET}/release-with-debug/${PROJECT_NAME}"
-        local size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
+        local size
+        size=$(du -h "$binary" 2>/dev/null | cut -f1 || echo "unknown")
         log_success "Release-debug build complete (${size})"
         echo "  └─ Binary: ${binary}"
     else
@@ -446,13 +453,11 @@ EOF
 }
 
 # Parse options
-VERBOSE=0
 NO_CACHE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --verbose|-v)
-            VERBOSE=1
             export RUST_BACKTRACE=full
             shift
             ;;
