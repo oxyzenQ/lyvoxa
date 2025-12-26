@@ -1,3 +1,18 @@
+> [!WARNING]
+> ## 🗄️ ARCHIVED PROJECT
+> This repository is **archived** and **no longer maintained**.
+>
+> - ❌ No updates / bug fixes
+> - ❌ No guarantees for security patches
+> - ❌ Issues/PRs may not be reviewed
+> - ✅ Code remains available for reference
+>
+> **Archived on:** 2025-12-26
+>
+> **Reason:** Owner is currently focused on building a system project
+>
+> See: [ARCHIVED.md](ARCHIVED.md)
+
 <div align="center">
 
 # 🌟 Lyvoxa Stellar

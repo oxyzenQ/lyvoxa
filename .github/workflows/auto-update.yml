@@ -10,8 +10,6 @@
 name: 🤖 Auto Update Dependencies
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at 8 AM Singapore time (00:00 UTC)
   workflow_dispatch:       # Manual trigger
     inputs:
       force_update:

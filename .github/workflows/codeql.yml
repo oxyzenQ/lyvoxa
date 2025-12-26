@@ -22,8 +22,6 @@ on:
       - 'build.rs'
       - '.cargo/**'
       - '.github/workflows/codeql.yml'
-  schedule:
-    - cron: '0 0 * * *'  # Daily at 8 AM Singapore time (00:00 UTC)
   workflow_dispatch:
 
 permissions:
